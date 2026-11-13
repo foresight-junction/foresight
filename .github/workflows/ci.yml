@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Frontend (skipped until frontend/ exists)
+      - if: hashFiles('frontend/package.json') != ''
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - if: hashFiles('frontend/package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: frontend lint + build
+        if: hashFiles('frontend/package.json') != ''
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm build
+
+      # Backend (skipped until backend/ exists)
+      - if: hashFiles('backend/pyproject.toml') != ''
+        uses: astral-sh/setup-uv@v6
+      - name: backend lint + import + tests
+        if: hashFiles('backend/pyproject.toml') != ''
+        working-directory: backend
+        run: |
+          uv sync
+          uvx ruff check .
+          uv run python -c "import app.main"
+          if [ -d tests ]; then uv run pytest -q; fi
