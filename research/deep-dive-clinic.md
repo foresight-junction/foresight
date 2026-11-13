@@ -4,7 +4,7 @@
 
 The brief asks for a home product that keeps people well after TMS for depression, ideally a closed loop: sense how the person is doing, respond with something helpful, learn what works for that person. There is a real, specific gap: about half of people who recover after rTMS relapse within a year, and the evidence hints (not proven) that "rescue" boosters triggered by early warning signs beat fixed schedules, yet nothing at home tells the clinic *when* to rescue. Judging is 75% product (usefulness, ease of use, creativity) and 25% sensing/learning, with no dataset to beat, so a polished, humane demo matters more than model accuracy.
 
-**Verdict:** a good pick for a team strong on UX that keeps claims modest. Risks: the prize is "to be announced" (it could be small), there's no provided data, and it's hard to make "learning per person" look credible in a 3-minute demo. Ask about the prize before committing.
+**Verdict:** a good pick for a team strong on UX that keeps claims modest. Prize (now announced): €2,000 for the best team + a visit to the brain stimulation lab; the most promising idea gets a chance to keep developing it with the researchers (updated on the platform, Fri 13 Nov evening). Risks: there's no provided data, and it's hard to make "learning per person" look credible in a 3-minute demo. Ask about the prize before committing.
 
 ## The clinical problem
 
@@ -82,11 +82,16 @@ Rule of thumb: use pretrained models plus open data to *show* the features, and 
 
 ## Uncertainties
 
-- Prize amount and format ("to be announced").
+- Prize: resolved, see Summary.
 - Which studies and datasets the "pointers" refer to; none are linked.
 - Whether the TMS and portable EEG demos happen, and whether teams can record EEG themselves.
 - Submission format, judging process, and primary user (patient vs clinician): not stated.
 - Whether the closed loop must be brain-based ("how the patient's brain reacts") or whether behavioural signals count.
+
+## Context from the challenge page (re-checked Fri evening)
+
+- The only links on the page are Soihtu (soihtudtx.com, a self-adapting video game for depression, in clinical trials, aiming for FDA 510(k)) and Meru Health (12-week program: therapist + app + HRV biofeedback device). No dataset links.
+- Aalto's company blurb names **AR4U**, its own Research-to-Business project: a voice AI companion with daily check-ins for older adults at home (Business Finland funded). Voice check-ins are a research line they already invest in.
 
 ## Questions for Aalto (prioritised)
 

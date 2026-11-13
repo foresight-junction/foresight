@@ -747,7 +747,7 @@ Platform Partners page / dashboard list: Junction, Aalto University, AfterQuery,
 - Creativity (25%): how original and delightful the idea is.
 - How judging runs: Not stated
 **Prizes:**
-- To be announced.
+- €2,000 for the best team + a visit to the brain stimulation lab; the most promising idea gets a chance to keep developing it with the researchers (updated on the platform, Fri 13 Nov evening).
 **Mentors / extras (talks, booth, hiring perks):**
 - Researchers from Prof. Risto Ilmoniemi and Prof. Pantelis Lioumis's group (Dept. of Neuroscience and Biomedical Engineering), plus support from Aalto Innovation.
 - Main contact: Myungji (MJ) Suh.

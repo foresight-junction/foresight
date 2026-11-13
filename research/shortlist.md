@@ -21,7 +21,7 @@ The draft submission with the challenge choice is due **Fri 23:59**. It can be c
 | AI-wrapper risk | High | Medium | None |
 | Expected competition | Heavy (featured, easy entry) | Light | Light |
 | Judging | Need, execution, originality, use of Cala (25% each) | Usefulness, ease of use, smart sensing, creativity (25% each) | Gap 30, difficulty 30, reward integrity 25, craft 15; judges rerun your code |
-| Prize | ~€5k Comet travel + €1k credits | To be announced | €3k / €1.5k / €500 + work trial |
+| Prize | ~€5k Comet travel + €1k credits | €2,000 + lab visit + chance to continue with researchers | €3k / €1.5k / €500 + work trial |
 | Top 5 pitch appeal (main €10k) | Medium | High | Low |
 | Stacks with side prizes | Gemini, Codex, Oxylabs, Context.dev | Gemini, Gemma, Modal, Codex, ElevenLabs | Modal, Verda, Codex, Gemini |
 | Non-boring version | Graph product: warm-intro path to a VC, or "who's about to raise" from signals | Phone signals (voice tone, typing rhythm, sleep) to adaptive music/light or a micro-game, learning per person what works, plus a clinician alert view | A domain where agents fail on real decisions (e.g. multi-step procurement or scheduling under hidden constraints) |
