@@ -171,11 +171,12 @@ if __name__ == "__main__":
 
 
 def test_live_world_uses_ed72_config_like_collect(tmp_path, monkeypatch):
+    from ed72_sim import constants as c
     from ed72_sim.config import load_config
     from ed72_sim.world import generate_world
 
     config_path = tmp_path / "harder.json"
-    config_path.write_text(json.dumps({"arrival_mean": 3.0}), encoding="utf-8")
+    config_path.write_text(json.dumps({"arrival_mean": c.ARRIVAL_MEAN + 1.5}), encoding="utf-8")
     monkeypatch.setenv("ED72_CONFIG", str(config_path))
     monkeypatch.delenv("USE_MOCKS", raising=False)
     monkeypatch.setattr(server, "_fresh_log", lambda path: tmp_path / "events.jsonl")
