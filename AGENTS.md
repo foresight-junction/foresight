@@ -58,7 +58,7 @@ Tool-specific extras are in `CLAUDE.md` (Claude), section 9 (Codex) and `GEMINI.
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:0` to `wave:7` (execution order, see #39).
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:0` to `wave:8` (execution order, see #39).
 - **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
 - **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
 - **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). #41 has landed and the issue bodies are realigned to the rulebook; if a body still disagrees with `docs/SPEC.md` or `docs/CONTRACTS.md`, follow the docs and comment on the issue.
