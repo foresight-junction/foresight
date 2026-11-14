@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Command-line client for the hospital MCP server: ward rules | observe | step."""
+
+import argparse
+import asyncio
+import json
+import sys
+
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+
+async def call(url: str, tool: str, args: dict) -> object:
+    async with streamable_http_client(url) as (read, write), ClientSession(read, write) as session:
+        await session.initialize()
+        return await session.call_tool(tool, args)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="ward")
+    parser.add_argument("--url", default="http://hospital:8000/mcp")
+    sub = parser.add_subparsers(dest="command", required=True)
+    for name in ("rules", "observe"):
+        sub.add_parser(name).add_argument(
+            "--json",
+            nargs="?",
+            const="{}",
+            help="print the raw JSON result (rules prints plain text without it); a value must be {}",
+        )
+    step = sub.add_parser("step")
+    step.add_argument("--json", default="[]", help='JSON list of actions, or {"actions": [...]}')
+    args = parser.parse_args()
+
+    try:
+        payload = json.loads("{}" if args.json is None else args.json)
+    except json.JSONDecodeError as e:
+        print(f"ward: --json is not valid JSON: {e}", file=sys.stderr)
+        return 2
+    tool_args: dict = {}
+    if args.command == "step":
+        actions = payload.get("actions") if isinstance(payload, dict) else payload
+        if not isinstance(actions, list):
+            print('ward: --json must be a list of actions or {"actions": [...]}', file=sys.stderr)
+            return 2
+        tool_args = {"actions": actions}
+    elif payload != {}:
+        print(f"ward: {args.command} takes no arguments; pass --json '{{}}' or nothing", file=sys.stderr)
+        return 2
+
+    try:
+        result = asyncio.run(call(args.url, args.command, tool_args))
+    except Exception as e:  # noqa: BLE001 - the agent needs one readable line, not a traceback
+        print(f"ward: {args.command} call to {args.url} failed: {type(e).__name__}: {e}", file=sys.stderr)
+        return 1
+    if result.is_error:
+        print(f"ward: {result.content[0].text}", file=sys.stderr)
+        return 1
+    data = result.structured_content or json.loads(result.content[0].text)
+    if "error" in data:
+        print(json.dumps(data, indent=2), file=sys.stderr)
+        return 1
+    if args.command == "rules" and args.json is None:
+        print(data["text"])
+    else:
+        print(json.dumps(data, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

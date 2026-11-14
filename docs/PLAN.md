@@ -17,7 +17,7 @@ Task board = GitHub Issues (`scripts/wt.sh board`). This file is the map; the is
 | **C. Reference and experiments** | `area:ref` | Reference policy, agent runs, failure analysis | The gap (30) + the explanation half of difficulty |
 | **D. Harness, repro and story** | `area:harness` | Harbor packaging, one-command eval, CI, README, demo, submission, stretch | Craft (15) + tiebreaker |
 
-Fill in names in AGENTS.md section 1. Every lead agent merges its own PRs (AGENTS.md golden rule 8); D watches that `main`'s CI stays green.
+Fill in names in AGENTS.md section 1. One integrator, `kostiantyn-claude-4`, merges every PR into `main` in dependency order (AGENTS.md golden rule 8) and watches that `main`'s CI stays green.
 
 ## Timeline
 | When | Milestone | Proof |
@@ -45,6 +45,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **A7 P2** Extra event types and a second hospital layout.
 - **A8 P1** (#31) Tool-output firewall tests: no tool output ever contains the future, the seed or a score.
 - **A9 P1** (#32) Action-independent randomness: same seed gives the same arrivals and dice whatever the agent does.
+- **A10 P0** (#67) Tune the difficulty values before the 22:00 freeze: one candidates table for Kostiantyn, then one PR that updates `config/default.json`, SPEC section 12, HANDBOOK.md and the baseline table together.
 
 ### B. Reward and integrity (`area:reward`)
 - **B1 P0** Scorer: O, T, W, B and reward = score / 100. No anchors, no planner. Pure function over the event log, unit tested (TDD).
@@ -63,6 +64,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **C4 P1** Failure analysis by F1..F10 (SPEC section 2) and by O, T, W, B: three trajectory excerpts, one chart. docs/FINDINGS.md.
 - **C5 P1** Fairness audit: for each agent mistake, confirm the needed info was in HANDBOOK or the observation. Fix the handbook where it was not.
 - **C6 P2** (#36) Reference ablations of the rulebook levers (F1 to F6): switch each lever off and measure the drop.
+- **C7 P1** (#69) Difficulty sweep in `eval/tuning/` over the SPEC section 7 knobs; feeds A10.
 
 ### D. Harness, repro and story (`area:harness`)
 - **D1 P0** Harbor spike: mostly done on Kostiantyn's branch (`docs/unfindable/SPIKE_S0_RESULTS.md`). Remaining: one real OpenCode model run against a stub hospital sidecar that serves `rules`, `observe` and `step`.
