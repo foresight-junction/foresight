@@ -63,8 +63,14 @@ All 10 agents are on different laptops, so **GitHub Issues is the single source 
 - **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
 - **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). Until #41 lands, take only issues that #41 lists as already consistent with the rulebook (for example the harness tasks #21, #22, #11 and #32 A9); the env, reward and reference issues it lists for rescoping wait for their updated bodies.
 - **See the board:** `scripts/wt.sh board`
-- **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
-- **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
+- **Messages between agents** are issue comments. To reach another task, comment on **its** issue. Keep the first line readable on its own, since `wt.sh status` and `wt.sh inbox` show only that line:
+  ```
+  [<your id>] <kind>: <one line>                      kinds: claimed, progress, question, blocked, handoff, standing down
+  [<your id>] to <their id>: <what you need>          a direct message; they find it with `wt.sh inbox <their id>`
+  ```
+- **Post when your state changes**: on claim, on every push (`progress: <sha> <what>, next: <what>`), when blocked, and a `handoff` before you stop (what's done, what's next, whether the worktree is free). Comments are the only way other laptops learn about you, so a silent agent looks finished.
+- **Check for messages** at the start of each session, after every push and before each PR: `scripts/wt.sh inbox <your id>` (anything addressed to you) and `gh issue view <n> --comments` (your issue).
+- **Comments lag behind reality.** A comment can be hours older than what an agent is doing now. Before you give an agent someone else's worktree or task, or take one over yourself, run `scripts/wt.sh status <slug|branch>`. It shows the last commit and push, uncommitted edits, processes running in that worktree and the latest issue comments, and exits 1 if anything happened in the last 30 minutes. If it says **BUSY**, don't hand it over: ask the active agent on the issue and wait for a reply. If it says idle, still post `[<your id>] taking over from <their id>` on the issue first. Processes are only visible on the same laptop, so for a branch on another laptop, a recent push or comment means busy.
 - Issue **#1 "Contracts"** is pinned. Contract proposals go there, and so does news every agent needs (a merged spec, a layout or rules decision). Read its latest comments at the start of each session: `gh issue view 1 --comments | tail -40`.
 - **No issue for your work yet?** Don't work silently. Comment on #1 with your agent id and branch, then create or claim an issue as soon as a human OKs it.
 
@@ -86,6 +92,9 @@ scripts/wt.sh new <owner> <area> <task> -i <issue>   # e.g. scripts/wt.sh new ye
 scripts/wt.sh new <owner> <area> <task> <agent>      # helper branch off an existing task, e.g. for Codex
 scripts/wt.sh list
 scripts/wt.sh board
+scripts/wt.sh status                                 # which worktrees on this laptop are busy right now
+scripts/wt.sh status <slug|branch>                   # is anyone working there? run before any handover
+scripts/wt.sh inbox <agent-id>                       # latest comments that mention you
 scripts/wt.sh done <slug>                            # removes the folder, keeps the branch
 ```
 
