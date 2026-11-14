@@ -20,7 +20,7 @@ from pathlib import Path
 from statistics import mean
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import manifest  # noqa: E402
+import manifest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_JOBS = REPO_ROOT / "eval" / "results" / "jobs"
