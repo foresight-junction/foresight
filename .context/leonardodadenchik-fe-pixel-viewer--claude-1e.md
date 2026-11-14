@@ -44,4 +44,5 @@ The pixel replay viewer's side panel: explain every action the AI took each tick
 ## Handoff
 - Done: everything in Status. `cd frontend && pnpm lint && pnpm build && pnpm test` passes (25 tests).
 - How to test: preview `viewer-1e` (http://localhost:5175). The reference replay has no deaths/rejections; to see those, mount a mutated replay from the console (import `/src/ui/hud.ts`, `/src/game/playback.ts`, `/src/world/layout.ts`).
-- Not done: agency arrivals and staff returning from sickness are not called out in "What happened" (no event for them; would need an obs diff).
+- Staff arrivals, contract ends, sick calls and returns are derived from an obs diff (describeStaffChanges); they land on the tick whose obs first shows them.
+- Not done: animations were checked with a throttled (hidden) preview pane, so timing feel at 1x-4x deserves one look in a visible browser.
