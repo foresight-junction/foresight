@@ -992,7 +992,7 @@ export class Renderer {
     dc.fillStyle = `rgba(10, 12, 38, ${lerp(0.06, 0.72, d)})`;
     dc.fillRect(0, 0, MAP_W, MAP_H);
     dc.clearRect(b.x, b.y, b.w, b.h);
-    dc.fillStyle = `rgba(${Math.round(lerp(28, 14, d))}, ${Math.round(lerp(20, 14, d))}, 44, ${lerp(0.3, 0.5, d)})`;
+    dc.fillStyle = `rgba(${Math.round(lerp(28, 12, d))}, ${Math.round(lerp(20, 12, d))}, 44, ${lerp(0.24, 0.62, d)})`;
     dc.fillRect(b.x, b.y, b.w, b.h);
     dc.globalCompositeOperation = "destination-out";
     for (const l of LIGHTS) {
