@@ -14,7 +14,7 @@ git status --short
 git diff --staged --stat
 ```
 - Every changed file must be one your task owns (see `.context/<branch-slug>.md`). Unstage anything else with `git restore --staged <file>` and comment on the owning task's issue instead.
-- Nothing generated or local should be staged: `node_modules`, `.venv`, `dist`, `.env`, `.DS_Store`, large data files.
+- Nothing generated or local should be staged: `.venv`, `__pycache__`, `.env`, `.DS_Store`, large data files, Harbor run output.
 
 ## 2. Secrets scan
 ```bash
@@ -25,18 +25,25 @@ Any match → **stop**. Move the value to `.env`, add the name to `.env.example`
 ## 3. noslop
 Run the `noslop` skill on the staged changes.
 
-## 4. Format and lint (only for the parts you changed)
-- Backend: `cd backend && uvx ruff format . && uvx ruff check --fix .`
-- Frontend: `cd frontend && pnpm prettier --write src && pnpm lint`
+## 4. Format and lint
+From the repo root:
+```bash
+uvx ruff format . && uvx ruff check --fix .
+```
 
 Re-stage after formatting: `git add -A`.
 
 ## 5. It still runs
-- Backend: `cd backend && uv run python -c "import app.main"`, and tests if any exist: `uv run pytest -q`
-- Frontend: `cd frontend && pnpm build`, and tests if any exist.
+- If `ed72/environment/hospital/pyproject.toml` exists:
+  `uv run --project ed72/environment/hospital --with pytest pytest -q ed72/environment/hospital`
+  (exit code 5 means no tests were collected, which is fine).
+- For any other folder you changed that has its own `pyproject.toml` (`eval/`, `analysis/`, `training/`), run the same pattern with that folder.
+- For every changed `.sh` file: `bash -n <file>`.
 
 ## 6. Contracts
-If you changed a route, request/response shape, DB table, env var or port: `docs/CONTRACTS.md` must be updated **in this same commit**, and you must have followed the `contract-change` skill. If not, stop and do that first.
+If you changed a tool name or its args/result shape, the score object, an event-log line, an env var or a port: `docs/CONTRACTS.md` must be updated **in this same commit**, and you must have followed the `contract-change` skill. If not, stop and do that first.
+
+If you changed a rule the scorer applies or a sim rate, `ed72/environment/workspace/HANDBOOK.md` must be updated in the same PR (AGENTS.md rule 10.3).
 
 ## 7. Context file
 Update `.context/<branch-slug>.md` (Status, and any new decisions) and stage it.

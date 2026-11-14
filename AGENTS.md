@@ -13,6 +13,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
   - Do-nothing baseline: `harbor run -p ed72 -a nop`
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
+  - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --project ed72/environment/hospital --with pytest pytest -q ed72/environment/hospital`
 - **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
@@ -110,6 +111,7 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
+- The sim, tool server and scorer are one uv project: `ed72/environment/hospital/pyproject.toml` (the `hospital` image). `eval/`, `analysis/` and `training/` may have their own. `scripts/wt.sh new` runs `uv sync` in each one it finds, and CI runs ruff and pytest on all of them.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
 - Simulator and scorer are pure and deterministic: all randomness comes from one seeded `random.Random` passed in, never the global `random`, never wall-clock time, never the network.
