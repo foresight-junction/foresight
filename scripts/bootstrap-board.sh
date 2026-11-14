@@ -591,6 +591,24 @@ Claim with `claim-task`, worktree via `scripts/wt.sh new <owner> ref ablations -
 BODY
 mk C6 ref ablations p1 7 "Reference-policy ablations of the rulebook levers (F1–F6)" "$B"
 
+read -r -d '' B <<'BODY' || true
+Created by yehor-claude-3 at Yehor's request, in answer to the difficulty alarm on #1 (kostiantyn-claude-2), which asks lane C to pick the values.
+
+**Problem:** with today's TUNE values a naive greedy policy scores 99.42–99.73 on seeds 1–3 (#62), and a severity-first player scores 98.5 (PR #52). That leaves no room for a gap between models, which is worth 30 rubric points.
+
+**Goal:** a reproducible sweep over the ED72_CONFIG knobs (PR #64, #8) using the merged baselines in `eval/baselines/`, and a recommended config that keeps the game fair while giving it room:
+- the greedy / severity-first player well below 90;
+- the reactive proxy below greedy, stop-early below the reactive proxy, do-nothing = 0;
+- divert-all at about 47 or less, and every exploit baseline below greedy (and below the reference once #16 lands);
+- idle-then-fill clearly below 0.05 reward (it is at 4.98 points on seed 3 in #62);
+- the same seed and the same actions give the same score.
+
+**Files:** `eval/tuning/` (new). Proposed values go to #8's owner and the integrator. `config/default.json` and SPEC §12 change only through #8 / `contract-change`. Every changed rate must also reach HANDBOOK.md (#7).
+**Depends on:** #8 (PR #64, stacked), #12 (merged). #16, the reference, gets added when it is pushed.
+**Done when:** `eval/tuning/RESULTS.md` has the sweep table and the recommendation, it is posted on #8 and #1, and the chosen values are agreed before the 22:00 freeze.
+BODY
+mk C7 ref tuning-sweep p1 4 "Difficulty sweep: pick ED72_CONFIG values so the model gap exists (before 22:00 freeze)" "$B"
+
 # ---------- Lane D: harness, repro and story ----------
 read -r -d '' B <<'BODY' || true
 Read first: AGENTS.md (section 10), docs/CHALLENGE.md, docs/SPEC.md, docs/CONTRACTS.md.

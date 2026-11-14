@@ -113,7 +113,7 @@ for n, w in sorted(table_wave.items()):
         report(wave_of(n) == w, f"#{n} table wave {w} = label wave {wave_of(n)}")
 for n, ds in sorted(deps.items()):
     for d in ds:
-        if d in table_wave:
+        if d in table_wave and d in tasks and n in tasks:  # a merged (closed) dependency no longer orders anything
             report(table_wave[d] < table_wave[n], f"#{n} (wave {table_wave[n]}) depends on #{d} (wave {table_wave[d]})")
 seen: set[int] = set()
 stack: list[int] = []
