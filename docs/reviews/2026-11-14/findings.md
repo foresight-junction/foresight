@@ -89,3 +89,17 @@ Separate verification note: the full branch hospital suite gave **468 passed, 1 
 3. **[P2, zero-warning config only] Monitor faults can hide current availability.** Config accepts `warning: 0`, [_beds](https://github.com/xand1ex999/guinness/blob/2df7b8a8543738d7f891c400a86674ca17b3cd6b/ed72/environment/hospital/ed72_sim/observation.py#L36-L40) omits closure state, and [warnings](https://github.com/xand1ex999/guinness/blob/2df7b8a8543738d7f891c400a86674ca17b3cd6b/ed72/environment/hospital/ed72_sim/observation.py#L84-L87) excludes zero-warning events even while active. Otherwise identical worlds with/without a tick-0 monitor fault produced identical complete public observations, although one had R3 closed. Expose active availability, include active zero-warning events, or reject that configuration until represented. The default three-tick warning is inferable with the proposed handbook rule and is not the case reported here.
 
 No feature changes or merge requested during the freeze; these notes are for the existing owner and Kostya's prioritization.
+
+
+## Additional validated findings from Argon's supplied review
+
+[Full validation, source links, reproduction evidence and fixes](argon-validation.md). These six items are additional to the original seven above, validated against main `474829afe5f9b5bf5b10f18561ce149c634a957f`:
+
+1. A1 [P2] Reject nonfinite numeric configuration before world generation.
+2. A2 [P3] Extend the main-branch push hook's ordinary-command coverage.
+3. A3 [P3] Validate worktree-removal slugs and encode status query values.
+4. A4 [P2] Read all versioned board-check inputs from the selected ref.
+5. A5 [P2] Keep unused ticks separate from clinical failure counts in the SVG.
+6. A6 [P2] Parse supported .env quoting without changing model/key values.
+
+Kostya should create or reuse owner issues after triage. Argon's critical server/config claim is already fixed; its Bash 3.2 crash did not reproduce. The addendum records all twelve dispositions and corrections to the proposed fixes. No implementation changes are included.

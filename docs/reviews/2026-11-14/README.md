@@ -3,6 +3,7 @@
 Published on `yehor/docs-review-findings` for Kostya to triage and create follow-up issues. This preserves the completed review's fixed snapshots; it is not a fresh claim about changes made afterward.
 
 - [Detailed findings and reproductions](findings.md)
+- [Argon review validation: six additional items and all twelve dispositions](argon-validation.md)
 - [Reviewed branch heads](branch-heads.json)
 - [Original review task](https://github.com/xand1ex999/guinness/issues/88)
 
@@ -10,7 +11,9 @@ One-off review completed for @xand1ex999, requested by Yehor. Review performed w
 
 **Snapshot:** full main review and Docker runs at `b6234af4011eb1276b976605b0b31c94a23c7de8`. During the review, PRs #86, #85 and #79 merged. Their complete delta through `474829afe5f9b5bf5b10f18561ce149c634a957f` was reviewed and the affected suites rerun. The simulator, scorer, public server, reference and Harbor task were unchanged by that delta.
 
-**Result:** seven actionable findings posted to existing owner issues, including two current run/reproduction blockers. During the review phase, no source changes, commits, merges or paid model calls were made. This branch subsequently publishes documentation only.
+**Argon follow-up:** the supplied older review was validated against `474829a`. [The addendum](argon-validation.md) adds six scoped triage items (four P2, two P3), marks the critical configuration claim already fixed, rejects the Bash-array crash, and separates optional robustness from demonstrated defects. No supplied patch was applied.
+
+**Original result:** seven actionable findings posted to existing owner issues, including two current run/reproduction blockers. During the review phase, no source changes, commits, merges or paid model calls were made. This branch subsequently publishes documentation only.
 
 | Priority | Finding | Evidence and suggested fix |
 |---|---|---|
