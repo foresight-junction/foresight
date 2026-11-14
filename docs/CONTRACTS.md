@@ -171,3 +171,5 @@ Lines the sim writes itself carry `"src": "sim"` and an `"event"` field:
 | `ED72_SEED` | hospital only | world and patient seed. Set in `docker-compose.yaml`, never in `main` |
 | `ED72_CONFIG` | hospital only | path to the difficulty config (SPEC §7) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` | host, passed to the agent by Harbor | model keys. Never in the repo |
+| `ED72_MODEL` | host only (`make eval`) | agent model as `<provider/model>`; the provider prefix picks the key variable |
+| `HARBOR` | host only (`make eval`) | optional Harbor command override; default `uvx --python 3.12 --from harbor==0.25.0 harbor` |
