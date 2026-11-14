@@ -121,3 +121,11 @@ def test_corrupt_log_fails_loudly(collect_module, tmp_path: Path) -> None:
 
     with pytest.raises(json.JSONDecodeError):
         collect_module.collect(1, log, tmp_path / "report.json")
+
+
+def test_refused_step_calls_are_not_replayed(collect_module, tmp_path: Path) -> None:
+    log = tmp_path / "events.jsonl"
+    refused = step_line(1, [{"type": "divert"}]) | {"result": {"error": "call_cap_reached"}}
+    write_log(log, [step_line(0, []), refused])
+    collect_module.collect(7, log, tmp_path / "report.json")
+    assert FakeSimulation.instances[0].steps == [[]]

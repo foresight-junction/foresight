@@ -25,7 +25,12 @@ def read_step_lines(log_path: Path) -> list[dict]:
         for raw in log_file:
             if raw.strip():
                 lines.append(json.loads(raw))
-    return [ln for ln in lines if ln.get("src") == "agent" and ln.get("tool") == "step"]
+    # A refused call (call cap, episode over) logs its "error" and resolved no tick, so it is not replayed.
+    return [
+        ln
+        for ln in lines
+        if ln.get("src") == "agent" and ln.get("tool") == "step" and "error" not in ln.get("result", {})
+    ]
 
 
 def collect(seed: int, log_path: Path, out_path: Path) -> dict:
