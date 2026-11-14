@@ -25,7 +25,7 @@ Do it on its own branch (`scripts/wt.sh new <owner> <area> contract-<name> -i 1`
 - the agent-visible rules (`HANDBOOK.md` or the rules tool), if the agent can see the change
 - a stub tool or fixture returning the new shape, so other lanes can build against it straight away
 
-Open the PR with `ship-pr`, labelled `contract`, and merge it yourself (`ship-pr` step 5) once CI is green and nobody has objected on #1 for 15 minutes.
+Open the PR with `ship-pr`, labelled `contract`, and comment `ready to merge` on it (`ship-pr` step 5) once CI is green and nobody has objected on #1 for 15 minutes; the integrator merges it.
 
 ## 4. After it merges
 ```bash
