@@ -1,6 +1,6 @@
-# One-command eval (docs/EVAL.md section 3). Needs Docker and uv; Harbor 0.25.0 runs through uvx.
-#   make eval            reference, do-nothing, stop-early and 3 agent runs on $(ED72_MODEL)
-#   make eval-baselines  reference, do-nothing, stop-early only (no API key)
+# One-command eval (docs/EVAL.md section 3). Needs Docker and uv; Harbor 0.26.0 runs through uvx.
+#   make eval            reference, do-nothing and 3 agent runs on $(ED72_MODEL)
+#   make eval-baselines  reference and do-nothing (no API key)
 #   make eval-summary    rewrite eval/results/summary.md from the latest run, or JOBS=<dir>
 # Results: eval/results/jobs/<run id>/ and eval/results/summary.md.
 
