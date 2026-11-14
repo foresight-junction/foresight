@@ -458,8 +458,12 @@ def test_odd_values_that_parse_are_logged_and_replay_exactly(raw, tmp_path):
 
 
 @pytest.mark.xfail(
+    sys.platform == "win32",
     strict=True,
-    reason="N5: a step whose reply cannot be serialised returns is_error although the tick advanced",
+    # pydantic-core's Windows build caps serialisation depth below 100; on Linux (CI, the hospital
+    # image) the 120-deep echo serialises, so there this is a plain regression test.
+    reason="N5 (Windows only): a step whose reply cannot be serialised returns is_error "
+    "although the tick advanced",
 )
 def test_a_step_that_advanced_the_tick_does_not_reply_with_an_error(raw):
     host, mcp = raw
