@@ -26,6 +26,8 @@ def stream(seed: int, name: str) -> random.Random:
 
 def poisson(rng: random.Random, mean: float) -> int:
     """Knuth's method; fine for the small means (< 5) this sim uses."""
+    if mean < 0:
+        raise ValueError(f"poisson mean must be >= 0, got {mean}")
     limit = math.exp(-mean)
     count = 0
     product = rng.random()
@@ -37,7 +39,10 @@ def poisson(rng: random.Random, mean: float) -> int:
 
 def weighted_choice[T](rng: random.Random, weights: dict[T, float]) -> T:
     """Pick a key with probability proportional to its weight, in the dict's key order."""
-    target = rng.random() * sum(weights.values())
+    total = sum(weights.values())
+    if not weights or any(w < 0 for w in weights.values()) or total <= 0:
+        raise ValueError(f"weights must be non-negative with a positive total, got {weights}")
+    target = rng.random() * total
     cumulative = 0.0
     for key, weight in weights.items():
         cumulative += weight
