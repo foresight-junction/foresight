@@ -82,14 +82,14 @@ BUS_MIX: Final = {1: 0.20, 2: 0.30, 3: 0.50}
 REPAIR_COST: Final = 2000
 REPAIR_TICKS: Final = 3
 DIVERT_TICKS: Final = 4
-DIVERT_SHARE: Final = 0.75  # TUNE: keeps permanent diversion under about 47 points at 4.0 arrivals
+DIVERT_SHARE: Final = 0.7
 BUDGET: Final = 12000
 HARD_LIMIT: Final = 24000
 
 # Score (§11, SPEC §6)
 LOSS_DISCHARGED: Final = 0.0
 LOSS_IN_BED_COVERED: Final = 0.3
-LOSS_DIVERTED: Final = 0.7
+LOSS_DIVERTED: Final = 0.75  # TUNE: rulebook §13 fix; keeps permanent diversion under about 47 points at 4.0 arrivals
 LOSS_FAILED: Final = 1.0  # died, left, never admitted, or in a bed at the end with no covered tick
 W_TIRED_WEIGHT: Final = 1.0  # TUNE
 W_FAINT_WEIGHT: Final = 0.05  # TUNE
