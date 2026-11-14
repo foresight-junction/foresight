@@ -6,7 +6,7 @@ import type { Action, Esi, Location, Observation, ReplayTick, ScoreSummary, SimE
 export type Tone = "good" | "bad" | "warn" | "info" | "money" | "muted";
 
 export interface Line {
-  icon: string;
+  icon: string; // key into icons.ts
   text: string;
   tone: Tone;
   esi?: Esi;
@@ -151,7 +151,7 @@ function describeAction(a: Action, obs: Observation, events: SimEvent[]): Line {
         if (w.needs_ct) tags.push("needs CT");
       }
       return {
-        icon: "🛏️",
+        icon: "bed",
         text: `Admit ${a.patient}${w ? ` (ESI ${w.esi})` : ""} → ${zone}${typeof bed === "string" ? ` ${bed}` : ""}`,
         tone: "info",
         esi: w?.esi,
@@ -161,33 +161,33 @@ function describeAction(a: Action, obs: Observation, events: SimEvent[]): Line {
     case "assign": {
       const s = obs.staff.find((x) => x.id === a.staff);
       if (a.to === "rest") {
-        return { icon: "💤", text: `Send ${a.staff} to rest (fatigue ${fat(s)})`, tone: "info" };
+        return { icon: "zzz", text: `Send ${a.staff} to rest (fatigue ${fat(s)})`, tone: "info" };
       }
       const from = s && s.status === "on_shift" && s.location !== "rest" ? ` from ${ZONE_NAME[s.location]}` : "";
       return {
-        icon: "➜",
+        icon: "arrow",
         text: `Put ${a.staff} on ${ZONE_NAME[a.to] ?? a.to}${from} (fatigue ${fat(s)})`,
         tone: "info",
       };
     }
     case "agency":
       return {
-        icon: "💼",
+        icon: "agency",
         text: `Hire agency ${a.role} ${euro(-AGENCY_COST[a.role])}`,
         tone: "money",
         detail: `arrives at tick ${obs.tick + 4}, stays 16 ticks`,
       };
     case "repair":
-      return { icon: "🔧", text: `Repair CT ${euro(-REPAIR_COST)}`, tone: "money", detail: "back within 3 ticks" };
+      return { icon: "wrench", text: `Repair CT ${euro(-REPAIR_COST)}`, tone: "money", detail: "back within 3 ticks" };
     case "divert":
       return {
-        icon: "🚑",
+        icon: "siren",
         text: "Divert ambulances",
         tone: "warn",
         detail: "70% of arrivals turned away for 4 ticks",
       };
     default:
-      return { icon: "?", text: `Unknown action ${JSON.stringify(a)}`, tone: "muted" };
+      return { icon: "warn", text: `Unknown action ${JSON.stringify(a)}`, tone: "muted" };
   }
 }
 
@@ -229,7 +229,7 @@ export function describeActions(t: ReplayTick): TickActions {
       if (!ids.length) continue;
       const who = ids.map((id) => `${id} ${fat(t.obs.staff.find((s) => s.id === id))}`).join(" · ");
       moveLines.push({
-        icon: to === "rest" ? "💤" : "➜",
+        icon: to === "rest" ? "zzz" : "arrow",
         text: to === "rest" ? `Send ${plural(ids.length, "person", "people")} to rest` : `Put ${ids.length} on ${ZONE_NAME[to]}`,
         tone: "info",
         ok: true,
@@ -305,22 +305,22 @@ export function describeEvents(t: ReplayTick): Line[] {
   const of = (name: string): SimEvent[] => ev.filter((e) => e.event === name);
   const out: Line[] = [];
 
-  for (const e of of("event_start")) out.push({ icon: "⚡", text: eventStartText(e), tone: "warn" });
+  for (const e of of("event_start")) out.push({ icon: "bolt", text: eventStartText(e), tone: "warn" });
   for (const e of of("death")) {
     const esi = esiOf(e, obs);
     out.push({
-      icon: "💀",
+      icon: "skull",
       text: `${String(e.patient)}${esi ? ` (ESI ${esi})` : ""} ${DEATH_CAUSE[String(e.cause)] ?? "died"}`,
       tone: "bad",
       esi,
     });
   }
   for (const e of of("faint")) {
-    out.push({ icon: "😵", text: `${String(e.staff)} fainted from exhaustion (out 10 ticks)`, tone: "bad" });
+    out.push({ icon: "dizzy", text: `${String(e.staff)} fainted from exhaustion (out 10 ticks)`, tone: "bad" });
   }
   for (const e of of("upgrade")) {
     out.push({
-      icon: "⬆",
+      icon: "up",
       text: `${String(e.patient)} got worse: now ESI ${String(e.esi)}${e.needs_ct ? ", needs CT" : ""}`,
       tone: "warn",
       esi: typeof e.esi === "number" ? (e.esi as Esi) : undefined,
@@ -328,7 +328,7 @@ export function describeEvents(t: ReplayTick): Line[] {
   }
   for (const e of of("left")) {
     const esi = esiOf(e, obs);
-    out.push({ icon: "🚪", text: `${String(e.patient)}${esi ? ` (ESI ${esi})` : ""} gave up and left`, tone: "warn", esi });
+    out.push({ icon: "door", text: `${String(e.patient)}${esi ? ` (ESI ${esi})` : ""} gave up and left`, tone: "warn", esi });
   }
 
   const arrivals = of("arrival");
@@ -337,7 +337,7 @@ export function describeEvents(t: ReplayTick): Line[] {
     const flu = arrivals.filter((e) => e.source === "flu").length;
     const extra = [bus ? `${bus} from the bus crash` : "", flu ? `${flu} with flu` : ""].filter(Boolean).join(", ");
     out.push({
-      icon: "🚶",
+      icon: "person",
       text: `${plural(arrivals.length, "arrival")}: ${esiCounts(arrivals)}`,
       tone: "info",
       detail: extra || undefined,
@@ -346,20 +346,20 @@ export function describeEvents(t: ReplayTick): Line[] {
   const diverted = of("diverted");
   if (diverted.length) {
     out.push({
-      icon: "🚑",
+      icon: "siren",
       text: `${plural(diverted.length, "patient")} diverted elsewhere: ${esiCounts(diverted)}`,
       tone: "warn",
     });
   }
   const discharged = of("discharged");
   if (discharged.length) {
-    out.push({ icon: "✅", text: `${plural(discharged.length, "patient")} treated and discharged`, tone: "good" });
+    out.push({ icon: "heart", text: `${plural(discharged.length, "patient")} treated and discharged`, tone: "good" });
   }
   for (const e of of("staff_fatigue")) {
     const above = Number(e.on_shift_above_60 ?? 0);
     if (above > 0) {
       out.push({
-        icon: "🥱",
+        icon: "tired",
         text: `${above} of ${String(e.on_shift)} on-shift staff above fatigue 60 (count as 0.6)`,
         tone: "warn",
       });
@@ -367,12 +367,12 @@ export function describeEvents(t: ReplayTick): Line[] {
   }
   for (const e of of("spend")) {
     if (e.item !== "agency_doctor" && e.item !== "agency_nurse" && e.item !== "repair") {
-      out.push({ icon: "💶", text: `Spent ${euro(Number(e.amount))} on ${humanize(String(e.item))}`, tone: "money" });
+      out.push({ icon: "coin", text: `Spent ${euro(Number(e.amount))} on ${humanize(String(e.item))}`, tone: "money" });
     }
   }
-  for (const e of of("event_end")) out.push({ icon: "✔", text: eventEndText(String(e.kind)), tone: "good" });
-  if (of("episode_start").length) out.push({ icon: "🏥", text: "Day 1, 08:00: the department opens", tone: "muted" });
-  if (of("episode_end").length) out.push({ icon: "🏁", text: "Day 4, 08:00: episode over", tone: "muted" });
+  for (const e of of("event_end")) out.push({ icon: "check", text: eventEndText(String(e.kind)), tone: "good" });
+  if (of("episode_start").length) out.push({ icon: "cross", text: "Day 1, 08:00: the department opens", tone: "muted" });
+  if (of("episode_end").length) out.push({ icon: "flag", text: "Day 4, 08:00: episode over", tone: "muted" });
   return out;
 }
 
@@ -387,16 +387,45 @@ export function describeStaffChanges(prev: Observation | undefined, cur: Observa
     if (was === s.status) continue;
     const who = s.agency ? `${s.id} (agency ${s.role})` : s.id;
     if (was === "agency_ordered" || (was === undefined && s.status !== "agency_ordered")) {
-      out.push({ icon: "🧑‍⚕️", text: `${who} arrived for a 16-tick contract`, tone: "good" });
+      out.push({ icon: "person", text: `${who} arrived for a 16-tick contract`, tone: "good" });
     } else if (s.status === "agency_left") {
-      out.push({ icon: "👋", text: `Contract ended for ${who}`, tone: "muted" });
+      out.push({ icon: "door", text: `Contract ended for ${who}`, tone: "muted" });
     } else if (s.status === "sick") {
-      out.push({ icon: "🤒", text: `${who} called in sick`, tone: "warn" });
+      out.push({ icon: "sick", text: `${who} called in sick`, tone: "warn" });
     } else if (was === "sick") {
-      out.push({ icon: "↩", text: `${who} is back from sick leave (resting)`, tone: "good" });
+      out.push({ icon: "heart", text: `${who} is back from sick leave (resting)`, tone: "good" });
     } else if (was === "fainted") {
-      out.push({ icon: "↩", text: `${who} recovered from fainting (resting, fatigue ${Math.round(s.fatigue)})`, tone: "info" });
+      out.push({ icon: "heart", text: `${who} recovered from fainting (resting, fatigue ${Math.round(s.fatigue)})`, tone: "info" });
     }
+  }
+  return out;
+}
+
+export interface Banner {
+  text: string;
+  tone: "bad" | "warn" | "good";
+}
+
+const START_BANNER: Record<string, Banner> = {
+  staff_sickness: { text: "STAFF SICK!", tone: "warn" },
+  flu_wave: { text: "FLU WAVE!", tone: "warn" },
+  ct_breakdown: { text: "CT DOWN!", tone: "bad" },
+  bus_crash: { text: "BUS CRASH!", tone: "bad" },
+};
+
+// Big game-style banners for the moments that change the plan: an event starting, the CT coming
+// back, or the AI switching on diversion.
+export function bannersFor(t: ReplayTick): Banner[] {
+  const out: Banner[] = [];
+  for (const e of t.events) {
+    if (e.event === "event_start") {
+      out.push(START_BANNER[String(e.kind)] ?? { text: `${eventName(String(e.kind)).toUpperCase()}!`, tone: "warn" });
+    } else if (e.event === "event_end" && e.kind === "ct_breakdown") {
+      out.push({ text: "CT FIXED", tone: "good" });
+    }
+  }
+  if (t.actions.some((a, i) => a.type === "divert" && t.results[i]?.ok !== false)) {
+    out.push({ text: "DIVERSION ON", tone: "warn" });
   }
   return out;
 }
@@ -408,7 +437,7 @@ export function describeWarnings(obs: Observation): Line[] {
     .map((w) => {
       const n = w.start_tick - obs.tick;
       return {
-        icon: "⚠",
+        icon: "warn",
         text: `${eventName(w.event)} expected at tick ${w.start_tick} (${clockForTick(w.start_tick)})`,
         tone: "warn" as Tone,
         detail: `in ${plural(n, "tick")}`,

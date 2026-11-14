@@ -27,6 +27,7 @@ The pixel replay viewer's side panel: explain every action the AI took each tick
 - [x] AI decisions (plain English, ✓/✗ with reasons), What happened, Department status
 - [x] Mistakes list (deaths, faints, walk-outs) with click-to-jump
 - [x] Tests for describe.ts / timeline.ts (vitest)
+- [x] Game-UI pass (lead direction): beveled panels, pixel SVG icons (icons.ts), coin counter + budget bar (red past €12k), LOST/SAVED/FAINTS/LEFT/DIVERTED counters with count-up, stamina bar per zone, chunky segmented score meters, chunky transport buttons, slide-in list items, shake on rejected actions, skull flash on deaths, event banners (BUS CRASH!, CT DOWN!, FLU WAVE!, STAFF SICK!, CT FIXED, DIVERSION ON)
 
 ## Decisions and notes
 - Sat 20:30: tick label shows the raw tick (`tick 47 / 143`) so it matches the tick numbers in warnings and the mistakes list.
@@ -36,8 +37,11 @@ The pixel replay viewer's side panel: explain every action the AI took each tick
 - `update()` only rebuilds DOM when tick/playing/speed change; the scrubber repaints its canvas only when the playhead pixel moves.
 - Space is ignored while a select/input is focused or when a focused button would handle it; mouse clicks blur the buttons.
 - No new dependencies.
+- Resource counters in the game bar show the state after the tick (next tick's obs, or final_obs), so a death and its skull flash land on the same tick; the Department panel shows the start-of-tick obs.
+- List animations switch off at 8x+ while playing and under prefers-reduced-motion. Banners and flashes do not fire on the first render after mount.
+- Icons are inline SVG built from a fixed pixel table in icons.ts (no emoji, no image files).
 
 ## Handoff
-- Done: everything in Status. `cd frontend && pnpm lint && pnpm build && pnpm test` passes (23 tests).
+- Done: everything in Status. `cd frontend && pnpm lint && pnpm build && pnpm test` passes (25 tests).
 - How to test: preview `viewer-1e` (http://localhost:5175). The reference replay has no deaths/rejections; to see those, mount a mutated replay from the console (import `/src/ui/hud.ts`, `/src/game/playback.ts`, `/src/world/layout.ts`).
 - Not done: agency arrivals and staff returning from sickness are not called out in "What happened" (no event for them; would need an obs diff).

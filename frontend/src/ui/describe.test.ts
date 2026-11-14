@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Observation, Replay, ReplayTick, ScoreSummary, SimEvent, Staff } from "../replay/types";
 import {
+  bannersFor,
   clockForTick,
   describeActions,
   describeEvents,
@@ -253,6 +254,22 @@ describe("describeStaffChanges", () => {
       "N6 recovered from fainting (resting, fatigue 65)",
     ]);
     expect(describeStaffChanges(undefined, cur)).toEqual([]);
+  });
+});
+
+describe("bannersFor", () => {
+  it("announces event starts, a fixed CT and a successful diversion", () => {
+    const t = tick({
+      events: [
+        ev(10, "event_start", { kind: "bus_crash", ends_tick: 12 }),
+        ev(10, "event_end", { kind: "ct_breakdown" }),
+        ev(10, "event_end", { kind: "flu_wave" }),
+      ],
+      actions: [{ type: "divert" }],
+      results: [{ index: 0, ok: true }],
+    });
+    expect(bannersFor(t).map((b) => b.text)).toEqual(["BUS CRASH!", "CT FIXED", "DIVERSION ON"]);
+    expect(bannersFor(tick({ actions: [{ type: "divert" }], results: [{ index: 0, ok: false }] }))).toEqual([]);
   });
 });
 

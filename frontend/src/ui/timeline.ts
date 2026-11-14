@@ -94,12 +94,12 @@ export function findMistakes(replay: Replay): Mistake[] {
       const p = String(e.patient ?? "");
       if (e.event === "death") {
         const esi = patientEsi(t.obs, p);
-        out.push({ tick: t.tick, icon: "💀", text: `${p}${esi ? ` (ESI ${esi})` : ""} ${CAUSE[String(e.cause)] ?? "died"}`, esi });
+        out.push({ tick: t.tick, icon: "skull", text: `${p}${esi ? ` (ESI ${esi})` : ""} ${CAUSE[String(e.cause)] ?? "died"}`, esi });
       } else if (e.event === "faint") {
-        out.push({ tick: t.tick, icon: "😵", text: `${String(e.staff)} fainted` });
+        out.push({ tick: t.tick, icon: "dizzy", text: `${String(e.staff)} fainted` });
       } else if (e.event === "left") {
         const esi = patientEsi(t.obs, p);
-        out.push({ tick: t.tick, icon: "🚪", text: `${p}${esi ? ` (ESI ${esi})` : ""} left untreated`, esi });
+        out.push({ tick: t.tick, icon: "door", text: `${p}${esi ? ` (ESI ${esi})` : ""} left untreated`, esi });
       }
     }
   }
