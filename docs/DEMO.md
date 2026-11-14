@@ -1,6 +1,6 @@
 # ED-72 demo script (10 minutes)
 
-For the live demo to the judges and for the demo video. Status: draft (#25). The hook and the close are for a human to write. The model walkthrough and gap discussion need the run matrix (#18) and failure analysis (#19).
+For the live demo to the judges and for the demo video (#25). The walkthrough uses the seed-42 Gemini calibration run, the same run the README analyses under "Model decisions". If the run matrix (#18) lands before recording, add its means to segment 7.
 
 The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficulty (30), reward integrity (25), craft (15). Each segment below says which criterion it is for.
 
@@ -8,14 +8,14 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 | Start | Length | Segment | Rubric |
 |---|---|---|---|
-| 0:00 | 0:40 | 1. Hook (human) | |
+| 0:00 | 0:40 | 1. Hook | |
 | 0:40 | 1:10 | 2. Setup: the department and the tools | Difficulty |
 | 1:50 | 1:10 | 3. A `harbor run`, live start then saved trial | Craft |
 | 3:00 | 2:00 | 4. One agent episode, through its log | Difficulty |
 | 5:00 | 1:00 | 5. The score breakdown | Integrity |
 | 6:00 | 1:15 | 6. A cheat attempt that fails | Integrity |
 | 7:15 | 1:15 | 7. Results | Gap |
-| 8:30 | 0:45 | 8. Close (human) | |
+| 8:30 | 0:45 | 8. Close | |
 | 9:15 | 0:45 | Buffer for questions or a slow terminal | |
 
 ## Before the demo
@@ -28,11 +28,9 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 ## 1. Hook (0:00, 0:40)
 
-<!-- HUMAN: write the hook (2-3 sentences, said out loud). Material:
-- An emergency department with fewer staff than beds, for 72 hours, where every 30 minutes someone decides who gets a bed and who rests.
-- The agent sees everything about the present and nothing about the future.
-- Frontier agents score below a short scripted policy (only once #18 confirms it; otherwise say what was measured).
--->
+Say:
+
+> An emergency department with 17 beds and only enough staff to cover some of them, for 72 hours. Every 30 minutes the agent decides who gets a bed, who gets a doctor and who goes to rest. It sees everything about the present and nothing about the future. On seed 42, a short scripted reference policy scored 0.99 and Gemini 3.8 Flash scored 0.81. Thirteen of Gemini's patients died; the reference lost none.
 
 ## 2. Setup (0:40, 1:10)
 
@@ -58,10 +56,11 @@ Point at `waiting`, `beds` (each bed’s `patient` field is `null`), `staff` (ev
 
 ## 3. A `harbor run` (1:50, 1:10)
 
-For the Gemini demo, export `GEMINI_API_KEY` and set `ED72_MODEL` to the model ID shown in the README. Start a run live:
+Export `GEMINI_API_KEY` off screen first. Start a run live with the README's command:
 
 ```bash
-uvx --python 3.12 --from harbor==0.26.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+alias harbor='uvx --python 3.12 --from harbor==0.26.0 harbor'
+harbor run -p ed72 -a opencode -m gemini/gemini-3.8-flash \
   --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
@@ -69,7 +68,12 @@ The agent container has the handbook, the `ward` CLI and the OpenCode runtime. T
 
 ## 4. One agent episode (3:00, 2:00)
 
-Open the saved [Gemini trajectory](../eval/results/2026-11-14-gemini-seed42/trajectory.json) and identify two or three decisions from #19. For each, show the tick, the latest observation the agent had, and its next actions. In `verifier/score_full.json`, match affected patients by ID and show their final outcomes or first covered ticks. Use the corresponding handbook rule to explain the available action. Compare with the reference at the same seed when the evidence supports it.
+Open the saved [Gemini trajectory](../eval/results/2026-11-14-gemini-seed42/trajectory.json). The agent read the handbook, wrote one Python policy (`/app/run_ed.py`, in the `write` call to that path) and ran it once for all 144 ticks.
+
+1. **The plan (0:30).** Scroll to the `write` call for `/app/run_ed.py`. Show `is_available`: it skips staff whose status is `sick`, `fainted`, `ordered`, `not_arrived` or `departed`. Then show `assign_role`: agency staff fill each zone first, permanent staff fill what is left, everyone else rests.
+2. **Tick 121 (0:45).** Scroll to the `python3 /app/run_ed.py` output. At tick 121 (day 3, 20:30), `last_rejected` shows AD1, AN1 and AN2 assigned to Resus and rejected with `staff_unavailable`. Say: the observation calls these workers `agency_left`, not `departed`, so the policy kept counting them as staff. Resus got no permanent staff because the plan thought it was covered.
+3. **The cost (0:30).** In [`score_full.json`](../eval/results/2026-11-14-gemini-seed42/score_full.json), search for `P424`: ESI 1, admitted to Resus at tick 120, `first_covered_tick: null`, `died`, failure code `F7`. `P436` (admitted at tick 123) is the same. Say: the reference, on the same seed and the same arrivals, covered both on arrival and discharged them.
+4. **Was it fair? (0:15).** Open `HANDBOOK.md` §3: "departed agency staff cannot be assigned", and agency staff leave 16 ticks after arrival. §6 tells the agent to check `last_rejected` before the next tick. The policy printed every rejection and never changed.
 
 ## 5. Score breakdown (5:00, 1:00)
 
@@ -105,17 +109,17 @@ The [round 1 report](REDTEAM.md) links each tested probe to its regression check
 
 ## 7. Results (7:15, 1:15)
 
-Show the seed-42 calibration first. Reference reward 0.989617, Gemini reward 0.811712, and do-nothing reward 0.000000. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
+Show the README Results table. Reference reward 0.989617, Gemini reward 0.811712, and do-nothing reward 0.000000, all on seed 42. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
 
-Once #18 is available, show the per-seed model means and ranges and compare each with the matching reference. Keep the confirmed baselines on screen if the matrix is still pending.
+Say where the 17.8-point gap comes from: Gemini's W and B are both 1 (rested staff, €8 800 spent), so the whole gap is O and T. 13 ESI 1 deaths against none for the reference; 3 of 20 ESI 1 patients covered on time against 16.
+
+If #18 has posted per-seed model means and ranges by recording time, show them next to the matching reference. Otherwise say plainly that this is one trial on one seed.
 
 ## 8. Close (8:30, 0:45)
 
-<!-- HUMAN: write the close (2-3 sentences). Material:
-- One line on what the agent gets wrong most, from #19.
-- One line on why the score can't be gamed: outcome-weighted, computed from the hospital's log, shortcuts played as baselines.
-- How to reproduce: one command, `make eval`, from the README.
--->
+Say:
+
+> The agent's main mistake was not reading the department's feedback: it staffed critical beds with people who had gone home and never noticed the rejections. The score can't be gamed by shortcuts. It weights patient outcomes first, it is computed from the hospital's own log after the agent stops, and every shortcut we could think of is played as a baseline and loses. To reproduce everything, run `make eval` from the README.
 
 ## Recording checklist (demo video)
 
@@ -130,17 +134,17 @@ Once #18 is available, show the per-seed model means and ranges and compare each
 
 ## Submission checklist
 
-`docs/CHALLENGE.md` lists what must be in the submission and the required stack. The Junction form's own fields are not recorded in the repo. TODO(human): copy the form's fields here from the Junction dashboard.
+`docs/CHALLENGE.md` lists what must be in the submission and the required stack. The Junction form's own fields are not recorded in the repo, so check them on the Junction dashboard before submitting. The items below are the ones CHALLENGE requires.
 
 Must be in the submission (CHALLENGE "Must be in the submission"):
 - [ ] At least one Harbor run log with its score, a model playing the environment. Linked from the README Results section.
-- [ ] A short README: what the agent has to do, why it is hard, how we score it, with the core written by hand. Check: `grep -n -e 'HUMAN:' -e 'TODO(' README.md` prints nothing.
+- [ ] A short README: what the agent has to do, why it is hard, how we score it, with the core written by hand. Check: `grep -nE 'HU[M]AN|TODO[(]' README.md docs/DEMO.md` prints nothing.
 - [ ] Demo video with a playthrough (recording checklist above).
 - [ ] Submitted before Sun 15 Nov 10:00.
 
 Required stack (CHALLENGE "Required stack"):
 - [ ] Harbor task with `instruction.md`, `task.toml`, `environment/Dockerfile`, `tests/`, `solution/`. Check: `ls ed72/instruction.md ed72/task.toml ed72/environment/Dockerfile ed72/tests ed72/solution`.
-- [ ] OpenCode harness: `harbor run -p ./ed72 -a opencode -m "$ED72_MODEL"` finishes with a reward.
+- [ ] OpenCode harness: the README's OpenCode command (`harbor run -p ed72 -a opencode -m gemini/gemini-3.8-flash --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5`) finishes with a reward.
 - [ ] The verifier writes one number in [0, 1] to `/logs/verifier/reward.txt`.
 
 What judges rerun (CHALLENGE "How judges run it"):
