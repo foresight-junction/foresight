@@ -111,7 +111,7 @@ O, T, W and B are each in [0, 1], computed once at the end over every patient wh
 
 W and B are multiplied by O so that treating nobody (fresh staff, no spending) cannot earn them. Anchor points: do nothing 0; perfect play 100; everyone treated on time with no rest and €24 000 spent 80.
 
-The score is a pure function of the hospital's append-only event log and the generated world. No LLM judge. `score_full.json` also carries per-patient outcomes, deaths, faints, spend and counts per failure code F1–F10 for the analysis; those do not change the reward.
+The score is a pure function of the hospital's append-only event log (CONTRACTS "Event log"); rule numbers come from the simulator's constants. No LLM judge. `score_full.json` also carries per-patient outcomes, deaths, faints, spend and counts per failure code F1–F10 for the analysis; those do not change the reward.
 
 ## 7. Difficulty knobs (one config file, hospital side, via `ED72_CONFIG`)
 Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.

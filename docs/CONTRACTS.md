@@ -115,21 +115,29 @@ Agent calls. `t` is the tick.
 ```
 Lines the sim writes itself carry `"src": "sim"` and an `"event"` field:
 ```json
-{"seq": 42, "t": 37, "src": "sim", "event": "arrival", "patient": "P052", "esi": 3, "needs_ct": false}
+{"seq": 1, "t": 0, "src": "sim", "event": "episode_start", "budget": 12000, "hard_limit": 24000}
+{"seq": 42, "t": 37, "src": "sim", "event": "arrival", "patient": "P052", "esi": 3, "needs_ct": false, "source": "base"}
 {"seq": 43, "t": 37, "src": "sim", "event": "diverted", "patient": "P053", "esi": 2}
 {"seq": 44, "t": 37, "src": "sim", "event": "admitted", "patient": "P051", "zone": "resus", "bed": "R2"}
 {"seq": 45, "t": 37, "src": "sim", "event": "covered", "patient": "P051"}
 {"seq": 46, "t": 37, "src": "sim", "event": "discharged", "patient": "P040"}
 {"seq": 47, "t": 37, "src": "sim", "event": "death", "patient": "P038", "cause": "waiting"}
-{"seq": 48, "t": 37, "src": "sim", "event": "upgrade", "patient": "P033", "esi": 2}
+{"seq": 48, "t": 37, "src": "sim", "event": "upgrade", "patient": "P033", "esi": 2, "needs_ct": true}
 {"seq": 49, "t": 37, "src": "sim", "event": "left", "patient": "P021"}
 {"seq": 50, "t": 37, "src": "sim", "event": "faint", "staff": "N2"}
 {"seq": 51, "t": 37, "src": "sim", "event": "staff_fatigue", "on_shift_above_60": 3, "on_shift": 9}
 {"seq": 52, "t": 37, "src": "sim", "event": "spend", "item": "agency_nurse", "amount": 350}
 {"seq": 53, "t": 38, "src": "sim", "event": "event_start", "kind": "ct_breakdown", "ends_tick": 54}
+{"seq": 70, "t": 54, "src": "sim", "event": "event_end", "kind": "ct_breakdown"}
+{"seq": 990, "t": 143, "src": "sim", "event": "episode_end"}
 ```
+- `episode_start` is the first line (t = 0) and `episode_end` the last, written after tick 143 resolves.
+- `arrival` `source` enum: `base`, `flu`, `bus`. A diverted patient gets only a `diverted` line, no `arrival` line. `upgrade` repeats `needs_ct` because an upgraded patient gets a new CT roll.
+- `event_end` pairs with `event_start` by `kind` (`staff_sickness`, `flu_wave`, `ct_breakdown`, `bus_crash`).
 - `covered` is written for the first covered tick of each patient (needed for T and the end-of-episode rule). `cause` enum for deaths: `waiting`, `uncovered_bed`, `fatigue`.
-- `staff_fatigue` is written once per tick (needed for W). The scorer is a pure function `score(events, world) -> ScoreObject` and reads nothing else. There is no LLM judge.
+- `staff_fatigue` is written once per tick: `on_shift` is the number of staff on shift at tick step 6 (treatment) and `on_shift_above_60` how many of them had fatigue above 60 at that point (needed for W).
+- Log file: `/var/lib/ed72/events.jsonl` inside `hospital` (`ed72_sim.constants.EVENT_LOG_PATH`). `collect.py` rebuilds the world from `ED72_SEED`, replays the agent `step` lines from that file, runs any remaining ticks with no actions, and scores.
+- The scorer is a pure function `score(events) -> ScoreObject`: it reads only the event log (the budget comes from `episode_start`, rule numbers from `ed72_sim/constants.py`). There is no LLM judge.
 
 ## Score object (written to `/evidence/report.json`, copied by `tests/test.sh`)
 ```json
@@ -153,7 +161,7 @@ Lines the sim writes itself carry `"src": "sim"` and an `"event"` field:
 - `outcome` enum: `discharged`, `in_bed_end`, `diverted`, `died`, `left`, `never_admitted`. `in_bed_end` with `first_covered_tick: null` is scored as loss 1 (SPEC §6).
 - `ended` enum: `tick_143` (agent played to the end), `agent_stopped` (the agent stopped calling `step` and the remaining ticks ran without actions), `call_cap`, `timeout` (the agent timeout).
 - `patients` is abbreviated here. The real file has one entry per patient who arrived, including diverted ones.
-- `failures` and `ticks_with_actions` are for analysis. They do not affect the reward.
+- `failures` and `ticks_with_actions` are for analysis. They do not affect the reward. For now only the codes derivable from the log are computed (F1, F2, F6, F7, F8, F10); the others are omitted until C4 (#19) defines them.
 - `/logs/verifier/reward.txt`: the `reward` number only.
 - `/logs/verifier/score_full.json`: the full object. Do not also write `reward.json`: AfterQuery reads `reward.txt`, and two reward files is one more thing that can disagree.
 
