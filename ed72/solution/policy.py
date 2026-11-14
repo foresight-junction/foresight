@@ -25,6 +25,9 @@ OVERSPEND_LIMIT = 16000
 # An order arrives 4 ticks later (section 3), so a late one has too few ticks left to pay for itself.
 LAST_HIRE_TICK = 135
 LAST_CT_BREAKDOWN_START = 75
+# ESI 4-5 start leaving after 16 ticks of waiting (section 4) and lose all their weight when they do.
+AGED_LIGHT_WAIT = 13
+AGED_LIGHT_RANK = 3.5
 REPAIR_COST = 2000
 AGENCY_PRICES = (("doctor", 900), ("nurse", 350))
 ZONES = ("resus", "acute", "fast_track")
@@ -138,7 +141,7 @@ class ReferencePolicy:
             else:
                 patients[bed["zone"]].append(bed)
         admissions = []
-        for patient in sorted(observation["waiting"], key=lambda p: (p["esi"], p["arrived_tick"], p["id"])):
+        for patient in sorted(observation["waiting"], key=_admission_order):
             for zone in PREFERENCES[patient["esi"]]:
                 if zone == "resus" and patient["esi"] == 2 and free[zone] <= 1:
                     continue
@@ -198,6 +201,13 @@ class ReferencePolicy:
                 hires.append({"type": "agency", "role": role})
                 spent += price
         return hires
+
+
+def _admission_order(patient: dict) -> tuple:
+    """Severity first, except that a light patient close to walking out goes ahead of other light patients."""
+    esi = patient["esi"]
+    rank = AGED_LIGHT_RANK if esi >= 4 and patient["waited_ticks"] >= AGED_LIGHT_WAIT else esi
+    return (rank, patient["arrived_tick"], patient["id"])
 
 
 def _uncovered(patients: dict[str, list[dict]], covered: dict[str, int]) -> list[dict]:

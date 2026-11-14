@@ -104,7 +104,7 @@ Doctor time is the limit. With full zones a patient needs about 1.05 doctor-tick
 
 | Policy | Seed 42 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 |
 |---|---:|---:|---:|---:|---:|---:|
-| Reference (this branch) | 94.02 | 93.37 | 88.59 | 94.01 | 92.67 | 94.05 |
+| Reference (this branch) | 93.61 | 93.48 | 92.04 | 93.87 | 92.56 | 94.33 |
 | Previous reference (main) | 57.29 | 71.55 | 64.16 | 67.46 | 57.14 | 64.36 |
 | Severity-first | 29.28 | 30.58 | 26.06 | 29.83 | 37.45 | 32.44 |
 | Reactive proxy | 48.05 | 47.33 | 44.69 | 50.12 | 49.66 | 47.43 |
@@ -134,3 +134,30 @@ The previous reference plays about as well as Kimi did at 3.0 (98.96 against 98.
 ### Not measured yet
 
 No model has been run at 4.0. The Kimi and Gemini scores above are at 3.0. The gap at 4.0 needs one agent run per model before the README table is updated.
+
+### Held-out seeds, ablation and sensitivity (Sat 22:30)
+
+The reference's numbers were chosen on seeds 42 and 1–11. On 40 seeds it never saw (100–139) at 4.0:
+
+| Policy | Mean | Min | P10 | Median | Max |
+|---|---:|---:|---:|---:|---:|
+| Reference (this branch) | 92.4 | 83.0 | 88.7 | 92.7 | 96.6 |
+| Previous reference (main) | 63.8 | 47.3 | 54.3 | 62.7 | 83.2 |
+| Previous reference + queue hiring | 74.6 | 61.9 | 64.5 | 74.1 | 93.6 |
+| Divert-all | 46.7 | 43.3 | 44.5 | 46.7 | 50.5 |
+| Reactive proxy | 45.2 | 37.8 | 41.7 | 44.6 | 52.9 |
+
+No baseline reaches the reference on any of the 40 seeds. Divert-all passes 50 on one held-out seed (50.5).
+
+Ablation on the same seeds, before the light-patient ordering was added:
+
+| Variant | Mean | Min |
+|---|---:|---:|
+| Full reference | 92.2 | 80.9 |
+| No fresh-staff cap | 92.3 | 80.1 |
+| Never past the budget | 88.9 | 74.3 |
+| No backlog hiring | 66.3 | 51.3 |
+
+Backlog hiring carries the result. Spending past the budget on a large backlog adds about 3 points. The fresh-staff cap adds nothing measurable. The mean stays between 91.7 and 92.6 across fresh cap 40–58, backlog to hire 2–8, backlog to overspend 6–16 and overspend limit €14 000–€20 000, so the values are not fitted to the seeds.
+
+A light patient who has waited 13 ticks is admitted ahead of other light patients. Moving such patients ahead of ESI 3 removes the walk-outs but lowers the mean (92.8 to 92.3 on the shipped seeds), so the reference does not do that.
