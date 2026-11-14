@@ -23,16 +23,18 @@ Most A4 rules already live in the sim core (#4, PR #48). This branch checks each
 - Uses CONTRACTS v1 actions, reasons and observation. Possible change: a `repair_pending` reject reason (contract-change on #1), pending the decision below.
 
 ## Status
-- [ ] 1. Audit + tests, in parallel: events/warnings/sick nurses; agency/faint/recovery; repair/divert/hard limit
-- [ ] 2. Report mismatches to #4, consequences to lane B (#10)
-- [ ] 3. Double-repair decision: reject reason vs HANDBOOK line
+- [x] 1. Audit + tests, in parallel (subagents 1d/1e/1f): 37 tests, no mismatch with the rulebook
+- [x] 2. Results posted on #6; HANDBOOK lines requested on #7
+- [x] 3. Double repair: proposed a HANDBOOK line, no engine or contract change (open for objections on #6)
 - [ ] 4. Check the reference (#16) still beats the baselines (#12, PR #52)
 - [ ] 5. cross-review, ship-pr
 
 ## Decisions and notes
 - 2026-11-14: Branch based on PR #48 because the rules under test live there; tests only, so the PR stays small once #48 merges.
+- 2026-11-14: Double repair: the rulebook is silent; the engine charges €2 000 and changes nothing. Chosen: document it in HANDBOOK (#7) rather than add a `repair_pending` reason, so no contract change before the 22:00 freeze.
+- 2026-11-14: Run tests with `uv run --no-project` so uv doesn't create a uv.lock in the hospital project (not ours).
 
 ## Handoff
-- Done: claimed #6, plan above.
-- Next: step 1.
+- Done: 37 rule tests in `tests/test_rules_{events,staff,actions}.py`; full suite 94 passed; no engine mismatch.
+- Next: step 4 once #16 posts a reference score; open the PR after #48 merges (this branch is stacked on it), then rebase onto main.
 - How to test: `cd ed72/environment/hospital && uv run --python 3.12 --with pytest pytest -q tests`
