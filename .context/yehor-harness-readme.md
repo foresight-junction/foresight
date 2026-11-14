@@ -27,9 +27,10 @@ A factual README skeleton ordered for a judge, and a 10-minute demo script with 
 - [ ] Fill TODO(results) after #18, TODO(findings) after #19, TODO(redteam) after #13/#14, TODO(demo) event-log decision
 
 ## Decisions and notes
+- Sat 17:30: merged main after #45, #47, #52, #53, #56, #60, #63 merged; their markers removed. Still open: #57 (server.py, ward), #58 (task.toml, Dockerfiles, compose), #16 (solution/), #7 (HANDBOOK, instruction.md).
 - Sat: paths that are only in open PRs are marked "(lands with #N)". Checked on these branches: #45 collect.py/tests, #47 scoring/, #52 eval/baselines, #53 Makefile/eval, #56 firewall tests, #57 server.py/ward, #58 task.toml/Dockerfiles/compose, #60 HARBOR-NOTES. `ed72/solution/` (#16) and `HANDBOOK.md`/`instruction.md` (#7) have no PR yet.
 - Sat: Harbor 0.25.0 flags `-p -a -m -k -o -n` and agents `oracle`, `nop`, `opencode` checked with `harbor run --help`. #60 used Harbor 0.26.0; README follows #53's pin.
-- Sat: `eval/run_all.sh` expects `eval/baselines/harbor_agent.py` for stop-early; #52 does not have it yet.
+- Sat: `eval/run_all.sh` expects `eval/baselines/ed72_baselines/harbor_agent.py` for stop-early; not on main yet, so run_all skips stop-early.
 - Sat: the event log is not collected as a trial artifact in #58's task.toml, so DEMO segment 4 needs a decision (TODO(demo)).
 - Sat: docs/CHALLENGE.md "Starting points" still describes the old game (15 beds, `assess`, 8+13 tools, M1-M4 harm). README follows SPEC and the rulebook.
 

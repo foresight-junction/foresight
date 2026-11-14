@@ -20,7 +20,7 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 ## Before the demo
 
-- [ ] `make eval` has finished on the final code and `eval/results/summary.md` is current (lands with #53).
+- [ ] `make eval` has finished on the final code and `eval/results/summary.md` is current.
 - [ ] One agent trial is picked for segment 4: the same trial the README links as its run log. Write its path here: `TODO(results)`.
 - [ ] TODO(demo): segment 4 needs that trial's event log. `ed72/task.toml` (lands with #58) collects only `/evidence/report.json`, and the log stays inside `hospital` at `/var/lib/ed72/events.jsonl`. Either the task owner (#22) adds the log as a second artifact, or segment 4 uses `agent/trajectory.json` plus the `patients` list in `verifier/score_full.json`. Decide before recording.
 - [ ] Terminal open in the repo root, font at least 18 pt, with these files ready in editor tabs: `docs/SPEC.md` §3, the trial's `verifier/score_full.json`, `eval/results/summary.md`.
@@ -93,7 +93,7 @@ Say: the score is computed only from the hospital's event log, after the agent s
 
 ## 6. A cheat attempt that fails (6:00, 1:15)
 
-Show the exploit baselines (lands with #52; needs the scorer from #47 on `main`). Each one tries one shortcut through the same tools an agent has:
+Show the exploit baselines (`eval/baselines/`, works on `main` today). Each one tries one shortcut through the same tools an agent has:
 
 ```bash
 (cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3)
@@ -105,7 +105,7 @@ Pick one row and explain why it loses, using SPEC §11:
 
 Read the numbers off the screen; don't quote them from memory.
 
-Backup if time allows (lands with #56): the leak tests, which check every tool result for future arrivals, unannounced events, the seed and score values.
+Backup if time allows: the leak tests, which check every tool result for future arrivals, unannounced events, the seed and score values.
 
 ```bash
 (cd ed72/environment/hospital && uv run --with pytest pytest -q tests/test_firewall.py)
