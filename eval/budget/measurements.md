@@ -78,4 +78,5 @@ Order: one 24 h (48-tick) thin-slice run per model first, then one full 72 h run
 - `opencode-ai@1.19.5` is a 8 KB wrapper. The real binary is `opencode-linux-x64` (214 MB unpacked) or `opencode-linux-arm64` (211 MB). npm may also pull the `-baseline` variant on x64, so expect 210 to 430 MB of image growth.
 - The binary contains nothing from the hospital, so AGENTS.md §10.1 holds.
 - It does not remove the internet requirement: OpenCode in `main` still calls the model provider. CHALLENGE Q7 stays open for that reason.
-- To check in Harbor 0.26.0 before proposing: the opencode agent kwarg that skips the install (`skip_install`, per SPIKE_S0_RESULTS §5) and whether a preinstalled matching version is reused.
+- Checked in Harbor 0.26.0 (`harbor agent schema opencode`): `--ak skip_install=true` skips the install, and the image must provide OpenCode and its dependencies. Leaving out `--ak version=...` uses the version the image already has. So a preinstalled image needs no new flag, but pin `opencode-ai@1.19.5` in the Dockerfile so every run uses the same version.
+- The same schema has `opencode_config` (an OpenCode config overlay) and `reasoning_effort`. These may let us set compaction and reasoning per run. Try them on the first measured run.
