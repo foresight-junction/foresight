@@ -209,6 +209,11 @@ class RunnerTests(unittest.TestCase):
             run.return_value.stdout = "# ED-72 handbook\nPublic rules"
             self.assertEqual(ward("rules", {}), {"text": "# ED-72 handbook\nPublic rules"})
 
+    def test_ward_rules_accepts_json_handbook(self) -> None:
+        with patch("reference.subprocess.run") as run:
+            run.return_value.stdout = '{"text": "Public rules"}'
+            self.assertEqual(ward("rules", {}), {"text": "Public rules"})
+
     def test_ward_tool_error_stops_runner(self) -> None:
         with patch("reference.subprocess.run") as run:
             run.return_value.stdout = '{"error": "call_cap_reached"}'

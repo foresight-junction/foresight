@@ -6,38 +6,35 @@
 - **Parent branch:** main
 
 ## Goal
-Deterministic 144-tick reference policy using the public ward tools, with tested admission, staffing and event preparation.
+Deterministic 144-tick reference policy using only public ward tools.
 
 ## Files and folders I own
 - ed72/solution/**
 - .context/kostiantyn-ref-policy.md
 
 ## Don't touch
-- Simulator, world, scorer, tools/server, handbook, Dockerfiles and shared docs.
+- Simulator, world, scorer, tool server, handbook, Dockerfiles and shared docs.
 
 ## Contracts used or changed
 - Uses v1 rules(), observe(), step(actions), Observation and Action. No changes.
 
 ## Status
-- [x] Confirm claim and create isolated worktree through wt.sh.
-- [x] Implement deterministic decisions and public ward runner.
-- [x] Test fixtures and independent real-engine integration.
-- [ ] Open PR and attach Harbor proof when packaging is available.
-- [x] noslop, full gates, Claude LGTM and independent Codex review; pushed cc53151.
+- [x] Policy, public runner and shared baseline API implemented and pushed.
+- [x] 22 contract tests; canonical ordering and deterministic real-engine checks pass.
+- [x] Claude LGTM and independent coordinating Codex review; PR #76 opened with baseline table.
+- [ ] Attach actual Harbor triple-repeat proof, then integrator merges.
 
 ## Decisions and notes
-- 14 Nov: owner authorizes starting with stub dependencies; full integration acceptance stays in scope.
-- Standard library only. Test fixtures are test-only and never served by production code.
-- Track issued CT repair and warning hires locally because the public observation has no pending repair flag.
-- Upstream world/engine/scorer are read-only inputs to independent integration checks, never production imports.
+- Standard library only. Fixtures stay in tests; production has no mock mode.
+- Local repair/warning state prevents repeated purchases. Public prices/rates match the rulebook.
+- Agency hires are capped by the two warning keys; maximum 8 hires. No production privileged imports.
+- Accept legacy plain-text rules and approved JSON rules; observe/step require JSON.
 
 ## Handoff
-- Confirmed ward CLI with #5: rules prints plain text, observe/step print JSON; adapter normalizes rules text.
-- Merged current main normally (no history rewrite); canonical baseline ordering 79 tests passed with reference enabled. Hospital regression + canonical suite: 374 passed, 4 skipped.
-- Exports ed72_reference.ReferencePolicy.act(obs) for the shared baseline runner; policy.ReferencePolicy.actions(obs) remains available.
-- Implemented public ward runner, weighted staffing/admission policy, one-shot warning hires and CT repair.
-- 21 contract tests pass; own solution uv project makes CI discover them. Run `uv run --with pytest pytest -q` in ed72/solution (or `python -m unittest discover -s tests -v` there).
-- Real integration (read-only engine bd3daf8, world a999ab2, scorer ba5e0f5): seeds 1-5, three identical score objects each, no rejected actions. Rewards 0.994228 / 0.992931 / 0.997263 / 0.990893 / 0.970795; nop is 0 throughout. Max 26 actions; no faints; one death on seed 5.
-- Claude round 1: reserve one Resus bed, name/source public constants, preserve ward process diagnostics and add tests; fixed. The >50-action finding is unreachable for this policy's 15 permanent + at most 8 hired staff and 17 beds (maximum 45 including purchases); retained loud guard. Claude's lead-id objection was mistaken: lead is Codex 16.
-- Independent Codex review by root found no substantive defects. Claude final review: LGTM; low-risk timeout/encoding suggestions deferred.
-- Harbor oracle triple-repeat and the canonical reactive/stop-early/divert baseline comparison remain pending packaging/integration. Do not treat fixture passes as those acceptance checks.
+- PR #76 at https://github.com/xand1ex999/guinness/pull/76; API ed72_reference.ReferencePolicy.act(obs), also policy.ReferencePolicy.actions(obs).
+- Run `uv run --with pytest pytest -q` in ed72/solution. CPython 3.12 and 3.13 checks pass. Ruff, shell and secrets gates pass.
+- Canonical baseline checks: 79 passed; combined hospital/canonical: 374 passed, 4 skipped. Shipped-seed reference scores 99.423 / 99.293 / 99.726, above every supplied exploit. Full table is in the PR.
+- Real-engine seeds 1-5 each repeat three identical full score objects with zero rejected actions. Rewards .994228/.992931/.997263/.990893/.970795; nop is 0 throughout; max 26 actions, no faints, one death on seed 5.
+- Root runs three real Harbor trials on immutable snapshots including reference 5264305 + #57 server + #58 packaging + #7 handbook. Await actual artifacts; fixture/in-process passes do not prove Harbor acceptance.
+- #58 packaging and #77 tuning leads have the adapter/API handoff. Existing owners finish Harbor proof and integrator readiness; no new tasks per user steering.
+- Literal `codex review --uncommitted` is running read-only (session 52484). Coordinating Codex reviewer approved the final six-line format adapter; Claude final review was LGTM. Record CLI outcome on the PR when it finishes.
