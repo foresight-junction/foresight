@@ -38,7 +38,17 @@ Per-run model (`estimate.py`): one model turn per tick, about 14k tokens of fixe
 | At 200k | 14.6 M | 199k | 72k |
 | At 128k | 10.2 M | 127k | 72k |
 
-Whether and when OpenCode compacts is unknown. Measure it on the first real run.
+### What OpenCode 1.19.5 does with the context (from its source)
+
+Source: `anomalyco/opencode` at tag `v1.19.5`, `packages/opencode/src/session/overflow.ts` and `compaction.ts`.
+
+- **Compaction triggers only when the context is nearly full.** The limit is the model's input limit minus a reserve of at most 20k, or its context limit minus its maximum output. A 1M-context model never compacts within 144 ticks, so it pays the "None" row: about 27M prompt tokens. A 200k model compacts once, near 180k.
+- **We can't make it compact earlier.** `compaction.reserved` only applies to models that declare a separate input limit. The other options (`auto`, `tail_turns`, `preserve_recent_tokens`) don't lower the trigger point.
+- **Pruning old tool outputs never fires in a Harbor run.** `compaction.prune` is off by default. Even when on, it skips the two most recent user turns, and a headless `opencode run` has exactly one user turn, the instruction.
+- **The fixed prompt is smaller than assumed.** OpenCode's system prompt is 1.6k tokens (`anthropic.txt`), 1.8k (`gpt.txt`, `default.txt`, `kimi.txt`) or 3.2k (`gemini.txt`). The rest of the 14k base is built-in tool schemas, the instruction and the rules.
+- **Built-in tools can be switched off.** The config has a `tools` map (name to boolean), which Harbor can pass with `--ak opencode_config=...`. Turning off `bash`, `edit`, `write`, `read`, `webfetch` and similar tools shrinks the base. It also stops the agent exploring the `main` container instead of playing. Measure the saving on the first run.
+
+**So cost is set mostly by the model's context window, and the environment controls the biggest lever: the size of each `step` result.** Ways to shrink it all need lane A (#5) and a contract change. Compact JSON, leaving out empty beds, and listing only staff whose state changed would each cut the 1.9k per-tick growth.
 
 ## 3. Cost (estimate)
 

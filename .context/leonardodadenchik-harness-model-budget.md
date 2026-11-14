@@ -26,7 +26,8 @@ Provider commands, a measured token, time and cost budget per ED-72 run, timeout
 - [x] Token size of v1 observations measured; per-run token and cost model (`eval/budget/`)
 - [x] Provider table from the two real runs on record; pre-install recommendation
 - [x] Harbor 0.26.0 opencode kwargs checked: skip_install, version reuse, opencode_config
-- [ ] Docker on this laptop; real 24 h and 72 h runs once #4, #5, #22 land
+- [x] OpenCode 1.19.5 compaction and prune behaviour read from source; system prompt sizes counted
+- [ ] Docker on this laptop (installing); real 24 h and 72 h runs once #4, #5, #22 land
 - [ ] Post recommendations on #18 and #22; section in docs/HARBOR-NOTES.md
 
 ## Decisions and notes
