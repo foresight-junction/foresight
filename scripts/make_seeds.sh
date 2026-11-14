@@ -66,9 +66,11 @@ stamp() {
   awk -v seed="$seed" '
     /^[ \t]*ED72_SEED:/ {
       cr = ($0 ~ /\r$/) ? "\r" : ""
-      if ($0 ~ /ED72_SEED:[ \t]*"\$\{ED72_SEED:-[0-9]+\}"[ \t]*\r?$/)
+      # Strip CR first: BSD awk may not treat "\r?" as optional inside an ERE.
+      sub(/\r$/, "")
+      if ($0 ~ /ED72_SEED:[ \t]*"\$\{ED72_SEED:-[0-9]+\}"[ \t]*$/)
         sub(/ED72_SEED:.*/, "ED72_SEED: \"${ED72_SEED:-" seed "}\"")
-      else if ($0 ~ /ED72_SEED:[ \t]*"[0-9]+"[ \t]*\r?$/)
+      else if ($0 ~ /ED72_SEED:[ \t]*"[0-9]+"[ \t]*$/)
         sub(/ED72_SEED:.*/, "ED72_SEED: \"" seed "\"")
       else
         bad = 1
@@ -159,7 +161,9 @@ if [ "$report" = 1 ]; then
   harbor_cmd="${HARBOR:-uvx --python 3.12 --from harbor==0.26.0 harbor}"
   commit=$(source_commit)
   build "$tmpd"
-  echo "Source commit: \`$commit\`. Run the commands from the repo root."
+  echo "Source commit: \`$commit\` (\`+dirty\` means uncommitted changes under ed72/ only)."
+  echo "Hashes are of the checked-out bytes; .gitattributes forces LF, so they match across OSes."
+  echo "Run the commands from the repo root."
   echo
   echo "| Folder | Default seed | Task name | SHA-256 (contents) | Source commit | Oracle | Nop |"
   echo "| --- | --- | --- | --- | --- | --- | --- |"
