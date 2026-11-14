@@ -34,7 +34,7 @@ def collect(seed: int, log_path: Path, out_path: Path, config: Config | None = N
         # Only a successful step resolves a tick. observe, rules and refused calls (call cap, episode
         # over) are re-recorded so ended and tool_calls match the live run.
         if line["tool"] == "step" and "error" not in line["result"]:
-            sim.step(line["args"]["actions"])
+            sim.replay_step(line["args"]["actions"])
         else:
             sim.record_call(line["tool"], line["args"], line["result"])
     sim.run_to_end()
