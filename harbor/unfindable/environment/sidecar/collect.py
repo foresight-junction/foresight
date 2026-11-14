@@ -2,7 +2,7 @@ import json
 import urllib.request
 
 with open("/run/uf-verifier-token", encoding="utf-8") as token_file:
-    verifier_token = token_file.read()
+    verifier_token = token_file.read().strip()
 
 request = urllib.request.Request(
     "http://127.0.0.1:8000/admin/finalize",

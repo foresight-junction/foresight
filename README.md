@@ -17,7 +17,8 @@ The verifier runs separately from the agent. It calculates the reward from evide
 Install Harbor and run the task with the OpenCode harness:
 
 ```bash
-pip install harbor
+pip install harbor==0.26.0
+harbor lint ./harbor/unfindable
 harbor run -p ./harbor/unfindable -a opencode -m provider/model
 ```
 
@@ -25,6 +26,7 @@ Replace `provider/model` with the model you want to evaluate and configure that 
 
 ```bash
 harbor run -p ./harbor/unfindable -a oracle
+harbor run -p ./harbor/unfindable -a nop
 ```
 
-The reference run checks the environment and scoring. A real OpenCode model run is needed for a submission playthrough log.
+The reference should score `1.0`; the no-op baseline should score `0.0`. These check the task and scoring without using a language model. A real OpenCode model run is still needed for the submission playthrough log.
