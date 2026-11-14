@@ -1,0 +1,65 @@
+[
+  {
+    "file": "reference-seed7.json",
+    "label": "Reference policy (scripted)",
+    "policy": "reference",
+    "seed": 7,
+    "reward": 0.93431
+  },
+  {
+    "file": "reference-seed42.json",
+    "label": "Reference policy (scripted)",
+    "policy": "reference",
+    "seed": 42,
+    "reward": 0.940221
+  },
+  {
+    "file": "reference-seed1234.json",
+    "label": "Reference policy (scripted)",
+    "policy": "reference",
+    "seed": 1234,
+    "reward": 0.928552
+  },
+  {
+    "file": "gemini-seed7.json",
+    "label": "Gemini 3.8 Flash script (replayed)",
+    "policy": "gemini",
+    "seed": 7,
+    "reward": 0.475036
+  },
+  {
+    "file": "gemini-seed42.json",
+    "label": "Gemini 3.8 Flash script (replayed)",
+    "policy": "gemini",
+    "seed": 42,
+    "reward": 0.58919
+  },
+  {
+    "file": "gemini-seed1234.json",
+    "label": "Gemini 3.8 Flash script (replayed)",
+    "policy": "gemini",
+    "seed": 1234,
+    "reward": 0.530091
+  },
+  {
+    "file": "reactive-seed7.json",
+    "label": "Reactive proxy (typical model play)",
+    "policy": "reactive",
+    "seed": 7,
+    "reward": 0.422113
+  },
+  {
+    "file": "reactive-seed42.json",
+    "label": "Reactive proxy (typical model play)",
+    "policy": "reactive",
+    "seed": 42,
+    "reward": 0.480546
+  },
+  {
+    "file": "reactive-seed1234.json",
+    "label": "Reactive proxy (typical model play)",
+    "policy": "reactive",
+    "seed": 1234,
+    "reward": 0.479553
+  }
+]

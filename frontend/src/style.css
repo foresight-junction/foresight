@@ -1,0 +1,53 @@
+/* Page frame. Owner: agent E (HUD). Keep the #app, #stage, #game and #hud ids (main.ts and index.html use them). */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #14141c;
+  color: #e8e8f0;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  height: 100vh;
+}
+
+#stage {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#game {
+  image-rendering: pixelated;
+}
+
+#hud {
+  overflow-y: auto;
+  padding: 8px;
+  border-left: 2px solid #2a2a3a;
+  background: #14141c;
+  scrollbar-color: #2a2a3a #14141c;
+}
+
+@media (max-width: 1100px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+@media (max-width: 900px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60vh auto;
+    height: auto;
+  }
+  #hud {
+    overflow: visible;
+    border-left: 0;
+    border-top: 2px solid #2a2a3a;
+  }
+}
