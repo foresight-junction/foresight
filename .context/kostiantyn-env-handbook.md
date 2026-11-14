@@ -35,6 +35,8 @@ Publish the English agent handbook and task instruction for the v1 RU rulebook. 
 ## Decisions and notes
 - 2026-11-14: Arrival cycle, flu severity mix, and W weights are concrete provisional tuning defaults from SPEC section 12; no production mocks or new dependencies.
 - 2026-11-14: #22 was notified of A5 ownership; packaging must preserve these files.
+- Latest #6 audit input: repeated repairs are charged again without postponing CT return; agency and repair share an inclusive hard limit. Added the explicit wording, root reviewed it.
+- #8 active config integration is owned by #5/#8; requested matching active values in rules and packaged handbook. This static artifact documents default.json values, not an unimplemented runtime overlay.
 - Claude review: limits mirror CONTRACTS (50 actions, current provisional 500 calls); overflow behavior remains a transport contract question, so no behavior is invented here. First CLI auth failed; isolated subprocess used existing managed login without changing credentials.
 - Setup template had trailing whitespace; setup gate stopped before its auto commit. Replaced placeholders with this scoped handoff before committing.
 
@@ -52,5 +54,5 @@ Publish the English agent handbook and task instruction for the v1 RU rulebook. 
 
 ## Handoff
 - Done: handbook and instruction cover all public tables, scoring, actions and timing. Source map, numeric audit, JSON examples and worked arithmetic pass; root independent review found no substantive issues.
-- Next: real engine/scorer rates, rules-tool byte identity, packaged paths, Harbor playthrough, and PR CI still require integrated implementations. Reviews and documentation checks pass.
+- Next: #5/#8 must expose active config values through rules and the packaged handbook; this file covers supplied defaults only. Rules-tool byte identity, packaged paths, Harbor playthrough, and PR CI still require integration. Reviews and documentation checks pass.
 - How to test: compare source rows above with handbook tables; answer the five section 9 scenarios using sections 1–8 alone; verify worked score 69.6/reward 0.696. These are documentation checks, not baseline or engine validation.

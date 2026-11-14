@@ -1,6 +1,6 @@
 # ED-72 handbook
 
-Manage a fictional emergency department for 72 simulated hours. Save patients, provide care on time, rotate staff before they become exhausted, and control spending. The final score is 0–100; the reward is score / 100. All patients and staff are synthetic.
+Manage a fictional emergency department for 72 simulated hours. Save patients, provide care on time, rotate staff before they become exhausted, and control spending. The final score is 0–100; the reward is score / 100. All patients and staff are synthetic. The values below describe the supplied default configuration.
 
 ## 1. Episode and controls
 
@@ -111,7 +111,9 @@ Submit action objects in a `step` action list. Use zone names exactly as shown i
 | `{"type":"repair"}` | €2,000 | Only while CT is broken. An order at tick t restores CT at the start of tick t + 3, or at its original return tick if sooner. |
 | `{"type":"divert"}` | Free | For 4 ticks, independently turns away 70% of each tick's arrivals, including event patients. Cannot start while diversion is active. |
 
-The budget is €12,000. Spending above it is permitted up to €24,000 but reduces the budget score. Reject a purchase if it would take total spending above €24,000. Diversion acts on arrivals while active; it does not remove patients already waiting. Diverted patients still count toward the score.
+Ordering another repair while one is already pending is accepted and costs another €2,000; CT still returns at the earlier scheduled time.
+
+The budget is €12,000. Agency and repair share one spending total. Spending above the budget is permitted up to and including exactly €24,000 but reduces the budget score. Reject a purchase if it would take total spending above €24,000. Diversion acts on arrivals while active; it does not remove patients already waiting. Diverted patients still count toward the score.
 
 Rejected-action reasons include `bad_action`, `unknown_patient`, `not_waiting`, `zone_not_allowed`, `no_free_bed`, `unknown_staff`, `staff_unavailable`, `over_hard_limit`, `ct_not_broken`, and `diversion_active`. Check the returned results and the next observation's `last_rejected` list before deciding the next tick's actions.
 
