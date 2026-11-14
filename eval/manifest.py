@@ -101,8 +101,7 @@ def resolve_seed(task_dir: Path, compose: str, env: dict | None = None) -> tuple
     literal = _SEED_ENV.search(compose)
     if literal:
         return int(literal.group(1)), "compose_literal"
-    if host.isdigit():
-        return int(host), "host_env"
+    # No seed line at all: compose has nothing to interpolate, so a host ED72_SEED never reaches the sim.
     by_name = _TASK_SEED.match(task_dir.name)
     if by_name:
         return int(by_name.group(1)), "task_name"

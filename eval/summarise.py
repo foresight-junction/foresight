@@ -264,7 +264,8 @@ def completeness(plan: dict | list, trials: list[Trial]) -> Completeness:
 
     An entry without a job matches that policy/model/seed in any job. Every planned attempt without
     a finished trial is `missing`, a matched trial with an error is `failed`, a matched trial that
-    ended on `timeout` is `timed_out` (still scored, so not a failure), and a trial no entry claims
+    ended on `timeout` is also listed as `timed_out` (it stays `failed` too if Harbor recorded an
+    exception, because #93 made any agent exception fail the evaluation), and a trial no entry claims
     is `unplanned`. Nothing is dropped.
     """
     entries = _plan_entries(plan)
@@ -315,7 +316,7 @@ def _completeness_lines(c: Completeness) -> list[str]:
     for title, items, fmt in (
         ("Missing (planned, no finished trial)", c.missing, entry),
         ("Failed (exception or no reward)", c.failed, trial),
-        ("Timed out (ended=timeout, scored)", c.timed_out, trial),
+        ("Timed out (ended=timeout; also failed if Harbor recorded an exception)", c.timed_out, trial),
         ("Unplanned (not in plan.json)", c.unplanned, trial),
     ):
         if items:
@@ -392,7 +393,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     loaded = [load_trial(d) for d in find_trial_dirs(roots)]
     trials = [t for t in loaded if t is not None]
-    plan = next((p for p in (manifest.load_plan(r) for r in roots) if p is not None), None)
+    plans = [p for p in (manifest.load_plan(r) for r in roots) if p is not None]
+    plan = [e for p in plans for e in _plan_entries(p)] if plans else None
     if not trials and plan is None:
         print(f"summarise: no finished Harbor trials under {', '.join(map(str, roots))}", file=sys.stderr)
         return 1

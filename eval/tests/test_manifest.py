@@ -53,7 +53,8 @@ def test_seed_host_override_default_and_literal(tmp_path: Path, monkeypatch: pyt
     assert _seed(interp) == (7, "host_env")
     # A literal compose seed ignores the host variable in Docker, so the manifest must say 42.
     assert _seed(literal) == (42, "compose_literal")
-    assert _seed(_task(tmp_path / "c", "X: 1", name="ed72-s9")) == (7, "host_env")
+    # No seed line: compose cannot interpolate the host value, so the folder name decides.
+    assert _seed(_task(tmp_path / "c", "X: 1", name="ed72-s9")) == (9, "task_name")
     monkeypatch.delenv("ED72_SEED")
     assert _seed(_task(tmp_path / "d", "X: 1", name="ed72-s9")) == (9, "task_name")
     assert _seed(_task(tmp_path / "e", "X: 1", name="other")) == (None, "unknown")
@@ -185,3 +186,40 @@ def test_plan_with_no_finished_trials_is_incomplete_not_empty_error(tmp_path: Pa
     root = tmp_path / "jobs"
     _plan(root, _entries()[:1])
     assert summarise.main([str(root), "--out", str(tmp_path / "s.md")]) == 4
+
+
+def test_host_seed_ignored_when_compose_declares_no_seed(tmp_path: Path) -> None:
+    assert manifest.resolve_seed(tmp_path / "custom", "services: {}\n", env={"ED72_SEED": "7"}) == (
+        None,
+        "unknown",
+    )
+    assert manifest.resolve_seed(tmp_path / "ed72-s2", "", env={"ED72_SEED": "7"}) == (2, "task_name")
+
+
+def test_timeout_with_harbor_exception_is_listed_and_still_failed(tmp_path: Path) -> None:
+    # #93: any agent exception fails the evaluation, even when a reward exists.
+    root = tmp_path / "jobs"
+    plan = _plan(root, _entries()[1:2])
+    _mk(
+        root,
+        "agent",
+        "opencode",
+        0.4,
+        "t",
+        report=helpers._report(0.4, ended="timeout"),
+        exception="AgentTimeoutError",
+    )
+    trials = [summarise.load_trial(d) for d in summarise.find_trial_dirs([root])]
+    comp = summarise.completeness(plan, [t for t in trials if t])
+    assert [t.name for t in comp.failed] == ["ed72__agentt"] == [t.name for t in comp.timed_out]
+    assert summarise.main([str(root), "--out", str(tmp_path / "s.md")]) == 4
+
+
+def test_plans_from_several_roots_are_merged(tmp_path: Path) -> None:
+    a, b = tmp_path / "a", tmp_path / "b"
+    _plan(a, _entries()[:1])
+    _plan(b, _entries()[1:2])
+    _mk(a, "reference", "oracle", 0.9, report=helpers._report(0.9))
+    out = tmp_path / "s.md"
+    assert summarise.main([str(a), str(b), "--out", str(out)]) == 4
+    assert "Planned 2" in out.read_text()

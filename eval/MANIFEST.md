@@ -59,4 +59,4 @@ literal (`compose_literal`) and never claims an override that did not happen.
 
 `{"schema": 2, "created_at": ..., "entries": [{"job", "policy", "model", "seed", "repeat"}]}`.
 `summarise.completeness(plan, trials)` matches trials to entries by (job, policy, model, seed),
-counting repeats, and reports missing, failed, timed-out and unplanned trials. Nothing is dropped.
+counting repeats, and reports missing, failed, timed-out and unplanned trials. Nothing is dropped. A timed-out trial with a Harbor exception counts as failed (#93: any agent exception fails the evaluation).
