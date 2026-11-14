@@ -182,3 +182,13 @@ def test_live_world_uses_ed72_config_like_collect(tmp_path, monkeypatch):
     sim = server._make_sim(1)
     assert sim.world == generate_world(1, load_config(str(config_path)))
     assert sim.world != generate_world(1)
+
+
+def test_refused_step_logs_at_most_50_actions(tmp_path):
+    host = make_host(tmp_path)
+    for _ in range(144):
+        host.call("step", {"actions": []})
+    assert host.call("step", {"actions": [{"type": "repair"}] * 5_000}) == {"error": "episode_over"}
+    refused = [line for line in read_log(host) if line.get("tool") == "step"][-1]
+    assert refused["result"] == {"error": "episode_over"}
+    assert len(refused["args"]["actions"]) == server.MAX_ACTIONS

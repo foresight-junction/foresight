@@ -51,6 +51,9 @@ class ToolHost:
                 result = self._step(args["actions"])
                 if "error" not in result:
                     return result
+            if tool == "step":
+                # A refused step must not bypass the 50-action cap and bloat the log (red team E1, #14).
+                args = {"actions": args["actions"][:MAX_ACTIONS]}
             # The observation follows from the log, so only errors are worth storing.
             self.sim.record_call(tool, args, result if "error" in result else {"ok": True})
             return result
