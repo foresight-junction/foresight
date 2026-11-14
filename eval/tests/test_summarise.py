@@ -78,6 +78,18 @@ def _trial(
     return d
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Fixture trials record the relative task path "ed72"; keep it from resolving to the real task dir.
+    monkeypatch.setattr(summarise, "REPO_ROOT", tmp_path / "no-repo")
+
+
+def _manifest(job_dir: Path, seed: int | None = 42, config: str = "c" * 64, instr: str = "i" * 64) -> None:
+    # MOCK: hand-written manifest.json, same keys as eval/manifest.py write_manifest.
+    data = {"seed": seed, "config_sha256": config, "instruction_sha256": instr}
+    (job_dir / "manifest.json").write_text(json.dumps(data))
+
+
 @pytest.fixture
 def jobs(tmp_path: Path) -> Path:
     root = tmp_path / "jobs"
@@ -89,6 +101,8 @@ def jobs(tmp_path: Path) -> Path:
     _trial(
         root, "ed72-agent", "ed72__c3", "opencode", reward=None, model=model, exception="AgentTimeoutError"
     )
+    for job in root.iterdir():
+        _manifest(job)
     return root
 
 
@@ -117,7 +131,7 @@ def test_render_orders_by_mean_and_reports_gap(jobs: Path) -> None:
     assert table[0].startswith("| reference (oracle) |")
     assert table[1].startswith("| opencode | `gemini/gemini-3.8-flash` |")
     assert table[2].startswith("| do-nothing (nop) |")
-    assert "- opencode `gemini/gemini-3.8-flash` seed -: +0.587" in text
+    assert "- opencode `gemini/gemini-3.8-flash` seed 42 config cccccccc instruction iiiiiiii: +0.587" in text
     assert (
         "| ed72-agent | ed72__c3 | opencode | gemini/gemini-3.8-flash | - | - | AgentTimeoutError |" in text
     )
@@ -131,7 +145,7 @@ def test_unfinished_trial_is_left_out(tmp_path: Path) -> None:
     assert summarise.main([str(root), "--out", str(out)]) == 0
     text = out.read_text()
     assert "1 finished trials, 1 still running (left out)." in text
-    assert "| reference (oracle) | - | - | 1 | 0 | 1.000 |" in text
+    assert "| reference (oracle) | - | unknown | unknown | unknown | 1 | 0 | 1.000 |" in text
 
 
 def test_reward_txt_and_artifact_report_fallbacks(tmp_path: Path) -> None:
@@ -180,3 +194,80 @@ def test_main_fails_when_a_trial_has_no_reward(jobs: Path, tmp_path: Path) -> No
     out = tmp_path / "summary.md"
     assert summarise.main([str(jobs), "--out", str(out)]) == 3
     assert out.is_file()
+
+
+def _write_task(root: Path, name: str, seed: int, instruction: str, config: str) -> Path:
+    # MOCK: minimal Harbor task dir with only the files manifest.py reads.
+    task = root / name
+    (task / "environment" / "hospital" / "config").mkdir(parents=True)
+    (task / "environment" / "docker-compose.yaml").write_text(
+        'services:\n  hospital:\n    environment:\n      ED72_SEED: "%d"\n' % seed
+    )
+    (task / "environment" / "hospital" / "config" / "default.json").write_text(config)
+    (task / "instruction.md").write_text(instruction)
+    return task
+
+
+def test_manifest_cli_records_seed_and_hashes(tmp_path: Path) -> None:
+    manifest = summarise.manifest
+    task = _write_task(tmp_path, "ed72-s7", 7, "play well", "{}")
+    job = tmp_path / "job"
+    assert manifest.main([str(job), "--task", str(task), "--harbor-version", "0.26.0"]) == 0
+    data = json.loads((job / "manifest.json").read_text())
+    assert data["seed"] == 7 and data["harbor_version"] == "0.26.0"
+    assert data["instruction_sha256"] == manifest.sha256_file(task / "instruction.md")
+    assert data["config_sha256"] == manifest.sha256_file(
+        task / "environment" / "hospital" / "config" / "default.json"
+    )
+
+
+def test_seed_falls_back_to_task_name_and_default(tmp_path: Path) -> None:
+    manifest = summarise.manifest
+    bare = tmp_path / "ed72"
+    bare.mkdir()
+    named = tmp_path / "ed72-s9"
+    named.mkdir()
+    assert manifest.task_facts(bare)["seed"] == 42
+    assert manifest.task_facts(named)["seed"] == 9
+    assert manifest.task_facts(tmp_path)["seed"] is None
+
+
+def test_no_pooling_across_seed_instruction_or_missing_provenance(tmp_path: Path) -> None:
+    root = tmp_path / "jobs"
+    cfg = "c" * 64
+    runs = [
+        # job, agent, model, reward, seed, instruction
+        ("ref-s1", "oracle", None, 0.9, 1, "a"),
+        ("ref-s2", "oracle", None, 0.7, 2, "a"),
+        ("agent-s1", "opencode", ("g", "m"), 0.5, 1, "a"),
+        ("agent-s2", "opencode", ("g", "m"), 0.2, 2, "a"),
+        ("agent-s1-prompt-b", "opencode", ("g", "m"), 0.6, 1, "b"),
+    ]
+    for job, agent, model, reward, seed, instr in runs:
+        _trial(root, job, f"ed72__{job}", agent, reward=reward, model=model, report=_report(reward))
+        _manifest(root / job, seed=seed, config=cfg, instr=instr * 64)
+    _trial(root, "agent-old", "ed72__old", "opencode", reward=0.1, model=("g", "m"), report=_report(0.1))
+
+    trials = [summarise.load_trial(d) for d in summarise.find_trial_dirs([root])]
+    rows = summarise.build_rows([t for t in trials if t])
+    agent_rows = [r for r in rows if r.policy == "opencode"]
+    assert len(agent_rows) == 4 and all(r.runs == 1 for r in agent_rows)
+    unknown = [r for r in agent_rows if r.seed == "unknown"]
+    assert len(unknown) == 1 and unknown[0].config == "unknown" and unknown[0].mean == pytest.approx(0.1)
+
+    gaps = summarise._gaps(rows)
+    assert len(gaps) == 2
+    assert any("seed 1 " in g and "aaaaaaaa" in g and g.endswith("+0.400") for g in gaps)
+    assert any("seed 2 " in g and g.endswith("+0.500") for g in gaps)
+    # Prompt b has no matching reference row, and the unknown row has no seed: neither gets a gap.
+    assert not any("bbbbbbbb" in g or "unknown" in g for g in gaps)
+
+
+def test_manifest_derived_from_recorded_task_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    task = _write_task(tmp_path, "ed72-s5", 5, "hi", "{}")
+    root = tmp_path / "jobs"
+    d = _trial(root, "j", "ed72__a", "oracle", reward=1.0, report=_report(1.0))
+    (d / "config.json").write_text(json.dumps({"trial_name": "ed72__a", "task": {"path": str(task)}}))
+    trial = summarise.load_trial(d)
+    assert trial is not None
+    assert trial.seed == "5" and trial.config != "unknown" and trial.instruction != "unknown"
