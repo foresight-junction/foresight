@@ -1,10 +1,16 @@
+import contextlib
+import importlib.machinery
+import importlib.util
+import io
 import json
 import socket
 import subprocess
 import sys
 import time
 import urllib.request
+from functools import cache
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -47,7 +53,8 @@ def url(tmp_path_factory):
         proc.wait()
 
 
-def ward(url, *args):
+def ward_script(url, *args):
+    """Run the real script in a new process: the entry point and its exit code."""
     return subprocess.run(
         [sys.executable, str(WARD), "--url", url, *args],
         check=False,
@@ -57,8 +64,33 @@ def ward(url, *args):
     )
 
 
+@cache
+def _ward_module() -> ModuleType:
+    loader = importlib.machinery.SourceFileLoader("ward_cli", str(WARD))  # the script has no .py suffix
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader("ward_cli", loader))
+    loader.exec_module(module)
+    return module
+
+
+def ward(url, *args):
+    """Run ward's main() in this process against the live server. A new process per call costs
+    seconds of interpreter start and mcp import, so only ward_script tests pay it."""
+    out, err = io.StringIO(), io.StringIO()
+    argv = sys.argv
+    sys.argv = [str(WARD), "--url", url, *args]
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = _ward_module().main()
+            except SystemExit as exc:  # argparse errors exit directly
+                code = exc.code
+    finally:
+        sys.argv = argv
+    return SimpleNamespace(returncode=code, stdout=out.getvalue(), stderr=err.getvalue())
+
+
 def test_rules_prints_handbook(url):
-    r = ward(url, "rules")
+    r = ward_script(url, "rules")
     assert r.returncode == 0
     assert r.stdout.strip() == "HANDBOOK TEXT"
 
@@ -76,7 +108,7 @@ def test_step_advances_one_tick(url):
 
 
 def test_step_rejects_bad_json(url):
-    r = ward(url, "step", "--json", "not json")
+    r = ward_script(url, "step", "--json", "not json")
     assert r.returncode == 2
     assert r.stdout == ""
     r = ward(url, "step", "--json", '{"a": 1}')

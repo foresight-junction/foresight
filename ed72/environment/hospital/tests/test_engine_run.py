@@ -63,6 +63,52 @@ def test_log_file_matches_events_and_is_byte_identical(tmp_path: Path) -> None:
     assert paths[0].read_bytes() == paths[1].read_bytes()
 
 
+def _file_lines(path: Path) -> list[dict]:
+    return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines()]
+
+
+def test_log_file_is_complete_after_every_public_call(tmp_path: Path) -> None:
+    """Lines are written in one batch per call, never left behind for a later call to flush."""
+    path = tmp_path / "events.jsonl"
+    sim = Simulation(make_world([patient(1, 0, 3), patient(2, 2, 2)]), log_path=path)
+    assert _file_lines(path) == sim.events
+    sim.record_call("observe", {}, {"ok": True})
+    assert _file_lines(path) == sim.events
+    for actions in ([{"type": "admit", "patient": "P001", "zone": "acute"}], [{"type": "bogus"}], []):
+        sim.step(actions)
+        assert _file_lines(path) == sim.events
+    sim.run_to_end()
+    assert _file_lines(path) == sim.events
+    assert sim.step([]) == {"error": "episode_over"}
+    assert _file_lines(path) == sim.events
+
+
+def test_logged_actions_are_a_copy_of_what_the_caller_sent() -> None:
+    sim = Simulation(make_world([patient(1, 0, 3)]))
+    flat = [{"type": "admit", "patient": "P001", "zone": "acute"}]
+    nested = [{"type": "repair", "extra": {"k": [1]}}]
+    sim.step(flat)
+    sim.step(nested)
+    flat[0]["zone"] = "resus"
+    nested[0]["extra"]["k"].append(2)
+    logged = [e["args"]["actions"] for e in sim.events if e["src"] == "agent"]
+    assert logged == [
+        [{"type": "admit", "patient": "P001", "zone": "acute"}],
+        [{"type": "repair", "extra": {"k": [1]}}],
+    ]
+
+
+def test_replay_step_logs_exactly_what_step_logs() -> None:
+    world = _random_world()
+    live, replay = Simulation(world), Simulation(world)
+    while not live.finished:
+        actions = _busy_policy(live.observe())
+        live.step(copy.deepcopy(actions))
+        replay.replay_step(actions)
+    replay.replay_step([{"type": "divert"}])  # after the end: ignored, like step's episode_over
+    assert replay.events == live.events
+
+
 def _random_world(n: int = 150, seed: int = 7) -> World:
     patients = []
     for i in range(n):

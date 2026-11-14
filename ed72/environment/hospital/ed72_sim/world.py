@@ -65,7 +65,8 @@ def generate_world(seed: int, config: Config | None = None) -> World:
         pid = f"P{n:03d}"
         rng = stream(seed, f"patient:{pid}")
         ct_u, divert_u, upgrade_ct_u = rng.random(), rng.random(), rng.random()
-        hazards = tuple(rng.random() for _ in range(c.TICKS))
+        draw = rng.random
+        hazards = tuple([draw() for _ in range(c.TICKS)])  # same draws as a genexpr, about 2x faster
         needs_ct = esi in c.CT_ESI and ct_u < c.CT_SHARE
         patients.append(PatientSpec(pid, tick, esi, needs_ct, source, divert_u, upgrade_ct_u, hazards))
     return World(seed, tuple(patients), staff, events, config.budget, config.hard_limit)

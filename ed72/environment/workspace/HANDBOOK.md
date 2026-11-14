@@ -84,7 +84,7 @@ A patient admitted in the current tick does not face its waiting hazard that tic
 
 ## 5. Arrivals, events, and warnings
 
-Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 3.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `3.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
+Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 4.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `4.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
 
 Each episode contains all four events below. Their exact start ticks are selected within the stated windows. Public windows and distributions describe possibilities, not a forecast of the current episode.
 
@@ -109,7 +109,7 @@ Submit action objects in a `step` action list. Use zone names exactly as shown i
 | `{"type":"assign","staff":"D3","to":"rest"}` | Free | Assign an available person to `rest`, `resus`, `acute`, or `fast_track`. |
 | `{"type":"agency","role":"nurse"}` | €350 | Order one nurse; use `doctor` for a €900 doctor. Arrival and contract timing are in section 3. |
 | `{"type":"repair"}` | €2,000 | Only while CT is broken. An order at tick t restores CT at the start of tick t + 3, or at its original return tick if sooner. |
-| `{"type":"divert"}` | Free | For 4 ticks, independently turns away 70% of each tick's arrivals, including event patients. Cannot start while diversion is active. |
+| `{"type":"divert"}` | Free | For 4 ticks, independently turns away 75% of each tick's arrivals, including event patients. Cannot start while diversion is active. |
 
 Ordering another repair while one is already pending is accepted and costs another €2,000; CT still returns at the earlier scheduled time.
 

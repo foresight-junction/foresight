@@ -37,7 +37,7 @@ CT_ESI: Final = (1, 2)
 CT_SHARE: Final = 0.5
 
 # Arrivals (§4, SPEC §12): Poisson per tick, mean ARRIVAL_MEAN * (1 + AMPLITUDE * cos(2*pi*(h - PEAK)/24)).
-ARRIVAL_MEAN: Final = 3.0  # TUNE
+ARRIVAL_MEAN: Final = 4.0  # TUNE
 ARRIVAL_AMPLITUDE: Final = 0.5  # TUNE
 ARRIVAL_PEAK_HOUR: Final = 15.0  # TUNE
 
@@ -82,7 +82,7 @@ BUS_MIX: Final = {1: 0.20, 2: 0.30, 3: 0.50}
 REPAIR_COST: Final = 2000
 REPAIR_TICKS: Final = 3
 DIVERT_TICKS: Final = 4
-DIVERT_SHARE: Final = 0.7
+DIVERT_SHARE: Final = 0.75  # TUNE: keeps permanent diversion under about 47 points at 4.0 arrivals
 BUDGET: Final = 12000
 HARD_LIMIT: Final = 24000
 

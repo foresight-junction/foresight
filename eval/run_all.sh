@@ -52,15 +52,16 @@ command -v uv >/dev/null 2>&1 || die "uv not found. Install it: https://docs.ast
 command -v "${HARBOR_CMD[0]}" >/dev/null 2>&1 || die "'${HARBOR_CMD[0]}' not found (HARBOR=${HARBOR_CMD[*]})"
 [ -f "$TASK_DIR/task.toml" ] || die "$TASK_DIR/task.toml not found. The Harbor task is built by #22."
 
+# KEY_NAME is the key the user sets; OPENCODE_KEY_NAME is the variable OpenCode's provider reads.
+# They differ only for Google (README "Run it" has the same table).
 KEY_NAME=""
+OPENCODE_KEY_NAME=""
 if [ "$MODE" = all ]; then
   [ -n "${ED72_MODEL:-}" ] || die "ED72_MODEL is not set (e.g. ED72_MODEL=gemini/gemini-3.8-flash)"
   case "${ED72_MODEL%%/*}" in
-    anthropic) KEY_NAME=ANTHROPIC_API_KEY ;;
-    openai) KEY_NAME=OPENAI_API_KEY ;;
-    gemini | google)
-      KEY_NAME=GEMINI_API_KEY
-      ;;
+    anthropic) KEY_NAME=ANTHROPIC_API_KEY OPENCODE_KEY_NAME=ANTHROPIC_API_KEY ;;
+    openai) KEY_NAME=OPENAI_API_KEY OPENCODE_KEY_NAME=OPENAI_API_KEY ;;
+    gemini | google) KEY_NAME=GEMINI_API_KEY OPENCODE_KEY_NAME=GOOGLE_GENERATIVE_AI_API_KEY ;;
     *) die "ED72_MODEL '$ED72_MODEL' must start with anthropic/, openai/, gemini/ or google/" ;;
   esac
   [ -n "${!KEY_NAME:-}" ] || die "$KEY_NAME is not set (shell or $ENV_FILE), needed for $ED72_MODEL"
@@ -91,11 +92,10 @@ else
 fi
 
 if [ "$MODE" = all ]; then
-  agent_args=(-a opencode -m "$ED72_MODEL" --api-key-name "$KEY_NAME" --ak "version=$OPENCODE_VERSION")
-  if [ "$KEY_NAME" = GEMINI_API_KEY ]; then
-    agent_args+=(--ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}')
-  fi
-  run_job agent "${agent_args[@]}" -k "$AGENT_RUNS" -n "$AGENT_RUNS"
+  # Harbor resolves the ${...} template from the host env, so the key value never appears here.
+  run_job agent -a opencode -m "$ED72_MODEL" --api-key-name "$KEY_NAME" \
+    --ae "$OPENCODE_KEY_NAME=\${$KEY_NAME}" --ak "version=$OPENCODE_VERSION" \
+    -k "$AGENT_RUNS" -n "$AGENT_RUNS"
 fi
 
 if ! uv run --no-project --python 3.12 python "$REPO_ROOT/eval/summarise.py" "$JOBS_DIR" --out "$SUMMARY"; then

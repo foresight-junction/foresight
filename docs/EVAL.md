@@ -31,7 +31,7 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 | Run | Command | Expected score |
 |---|---|---|
 | Reference | `harbor run -p ed72 -a oracle` | Clearly the highest of all runs |
-| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> -k 3` | To be measured. Gap = reference minus agent mean |
+| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> --api-key-name <KEY> --ae '<OPENCODE_KEY>=${<KEY>}' --ak version=1.19.5 -k 3` (key table in README "Run it") | To be measured. Gap = reference minus agent mean |
 | Do-nothing | `harbor run -p ed72 -a nop` | 0 |
 | Stop-early | Scripted baseline in `eval/`: plays the reactive proxy for 12 ticks, then stops | Low. Below the reactive proxy |
 
@@ -61,7 +61,7 @@ Built-in baselines (rulebook section 12):
 
 | Policy | How it plays | Expected rank |
 |---|---|---|
-| Reference | Admits by severity and keeps resus beds free for critical patients. Sends light cases to fast-track. Staffs each zone from the least tired people, which rotates rest. Orders agency staff when a warning is about 9 ticks away. Repairs the CT at once. Keeps staff on shift when a surge is near | 1 |
+| Reference | Admits by severity and keeps resus beds free for critical patients. Sends light cases to fast-track. Staffs each zone from the least tired people, which rotates rest. Keeps permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered. Orders agency staff when a warning is about 9 ticks away, and again whenever four or more patients go uncovered with no fresh person of that role left (within the budget, or up to €16 000 once eight or more are uncovered). Repairs the CT at once. Keeps staff on shift when a surge is near | 1 |
 | Reactive proxy | Scripted stand-in for typical model play. Admits first come first served into the first free bed, so light cases fill resus. Keeps staff at fixed posts until fatigue reaches 85, so they faint together. Orders agency staff only when the queue reaches 10. Ignores warnings | 2 |
 | Stop-early | Plays the reactive proxy for 12 ticks, then stops acting | 3 |
 | Do-nothing | Never acts | 4, score 0 |

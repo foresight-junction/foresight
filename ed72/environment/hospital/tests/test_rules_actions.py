@@ -83,8 +83,8 @@ def test_divert_is_free() -> None:
     assert spent(sim) == 0 and not lines(sim, "spend")
 
 
-@pytest.mark.parametrize(("divert_u", "turned_away"), [(0.69, True), (0.70, False)])
-def test_diversion_share_is_strictly_below_70_percent(divert_u: float, turned_away: bool) -> None:
+@pytest.mark.parametrize(("divert_u", "turned_away"), [(0.74, True), (0.75, False)])
+def test_diversion_share_is_strictly_below_75_percent(divert_u: float, turned_away: bool) -> None:
     sim = Simulation(make_world([patient(1, 1, 3, divert_u=divert_u)]))
     sim.step([DIVERT])
     assert bool(lines(sim, "diverted", patient="P001")) is turned_away
