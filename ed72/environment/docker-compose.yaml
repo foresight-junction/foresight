@@ -11,7 +11,9 @@ services:
     expose:
       - "8000"
     environment:
-      ED72_SEED: "42"
+      # In ed72/ the host's ED72_SEED picks the seed (Harbor runs compose with the host environment);
+      # ":-" keeps 42 when it is unset or empty. scripts/make_seeds.sh pins a literal in ed72-s<N>.
+      ED72_SEED: "${ED72_SEED:-42}"
     healthcheck:
       test:
         - CMD
