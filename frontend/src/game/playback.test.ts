@@ -251,6 +251,38 @@ describe("Playback controls", () => {
 describe("Playback on the reference replay", () => {
   it("keeps the world invariants", () => checkInvariants(reference));
 
+  it("drives an ambulance in for ESI 1-2 and bus-crash arrivals, and out again", () => {
+    const pb = new Playback(reference, layout);
+    let runs = 0;
+    let pairs = 0;
+    for (let t = 0; t + 1 < pb.tickCount; t++) {
+      const riders = reference.ticks[t + 1].events.filter(
+        (e) => e.event === "arrival" && (Number(e.esi) <= 2 || e.source === "bus"),
+      );
+      // Phase 0 and 1 are exactly the observations: no ambulance in the bay.
+      expect(frameAt(pb, t, 0).vehicles).toHaveLength(0);
+      expect(frameAt(pb, t, 1).vehicles.every((v) => v.y + 48 <= 0)).toBe(true);
+      const mid = frameAt(pb, t, 0.45);
+      if (riders.length === 0) {
+        expect(mid.vehicles, `tick ${t}`).toHaveLength(0);
+        continue;
+      }
+      runs++;
+      expect(mid.vehicles, `tick ${t}`).toHaveLength(riders.length > 3 ? 2 : 1);
+      if (riders.length > 3) pairs++;
+      for (const v of mid.vehicles) {
+        expect(v.y, `tick ${t} ${v.id} parked`).toBeGreaterThanOrEqual(0);
+        expect(v.doorsOpen).toBeGreaterThan(0);
+      }
+      // Riders step out of the rear doors, not the walk-in entrance.
+      const first = frameAt(pb, t, 0.44).patients.find((p) => p.id === String(riders[0].patient));
+      expect(first, `tick ${t} first rider visible`).toBeDefined();
+      expect(first!.y).toBeLessThan(layout.entrance.y - 4 * 16);
+    }
+    expect(runs).toBeGreaterThan(20);
+    expect(pairs).toBeGreaterThan(0);
+  });
+
   it("seeks to any tick and phase without throwing", () => {
     const pb = new Playback(reference, layout);
     for (const t of [143, 0, 77, 12, 143, 1]) {

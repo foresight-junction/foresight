@@ -26,8 +26,11 @@ export interface TimelineData {
   maxWaiting: number;
 }
 
+const EPISODE_TICKS = 144;
+
 export function buildTimeline(replay: Replay): TimelineData {
-  const n = replay.ticks.length;
+  // A live episode keeps the full 144-tick width, so the timeline fills in from the left as it plays.
+  const n = replay.meta.live ? Math.max(EPISODE_TICKS, replay.ticks.length) : replay.ticks.length;
   const marks: TickMarks[] = replay.ticks.map((t) => {
     const m: TickMarks = { deaths: 0, faints: 0, rejected: 0, spend: 0, left: 0, waiting: t.obs.waiting.length };
     for (const e of t.events) {

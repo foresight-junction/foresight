@@ -1,8 +1,9 @@
-// Boot: load the replay list and one replay, then run the render loop.
-// Owner: lead. Wires src/world, src/game, src/render and src/ui together.
+// Boot: load the replay list and one replay (or follow a live episode with ?live=1), then run the
+// render loop. Owner: lead. Wires src/world, src/game, src/render and src/ui together.
 
 import { Playback } from "./game/playback";
 import { Renderer } from "./render/renderer";
+import { connectLive } from "./replay/live";
 import type { Replay, ReplayIndexEntry } from "./replay/types";
 import "./style.css";
 import { mountHud, type Hud } from "./ui/hud";
@@ -23,22 +24,51 @@ async function start(): Promise<void> {
   const renderer = new Renderer(canvas, layout);
   window.addEventListener("resize", () => renderer.resize());
 
+  const params = new URLSearchParams(location.search);
   const index = await fetchJson<ReplayIndexEntry[]>(`${REPLAY_DIR}index.json`);
-  const wanted = new URLSearchParams(location.search).get("replay");
   let playback: Playback | null = null;
   let hud: Hud | null = null;
 
-  async function load(file: string): Promise<void> {
-    const replay = await fetchJson<Replay>(REPLAY_DIR + file);
-    hud?.destroy();
-    playback = new Playback(replay, layout);
-    hud = mountHud(hudRoot, replay, playback, { replays: index, currentFile: file, onSelectReplay: load });
-    const url = new URL(location.href);
-    url.searchParams.set("replay", file);
-    history.replaceState(null, "", url);
+  function openFile(file: string): void {
+    // Leaving live mode (or switching files) is a fresh page, so no stream or timers linger.
+    location.search = `?replay=${encodeURIComponent(file)}`;
   }
 
-  await load(index.find((r) => r.file === wanted)?.file ?? index[0].file);
+  if (params.has("live")) {
+    hudRoot.textContent = "Waiting for the live episode… start it with frontend/tools/live (see its README).";
+    connectLive(
+      (replay: Replay) => {
+        if (!playback || !hud) {
+          playback = new Playback(replay, layout);
+          playback.speed = 1;
+          // Joining mid-episode: start one tick behind the agent, so you watch it decide right away.
+          playback.seek(replay.ticks.length - 2);
+          playback.play();
+          hud = mountHud(hudRoot, replay, playback, { replays: index, currentFile: null, onSelectReplay: openFile });
+          return;
+        }
+        playback.setReplay(replay);
+        hud.setReplay(replay);
+      },
+      (ok) => document.body.classList.toggle("live-offline", !ok),
+    );
+  } else {
+    const wanted = params.get("replay");
+    // Saved live runs (replays/runs/, not in the index) open by name too.
+    const isRun = wanted !== null && /^runs\/[\w.-]+\.json$/.test(wanted);
+    const file = isRun ? wanted : (index.find((r) => r.file === wanted)?.file ?? index[0].file);
+    const replay = await fetchJson<Replay>(REPLAY_DIR + file);
+    const pb = new Playback(replay, layout);
+    playback = pb;
+    hud = mountHud(hudRoot, replay, pb, { replays: index, currentFile: file, onSelectReplay: openFile });
+    // ?tick=N opens the replay at that tick, e.g. to link a demo straight to the bus crash; a fraction
+    // (?tick=12.45) opens part-way through the tick's animation.
+    const startTick = Number(params.get("tick"));
+    if (Number.isFinite(startTick) && startTick > 0) {
+      pb.seek(Math.floor(startTick));
+      pb.phase = startTick % 1;
+    }
+  }
 
   let last = performance.now();
   const loop = (now: number): void => {

@@ -4,13 +4,16 @@
 // diversion) -> vignette and flash. Screen shake offsets the whole map. Owner: agent B (map + renderer).
 // Sprites come from sprites.ts (agent C); furniture, outdoor art and the 3x5 pixel font are drawn here.
 
-import type { EffectKind, Frame, PatientEntity, StaffEntity } from "../replay/frame";
+import type { EffectKind, Frame, PatientEntity, StaffEntity, VehicleEntity } from "../replay/frame";
 import type { Zone } from "../replay/types";
 import {
   AMBULANCE_BAY,
+  AMBULANCE_DOOR_ROW,
   BEDS_PER_DOCTOR,
   BEDS_PER_NURSE,
   BUILDING,
+  ENTRANCE_ROW,
+  EXIT_COL,
   FURNITURE,
   type Furniture,
   type Light,
@@ -168,14 +171,14 @@ function drawOutdoors(ctx: CanvasRenderingContext2D, layout: Layout): void {
   ctx.fillRect(bay.x + 4, bay.y + 4, 1, 60);
   ctx.fillRect(bay.x + bay.w - 5, bay.y + 4, 1, 60);
   ctx.fillRect(bay.x + 4, bay.y + 64, bay.w - 8, 1);
-  for (let i = 0; i < 6; i++) ctx.fillRect(bay.x + 12 + i * 10, 5 * TILE + 2, 4, 28);
+  for (let x = bay.x + 12; x + 4 <= bay.x + bay.w - 6; x += 10) ctx.fillRect(x, AMBULANCE_DOOR_ROW * TILE + 2, 4, 28);
   // Kerb between bay and sidewalk.
   ctx.fillStyle = "#8c867a";
   ctx.fillRect(0, (AMBULANCE_BAY.r1 + 1) * TILE - 2, (AMBULANCE_BAY.c1 + 1) * TILE, 2);
   // Doormats at the entrance and the exit.
   ctx.fillStyle = "#5a5f73";
-  ctx.fillRect(4 * TILE + 4, 18 * TILE + 1, 10, 30);
-  ctx.fillRect(37 * TILE + 1, (STREET_ROW) * TILE + 1, 30, 6);
+  ctx.fillRect((BUILDING.c0 - 1) * TILE + 4, ENTRANCE_ROW * TILE + 1, 10, 30);
+  ctx.fillRect(EXIT_COL * TILE + 1, STREET_ROW * TILE + 1, 30, 6);
 }
 
 function drawWallShadows(ctx: CanvasRenderingContext2D, layout: Layout): void {
@@ -286,11 +289,11 @@ function drawCorridorGuides(ctx: CanvasRenderingContext2D): void {
   // Coloured floor lines from the waiting-room door to each zone's door, as in real EDs.
   const y = ROOMS.corridor.r1 * TILE; // clear of the next wall's cap
 
-  const from = 14 * TILE;
+  const from = 11 * TILE;
   const lines: [string, number, number][] = [
-    [COL.red, 12 * TILE, y - 4],
-    [COL.teal, 37 * TILE, y - 1],
-    [COL.green, 31 * TILE, y + 2],
+    [COL.red, 8 * TILE, y - 4],
+    [COL.teal, 29 * TILE, y - 1],
+    [COL.green, 25 * TILE, y + 2],
   ];
   for (const [color, to, ly] of lines) {
     ctx.fillStyle = color;
@@ -502,9 +505,6 @@ function drawFurniture(ctx: CanvasRenderingContext2D, f: Furniture): void {
       ctx.fillRect(x + 5, y + 11, 1, 3);
       ctx.fillRect(x + 10, y + 11, 1, 3);
       break;
-    case "ambulance":
-      drawAmbulance(ctx, x, y, w, h);
-      break;
     case "lamp":
       ctx.fillStyle = "rgba(20,20,40,0.25)";
       ctx.fillRect(x + 6, y + 10, 6, 3);
@@ -518,9 +518,24 @@ function drawFurniture(ctx: CanvasRenderingContext2D, f: Furniture): void {
   }
 }
 
-function drawAmbulance(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+const AMB_W = 32;
+const AMB_H = 48;
+
+// Top-down ambulance, nose up. `flash` 0/1 alternates the roof lights (-1 = off); open rear doors stand
+// out behind it at right angles.
+function drawAmbulance(ctx: CanvasRenderingContext2D, v: VehicleEntity, flash: number): void {
+  const x = Math.round(v.x);
+  const y = Math.round(v.y);
+  const w = AMB_W;
+  const h = AMB_H;
   ctx.fillStyle = "rgba(20,20,40,0.3)";
   ctx.fillRect(x + 4, y + 4, w - 4, h - 2);
+  const door = Math.round(10 * v.doorsOpen);
+  if (door > 0) {
+    ctx.fillStyle = "rgba(20,20,40,0.25)";
+    ctx.fillRect(x + 4, y + h - 2, 3, door + 1);
+    ctx.fillRect(x + w - 5, y + h - 2, 3, door + 1);
+  }
   ctx.fillStyle = "#d9d9d4";
   ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
   ctx.fillStyle = COL.white;
@@ -529,10 +544,17 @@ function drawAmbulance(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.fillRect(x + 5, y + 4, w - 10, 6);
   ctx.fillStyle = "#6fa3c4";
   ctx.fillRect(x + 5, y + 9, w - 10, 1);
-  ctx.fillStyle = COL.red;
+  const red = flash === 0 ? "#ff5a5a" : COL.red;
+  const blue = flash === 1 ? "#7fb2ff" : "#3a6fd9";
+  ctx.fillStyle = flash < 0 ? "#8a3a40" : red;
   ctx.fillRect(x + 6, y + 13, (w - 12) / 2, 3);
-  ctx.fillStyle = "#3a6fd9";
+  ctx.fillStyle = flash < 0 ? "#34507a" : blue;
   ctx.fillRect(x + w / 2, y + 13, (w - 12) / 2, 3);
+  if (flash >= 0) {
+    // Bright core on whichever half is lit.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(flash === 0 ? x + 9 : x + w / 2 + 4, y + 14, 3, 1);
+  }
   ctx.fillStyle = COL.red;
   ctx.fillRect(x + 2, y + 30, w - 4, 3);
   ctx.fillRect(x + w / 2 - 1, y + 19, 2, 8);
@@ -542,6 +564,20 @@ function drawAmbulance(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.fillRect(x + w - 2, y + 8, 1, 6);
   ctx.fillRect(x + 1, y + h - 14, 1, 6);
   ctx.fillRect(x + w - 2, y + h - 14, 1, 6);
+  // Tail lights, and the dark cabin plus both door leaves once the rear doors open.
+  ctx.fillStyle = "#c8323c";
+  ctx.fillRect(x + 3, y + h - 4, 2, 1);
+  ctx.fillRect(x + w - 5, y + h - 4, 2, 1);
+  if (door > 0) {
+    ctx.fillStyle = "#2a2a3a";
+    ctx.fillRect(x + 5, y + h - 5, w - 10, 3);
+    for (const dx of [2, w - 5]) {
+      ctx.fillStyle = COL.ink;
+      ctx.fillRect(x + dx, y + h - 3, 3, door);
+      ctx.fillStyle = COL.white;
+      ctx.fillRect(x + dx + 1, y + h - 3, 1, door - 1);
+    }
+  }
 }
 
 // Red lit box sign on two posts over the walk-in entrance.
@@ -582,7 +618,7 @@ function buildStatic(layout: Layout): HTMLCanvasElement {
   ctx.fillRect(morgue.x, morgue.y, morgue.w, morgue.h);
   // Rug under the staff-room seating, before furniture so people and the table sit on it.
   ctx.fillStyle = "rgba(150, 110, 170, 0.22)";
-  ctx.fillRect(38 * TILE + 4, 15 * TILE + 4, 8 * TILE - 8, 3 * TILE - 8);
+  ctx.fillRect(30 * TILE + 4, 12 * TILE + 4, 5 * TILE - 8, 3 * TILE - 8);
   drawBays(ctx, layout);
   drawCorridorGuides(ctx);
   drawWallShadows(ctx, layout);
@@ -592,8 +628,8 @@ function buildStatic(layout: Layout): HTMLCanvasElement {
   // Exit chevrons in the lobby.
   ctx.fillStyle = COL.greenDark;
   for (let i = 0; i < 2; i++) {
-    const cx = 38 * TILE;
-    const cy = 21 * TILE + 6 + i * 8;
+    const cx = (EXIT_COL + 1) * TILE;
+    const cy = 17 * TILE + 6 + i * 8;
     for (let d = 0; d < 4; d++) {
       ctx.fillRect(cx - 4 + d, cy + d, 1, 1);
       ctx.fillRect(cx + 3 - d, cy + d, 1, 1);
@@ -722,7 +758,7 @@ export class Renderer {
     if (parent && typeof ResizeObserver !== "undefined") new ResizeObserver(() => this.resize()).observe(parent);
   }
 
-  // Fit the whole map into the canvas's parent at the largest integer zoom (in device pixels).
+  // Fill the canvas's parent with the whole map: draw at an integer zoom, CSS-scale to the exact fit.
   resize(): void {
     const parent = this.canvas.parentElement ?? document.body;
     const fit = fitZoom(parent.clientWidth, parent.clientHeight, MAP_W, MAP_H, window.devicePixelRatio || 1);
@@ -732,6 +768,9 @@ export class Renderer {
     }
     this.canvas.style.width = `${fit.cssW}px`;
     this.canvas.style.height = `${fit.cssH}px`;
+    // Nearest-neighbour only at an exact integer fit; when shrinking a little, smooth sampling avoids
+    // dropped pixel rows.
+    this.canvas.style.imageRendering = fit.exact ? "pixelated" : "auto";
     this.zoom = fit.zoom;
     this.cssW = fit.cssW;
   }
@@ -762,6 +801,10 @@ export class Renderer {
     if (!frame.ct.working && Math.random() < dt * 5) {
       this.particles.emit("sparks", this.layout.ct.x + 6 + Math.random() * 20, this.layout.ct.y + 8);
     }
+    for (const v of frame.vehicles) {
+      // Exhaust puffs from the tailpipe while an ambulance drives.
+      if (v.moving && v.y > -AMB_H && Math.random() < dt * 9) this.particles.emit("dust", v.x + 6, v.y + AMB_H - 6);
+    }
     this.particles.update(dt);
 
     const ctx = this.ctx;
@@ -789,6 +832,8 @@ export class Renderer {
     ctx.fillStyle = "rgba(15, 12, 30, 0.28)";
     ctx.fillRect(this.layout.ct.x + 2, this.layout.ct.y + 30, 32, 4);
     drawCt(ctx, this.layout.ct.x, this.layout.ct.y, frame.ct.working, anim);
+    const siren = Math.floor(timeMs / 180) % 2;
+    for (const v of frame.vehicles) drawAmbulance(ctx, v, v.siren ? siren : -1);
 
     const people = this.sorted(frame).filter((e) => e.alpha > 0.01);
     for (const e of people) {
@@ -1008,6 +1053,13 @@ export class Renderer {
     }
     const sign = this.layout.labels.find((l) => l.text === "EMERGENCY");
     if (sign) pool(sign.at.x, sign.at.y, 34, [255, 60, 70], lerp(0.12, 0.35, d));
+    // Ambulance roof lights wash the bay red and blue in turn, strongest at night.
+    const flash = Math.floor(timeMs / 180) % 2;
+    for (const v of frame.vehicles) {
+      if (!v.siren) continue;
+      const lx = v.x + (flash === 0 ? 10 : AMB_W - 10);
+      pool(lx, v.y + 14, 40, flash === 0 ? [255, 50, 60] : [70, 120, 255], lerp(0.25, 0.55, d));
+    }
     const alarm = Object.entries(this.layout.beds).some(([id]) => {
       const p = inBed.get(id);
       return this.layout.bedZone[id] === "resus" && !!p && !p.covered;
@@ -1039,7 +1091,7 @@ export class Renderer {
     const text = frame.ct.downTicksLeft > 0 ? `CT DOWN ${frame.ct.downTicksLeft}` : "CT DOWN";
     const w = textWidth(text) + 8;
     const x = Math.round(r.x + (r.w - w) / 2);
-    const y = r.y + 4 * TILE + 14;
+    const y = r.y + 3 * TILE + 12; // just below the scanner, clear of the console
     ctx.fillStyle = blink ? COL.red : COL.redDark;
     ctx.fillRect(x - 1, y - 1, w + 2, 11);
     ctx.fillStyle = "#3a1418";
@@ -1093,8 +1145,8 @@ export class Renderer {
     // Sign board on the sidewalk by the entrance.
     const text = frame.diversion.ticksLeft > 0 ? `DIVERT ${frame.diversion.ticksLeft}` : "DIVERT";
     const w = Math.max(textWidth(text) + 10, 44);
-    const x = 3 * TILE - Math.floor(w / 2);
-    const y = 13 * TILE + 2;
+    const x = 2 * TILE + 8 - Math.floor(w / 2);
+    const y = (AMBULANCE_BAY.r1 + 2) * TILE + 2;
     ctx.fillStyle = COL.ink;
     ctx.fillRect(x + 4, y + 13, 2, 4);
     ctx.fillRect(x + w - 6, y + 13, 2, 4);

@@ -40,6 +40,16 @@ export interface StaffEntity extends Point {
   alpha: number;
 }
 
+// An ambulance on a drop-off run: reverses into the bay, opens its rear doors, drives off nose first.
+// x, y is the top-left of its 32x48 top-down sprite (nose up); y < 0 while it is still off the map.
+export interface VehicleEntity extends Point {
+  kind: "ambulance";
+  id: string;
+  doorsOpen: number; // 0 shut .. 1 rear doors fully open
+  siren: boolean; // roof lights flashing
+  moving: boolean;
+}
+
 export type EffectKind =
   | "arrival"
   | "admitted"
@@ -65,6 +75,7 @@ export interface Frame {
   phase: number; // 0..1 progress through the current tick's animation
   patients: PatientEntity[];
   staff: StaffEntity[];
+  vehicles: VehicleEntity[];
   effects: Effect[];
   ct: { working: boolean; downTicksLeft: number };
   diversion: { active: boolean; ticksLeft: number };

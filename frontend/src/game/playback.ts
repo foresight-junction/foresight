@@ -2,11 +2,11 @@
 // The whole replay is planned once at load (model.ts), so seeking is just an index and never replays
 // animations. Owner: agent D (playback + animation).
 
-import type { Effect, Frame, PatientEntity, StaffEntity } from "../replay/frame";
+import type { Effect, Frame, PatientEntity, StaffEntity, VehicleEntity } from "../replay/frame";
 import type { Replay, ReplayTick, Staff, Zone } from "../replay/types";
 import type { Layout } from "../world/layout";
 import { buildModel, type PatientRecord, type ReplayModel, type TickMarkers } from "./model";
-import { linearAt, poseAt, spinFacing, stepAt } from "./motion";
+import { easedAt, linearAt, poseAt, spinFacing, stepAt } from "./motion";
 
 // From this speed on, crowds move in lockstep: staggering at 8x+ reads as lag.
 const FAST_SPEED = 8;
@@ -26,14 +26,28 @@ export class Playback {
   private model: ReplayModel;
 
   constructor(
-    readonly replay: Replay,
-    layout: Layout,
+    public replay: Replay,
+    private layout: Layout,
   ) {
     this.model = buildModel(replay, layout);
   }
 
   get tickCount(): number {
     return this.replay.ticks.length;
+  }
+
+  // A live episode still being played: its last tick is the one the agent is deciding right now.
+  get live(): boolean {
+    const s = this.replay.meta.live?.state;
+    return s !== undefined && s !== "done";
+  }
+
+  // Live mode: the replay grew (or its status changed). Re-plans everything, keeps the position, so a
+  // viewer waiting at the live edge carries straight on into the new tick.
+  setReplay(replay: Replay): void {
+    this.replay = replay;
+    this.model = buildModel(replay, this.layout);
+    if (this.tick > this.tickCount - 1) this.setTick(this.tickCount - 1);
   }
 
   current(): ReplayTick {
@@ -43,7 +57,17 @@ export class Playback {
   update(dtMs: number): void {
     if (!this.playing || dtMs <= 0) return;
     this.phase += (dtMs / 1000) * this.speed;
+    // Live edge: hold the agent's current tick at its observation (phase 0) until its decision arrives.
+    if (this.live && this.tick >= this.tickCount - 1) {
+      this.phase = 0;
+      return;
+    }
     while (this.phase >= 1) {
+      if (this.live && this.tick + 1 >= this.tickCount - 1) {
+        this.phase = 0;
+        this.setTick(this.tick + 1);
+        break;
+      }
       if (this.tick >= this.tickCount - 1) {
         this.phase = 1;
         this.playing = false;
@@ -61,7 +85,7 @@ export class Playback {
 
   // At the very end, play starts over from the first tick.
   play(): void {
-    if (this.tick >= this.tickCount - 1 && this.phase >= 1) this.seek(0);
+    if (!this.live && this.tick >= this.tickCount - 1 && this.phase >= 1) this.seek(0);
     this.playing = true;
   }
 
@@ -161,12 +185,27 @@ export class Playback {
         effects.push(e.text === undefined ? { kind: e.kind, age, x: e.x, y: e.y } : { kind: e.kind, age, x: e.x, y: e.y, text: e.text });
       }
     }
+    const vehicles: VehicleEntity[] = [];
+    for (const v of tm.vehicles) {
+      if (ph < v.y[0].at || ph > v.y[v.y.length - 1].at) continue;
+      const y = easedAt(v.y, ph);
+      vehicles.push({
+        kind: "ambulance",
+        id: v.id,
+        x: v.x,
+        y,
+        doorsOpen: Math.max(0, Math.min(1, linearAt(v.doors, ph))),
+        siren: true,
+        moving: Math.abs(easedAt(v.y, ph + 0.002) - y) > 0.01,
+      });
+    }
     const status = stepAt(tm.status, ph);
     return {
       tick: this.replay.ticks[t].tick,
       phase: ph,
       patients,
       staff,
+      vehicles,
       effects,
       ct: { ...status.ct },
       diversion: { ...status.diversion },

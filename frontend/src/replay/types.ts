@@ -84,6 +84,7 @@ export interface ReplayTick {
   actions: Action[]; // what the policy chose
   results: ActionResult[]; // one per action, same order
   events: SimEvent[]; // every sim line with t === tick (arrivals before obs, outcomes after actions)
+  thought?: string; // live LLM agent only: its short reasoning for this tick's actions
 }
 
 export interface ScoreSummary {
@@ -104,9 +105,26 @@ export interface ReplayMeta {
   policy: string;
   label: string; // human title, e.g. "Gemini 3.8 Flash (its own script)"
   seed: number;
-  reward: number;
-  score: ScoreSummary;
+  reward: number | null; // null while a live episode is still running
+  score: ScoreSummary | null;
+  live?: LiveStatus; // set only on a live episode streamed from frontend/tools/live
 }
+
+export interface LiveStatus {
+  agent: string; // "llm" | "reference" | "reactive"
+  model: string | null; // model id for the LLM agent
+  state: "starting" | "thinking" | "acting" | "done" | "error";
+  error?: string;
+}
+
+// Server-sent events from frontend/tools/live (GET /live/stream, one JSON object per `data:` line).
+// The browser keeps `ticks` (finished ticks) plus `head` (the tick the agent is deciding now: its obs
+// and pre-observation events, empty actions/results) and shows Replay { ticks: [...ticks, head] }.
+export type LiveMessage =
+  | { type: "snapshot"; meta: ReplayMeta; ticks: ReplayTick[]; head: ReplayTick | null; final_obs: Observation | null }
+  | { type: "step"; meta: ReplayMeta; tick: ReplayTick; head: ReplayTick | null }
+  | { type: "status"; meta: ReplayMeta }
+  | { type: "done"; meta: ReplayMeta; final_obs: Observation };
 
 export interface Replay {
   version: 1;

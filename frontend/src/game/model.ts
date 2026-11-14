@@ -41,6 +41,21 @@ export const PHASE = {
   carryEnd: 0.3, // a person who fainted last tick is carried to the infirmary by now
 } as const;
 
+// An ambulance run inside a tick: it reverses into the bay, opens its rear doors as the next tick's
+// arrivals start (PHASE.next), lets its patients out one by one, then drives off nose first.
+export const AMBULANCE = {
+  in0: 0.14, // starts reversing in from above the map...
+  in1: 0.34, // ...and is parked
+  stagger: 0.04, // a second ambulance follows this much later
+  gap: 0.05, // between two patients climbing out
+  drive: 0.2, // time to drive off the map
+  offY: -56, // y of the sprite's top-left when fully off the map
+} as const;
+
+// ESI 1-2 patients come by ambulance, and so does everyone hurt in the bus crash; the rest walk in.
+const byAmbulance = (e: SimEvent): boolean =>
+  e.event === "arrival" && (Number(e.esi) <= 2 || e.source === "bus");
+
 const PRE_OBS = new Set(["episode_start", "arrival", "diverted", "event_start", "event_end"]);
 
 export interface PatientPlan {
@@ -84,9 +99,17 @@ export interface WorldStatus {
   activeEvents: string[];
 }
 
+export interface VehiclePlan {
+  id: string;
+  x: number;
+  y: Key<number>[]; // eased between keys; shown only between the first and last key
+  doors: Key<number>[]; // linear, 0 shut .. 1 open
+}
+
 export interface TickModel {
   patients: PatientPlan[];
   staff: StaffPlan[];
+  vehicles: VehiclePlan[];
   effects: EffectSpec[];
   status: Key<WorldStatus>[];
 }
@@ -147,6 +170,22 @@ class Slots {
     this.taken[i] = true;
     return i;
   }
+  // Waiting patients: a free chair among the first `chairs` picked by id, so people spread over the whole
+  // room as in a real waiting room instead of always filling the front row. Standing room (lowest free
+  // index past the chairs) only once every chair is taken.
+  takeSpread(id: string, chairs: number): number {
+    const free: number[] = [];
+    for (let i = 0; i < chairs; i++) if (!this.taken[i]) free.push(i);
+    if (free.length === 0) {
+      let i = chairs;
+      while (this.taken[i]) i++;
+      this.taken[i] = true;
+      return i;
+    }
+    const i = free[Math.floor(jitter(`seat:${id}`) * free.length)];
+    this.taken[i] = true;
+    return i;
+  }
   free(i: number): void {
     this.taken[i] = false;
   }
@@ -201,6 +240,42 @@ const fadeOut = (t0: number, t1: number): Key<number>[] => [
 ];
 
 const eventLabel = (kind: string): string => kind.replace(/_/g, " ");
+
+interface AmbulanceRun {
+  plan: VehiclePlan;
+  rear: Point; // where its patients step out
+  unloadAt(j: number): number; // phase the j-th patient of this run steps out
+}
+
+// k-th ambulance of the tick (0 or 1), carrying `riders` patients, parked at `park`.
+function ambulanceRun(park: Point, riders: number, k: number): AmbulanceRun {
+  const d = k * AMBULANCE.stagger;
+  const in1 = AMBULANCE.in1 + d;
+  const gap = Math.min(AMBULANCE.gap, 0.2 / Math.max(1, riders));
+  const first = Math.max(PHASE.next, in1 + 0.05);
+  const close = first + (riders - 1) * gap + 0.06;
+  const out0 = close + 0.07;
+  return {
+    plan: {
+      id: `AMB${k + 1}`,
+      x: park.x,
+      y: [
+        { at: AMBULANCE.in0 + d, v: AMBULANCE.offY },
+        { at: in1, v: park.y },
+        { at: out0, v: park.y },
+        { at: Math.min(1, out0 + AMBULANCE.drive), v: AMBULANCE.offY },
+      ],
+      doors: [
+        { at: in1, v: 0 },
+        { at: in1 + 0.04, v: 1 },
+        { at: close, v: 1 },
+        { at: close + 0.04, v: 0 },
+      ],
+    },
+    rear: { x: park.x + 8, y: park.y + 36 },
+    unloadAt: (j) => first + j * gap,
+  };
+}
 
 function worldStatus(obs: Observation, active: Set<string>): WorldStatus {
   return {
@@ -358,7 +433,7 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
         place = { k: "bed", bed: bed.bed };
       } else if (!bed && place?.k !== "seat") {
         if (place) release(place);
-        place = { k: "seat", i: seats.take() };
+        place = { k: "seat", i: seats.takeSpread(id, layout.waitingSeats) };
       }
       pPlace.set(id, place!);
       const f = facts.get(id) ?? { esi: (bed?.esi ?? 3) as Esi, needsCt: false };
@@ -499,6 +574,10 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
 
     // --- start of the next tick: events, arrivals, diverted -----------------------------------------
     let arriveOrder = 0;
+    // One ambulance brings up to 3 patients; more (the bus crash) need both.
+    const riders = nextPre.filter(byAmbulance).map((e) => String(e.patient ?? ""));
+    const parks = riders.length === 0 ? [] : riders.length > 3 ? layout.ambulanceParks.slice(1) : layout.ambulanceParks.slice(0, 1);
+    const runs = parks.map((p, k) => ambulanceRun(p, Math.ceil((riders.length - k) / parks.length), k));
     for (const e of nextPre) {
       const id = String(e.patient ?? "");
       if (e.event === "event_start" || e.event === "event_end") {
@@ -529,8 +608,24 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       };
       if (e.event === "arrival") {
         facts.set(id, { esi, needsCt });
-        const seat: Place = { k: "seat", i: seats.take() };
+        const seat: Place = { k: "seat", i: seats.takeSpread(id, layout.waitingSeats) };
         pPlace.set(id, seat);
+        const j = riders.indexOf(id);
+        if (j >= 0) {
+          // Steps out of the ambulance's rear doors, then walks in to a seat.
+          const run = runs[j % runs.length];
+          const t0 = run.unloadAt(Math.floor(j / runs.length));
+          plan.from = run.rear;
+          plan.alpha = [
+            { at: t0, v: 0 },
+            { at: t0 + 0.04, v: 1 },
+          ];
+          const leg = addLeg(plan, t0, Math.max(PHASE.moveEnd, t0 + 0.25), pointOf(seat), { settle: true });
+          plan.state.push({ at: leg.t1, v: "waiting" });
+          fx("arrival", t0, run.rear);
+          pPlans.set(id, plan);
+          continue;
+        }
         // Bus-crash victims rush in close together; flu patients shuffle in and spread out.
         const lag =
           e.source === "bus" ? order * 0.025 : e.source === "flu" ? stagger(id, order) * 1.5 : stagger(id, order);
@@ -677,7 +772,13 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
 
     for (const plan of pPlans.values()) sortKeys(plan);
     for (const plan of sPlans.values()) sortKeys(plan);
-    ticks.push({ patients: [...pPlans.values()], staff: [...sPlans.values()], effects, status });
+    ticks.push({
+      patients: [...pPlans.values()],
+      staff: [...sPlans.values()],
+      vehicles: runs.map((r) => r.plan),
+      effects,
+      status,
+    });
   }
 
   function eventPoint(kind: string): Point {

@@ -1,21 +1,26 @@
-// Fit the map into the stage: largest integer zoom in *device* pixels, so every map pixel is an exact
-// square on screen at any devicePixelRatio. Below 1x (tiny screens) it falls back to a fractional zoom.
+// Fit the map into the stage so it fills as much of it as the aspect ratio allows. The canvas draws at
+// the smallest integer zoom (in device pixels) at or above the fit, so map pixels are exact squares in
+// the backing store, and CSS scales it down by less than one zoom step to fill the stage exactly.
+// `exact` is true when no CSS scaling happens (the fit landed on an integer zoom).
 
 export interface Fit {
-  zoom: number; // device pixels per map pixel
+  zoom: number; // backing-store device pixels per map pixel
   pxW: number; // canvas backing size, device pixels
   pxH: number;
   cssW: number; // canvas CSS size
   cssH: number;
+  exact: boolean;
 }
 
 export function fitZoom(availCssW: number, availCssH: number, mapW: number, mapH: number, dpr: number): Fit {
   const ratio = dpr > 0 ? dpr : 1;
-  const fit = Math.min((availCssW * ratio) / mapW, (availCssH * ratio) / mapH);
-  const zoom = fit >= 1 ? Math.floor(fit) : Math.max(0.25, fit);
+  const fit = Math.max(0.25, Math.min((availCssW * ratio) / mapW, (availCssH * ratio) / mapH));
+  const zoom = Math.max(1, Math.ceil(fit - 1e-6));
   const pxW = Math.round(mapW * zoom);
   const pxH = Math.round(mapH * zoom);
-  return { zoom, pxW, pxH, cssW: pxW / ratio, cssH: pxH / ratio };
+  const cssW = (mapW * fit) / ratio;
+  const cssH = (mapH * fit) / ratio;
+  return { zoom, pxW, pxH, cssW, cssH, exact: Math.abs(fit - zoom) < 1e-6 };
 }
 
 // Clock for a tick: tick 0 is Day 1 08:00 and each tick is 30 minutes. Returns hours since midnight.

@@ -47,6 +47,17 @@ export function linearAt(keys: Key<number>[], phase: number): number {
 
 export const easeInOut = (u: number): number => 0.5 - Math.cos(Math.PI * u) / 2;
 
+// Like linearAt, but eases in and out between each pair of keys (vehicles pulling away and braking).
+export function easedAt(keys: Key<number>[], phase: number): number {
+  if (phase <= keys[0].at) return keys[0].v;
+  for (let i = 1; i < keys.length; i++) {
+    const a = keys[i - 1];
+    const b = keys[i];
+    if (phase <= b.at) return b.at === a.at ? b.v : a.v + (b.v - a.v) * easeInOut((phase - a.at) / (b.at - a.at));
+  }
+  return keys[keys.length - 1].v;
+}
+
 const OVERSHOOT = 0.08;
 const SETTLE_AT = 0.8;
 // Ease-out-back with the back part kept short: a smooth walk that runs a little past the spot over the

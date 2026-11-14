@@ -3,7 +3,7 @@
 // department status and the episode's mistakes. Owner: agent E (HUD).
 
 import type { Playback } from "../game/playback";
-import type { Observation, Replay, ReplayIndexEntry, Staff, Zone } from "../replay/types";
+import type { Observation, Replay, ReplayIndexEntry, ReplayTick, Staff, Zone } from "../replay/types";
 import {
   bannersFor,
   describeActions,
@@ -26,16 +26,25 @@ import { findMistakes, type Band } from "./timeline";
 
 export interface HudOptions {
   replays: ReplayIndexEntry[];
-  currentFile: string;
+  currentFile: string | null; // null in live mode
   onSelectReplay: (file: string) => void;
 }
 
 export interface Hud {
   update(): void; // called every animation frame
+  setReplay(replay: Replay): void; // live mode: the replay grew or its status changed
   destroy(): void;
 }
 
-const SPEEDS = [1, 2, 4, 8, 16];
+const LIVE_STATE: Record<string, string> = {
+  starting: "connecting to the hospital",
+  thinking: "agent is thinking",
+  acting: "agent is acting",
+  done: "episode over",
+  error: "agent error",
+};
+
+const SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16];
 const ZONES: Zone[] = ["resus", "acute", "fast_track"];
 const COUNT_MS = 350;
 const BANNER_MS = 2000;
@@ -241,37 +250,71 @@ function renderStatus(body: HTMLElement, obs: Observation, active: Band[]): void
   body.replaceChildren(...out);
 }
 
-export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, opts: HudOptions): Hud {
-  const meta = replay.meta;
+export function mountHud(root: HTMLElement, initial: Replay, playback: Playback, opts: HudOptions): Hud {
+  let replay = initial;
   const hud = el("div", "hud");
 
   // Header: picker, label, reward and the four score meters.
   const header = el("section", "panel header");
   const picker = el("select", "picker");
   picker.setAttribute("aria-label", "Replay");
+  if (opts.currentFile === null) {
+    const o = el("option", "", "● LIVE episode");
+    o.value = "";
+    o.selected = true;
+    picker.append(o);
+  } else if (!opts.replays.some((r) => r.file === opts.currentFile)) {
+    // A file outside the index, e.g. a saved live run.
+    const r = initial.meta.reward;
+    const o = el("option", "", `${initial.meta.label} · seed ${initial.meta.seed} · ${r === null ? "unfinished" : r.toFixed(3)}`);
+    o.value = "";
+    o.selected = true;
+    picker.append(o);
+  }
   for (const r of opts.replays) {
     const o = el("option", "", `${r.label} · seed ${r.seed} · ${r.reward.toFixed(3)}`);
     o.value = r.file;
     o.selected = r.file === opts.currentFile;
     picker.append(o);
   }
-  picker.addEventListener("change", () => opts.onSelectReplay(picker.value));
+  picker.addEventListener("change", () => {
+    if (picker.value) opts.onSelectReplay(picker.value);
+  });
   const titleRow = el("div", "title-row");
-  const who = el("div", "who");
-  who.append(el("div", "who-label", meta.label), el("div", "who-sub", `POLICY ${meta.policy} · SEED ${meta.seed}`));
-  const reward = el("div", "reward");
-  reward.append(el("div", "reward-l", "FINAL REWARD"), el("div", "reward-n", meta.reward.toFixed(3)));
-  titleRow.append(who, reward);
   const parts = el("div", "parts");
-  for (const p of scoreParts(meta.score)) {
-    const row = el("div", `part part-${p.key}`);
-    row.title = `${p.name} ${p.key} = ${p.value.toFixed(3)}, worth ${p.points.toFixed(1)} of ${p.max} points`;
-    row.append(el("span", "part-k", p.key), el("span", "part-n", p.name.toUpperCase()), meter(p.value, "chunky"));
-    row.append(el("span", "part-v", `${p.points.toFixed(1)}/${p.max}`));
-    parts.append(row);
-  }
-  parts.append(el("div", "parts-sum", `SCORE ${meta.score.score.toFixed(1)} / 100`));
   header.append(picker, titleRow, parts);
+
+  function renderHeader(): void {
+    const meta = replay.meta;
+    const who = el("div", "who");
+    who.append(el("div", "who-label", meta.label), el("div", "who-sub", `POLICY ${meta.policy} · SEED ${meta.seed}`));
+    const reward = el("div", "reward");
+    if (meta.reward === null || meta.score === null) {
+      // Live and still running: no reward yet, a pulsing LIVE badge with the agent's state instead.
+      const live = meta.live;
+      reward.append(el("div", "reward-l", live?.model ?? live?.agent ?? ""), el("div", "reward-n live-badge", "● LIVE"));
+      titleRow.replaceChildren(who, reward);
+      const done = Math.max(0, replay.ticks.length - 1);
+      const state = live ? LIVE_STATE[live.state] ?? live.state : "";
+      parts.replaceChildren(
+        el("div", `live-state ${live?.state ?? ""}`, live?.error ? `${state}: ${live.error}` : state),
+        el("div", "parts-sum", `${done} OF 144 TICKS PLAYED · SCORE AT THE END`),
+      );
+      return;
+    }
+    reward.append(el("div", "reward-l", "FINAL REWARD"), el("div", "reward-n", meta.reward.toFixed(3)));
+    titleRow.replaceChildren(who, reward);
+    parts.replaceChildren();
+    for (const p of scoreParts(meta.score)) {
+      const row = el("div", `part part-${p.key}`);
+      row.title = `${p.name} ${p.key} = ${p.value.toFixed(3)}, worth ${p.points.toFixed(1)} of ${p.max} points`;
+      row.append(el("span", "part-k", p.key), el("span", "part-n", p.name.toUpperCase()), meter(p.value, "chunky"));
+      row.append(el("span", "part-v", `${p.points.toFixed(1)}/${p.max}`));
+      parts.append(row);
+    }
+    parts.append(el("div", "parts-sum", `SCORE ${meta.score.score.toFixed(1)} / 100`));
+  }
+  renderHeader();
 
   // Pinned game bar: clock, resources and transport.
   const bar = el("section", "panel gamebar");
@@ -333,7 +376,7 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
     return b;
   };
   const togglePlay = (): void => {
-    if (!playback.playing && playback.tick >= playback.tickCount - 1) playback.seek(0);
+    if (!playback.live && !playback.playing && playback.tick >= playback.tickCount - 1) playback.seek(0);
     playback.toggle();
   };
   const playBtn = btn("play", "Play / pause (Space)", togglePlay, "play");
@@ -364,31 +407,35 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
 
   // Timeline.
   const timeline = panel("Timeline", "timeline", "flag");
-  const scrubber = createScrubber(replay, (t) => playback.seek(t));
-  const legend = el("div", "legend");
-  const legendItem = (color: string, label: string): void => {
-    const i = el("span", "lg");
-    const sw = el("span", "lg-sw");
-    sw.style.background = color;
-    i.append(sw, document.createTextNode(label));
-    legend.append(i);
-  };
-  legendItem(MARK_COLOR.deaths, "death");
-  legendItem(MARK_COLOR.faints, "faint");
-  legendItem(MARK_COLOR.rejected, "rejected");
-  legendItem(MARK_COLOR.spend, "spend");
-  legendItem("#3a3a52", "queue");
-  const kinds = new Set(scrubber.data.bands.map((b) => b.kind));
-  for (const [k, label] of [
-    ["staff_sickness", "sickness"],
-    ["flu_wave", "flu"],
-    ["ct_breakdown", "CT down"],
-    ["bus_crash", "bus crash"],
-    ["diversion", "diversion"],
-  ]) {
-    if (kinds.has(k)) legendItem(BAND_COLOR[k], label);
+  let scrubber = createScrubber(replay, (t) => playback.seek(t));
+
+  function renderTimeline(): void {
+    const legend = el("div", "legend");
+    const legendItem = (color: string, label: string): void => {
+      const i = el("span", "lg");
+      const sw = el("span", "lg-sw");
+      sw.style.background = color;
+      i.append(sw, document.createTextNode(label));
+      legend.append(i);
+    };
+    legendItem(MARK_COLOR.deaths, "death");
+    legendItem(MARK_COLOR.faints, "faint");
+    legendItem(MARK_COLOR.rejected, "rejected");
+    legendItem(MARK_COLOR.spend, "spend");
+    legendItem("#3a3a52", "queue");
+    const kinds = new Set(scrubber.data.bands.map((b) => b.kind));
+    for (const [k, label] of [
+      ["staff_sickness", "sickness"],
+      ["flu_wave", "flu"],
+      ["ct_breakdown", "CT down"],
+      ["bus_crash", "bus crash"],
+      ["diversion", "diversion"],
+    ]) {
+      if (kinds.has(k)) legendItem(BAND_COLOR[k], label);
+    }
+    timeline.body.replaceChildren(scrubber.el, legend);
   }
-  timeline.body.append(scrubber.el, legend);
+  renderTimeline();
 
   const decisions = panel("AI decisions this tick", "decisions", "cross");
   const decisionsBadge = el("span", "head-badge");
@@ -397,24 +444,32 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
   const status = panel("Department · start of tick", "status", "bed");
 
   const mistakesP = panel("Mistakes", "mistakes", "skull");
-  const mistakes = findMistakes(replay);
-  mistakesP.head.append(el("span", `head-badge${mistakes.length ? " bad" : ""}`, String(mistakes.length)));
-  const mList = el("ul", "mlist");
-  const mRows = mistakes.map((m) => {
-    const li = el("li");
-    const b = el("button", `mrow${m.esi ? ` esi-edge-${m.esi}` : ""}`);
-    b.type = "button";
-    b.append(el("span", "m-t", `t${m.tick}`), icon(m.icon), el("span", "m-x", m.text));
-    b.addEventListener("click", () => {
-      playback.pause();
-      playback.seek(m.tick);
+  const mBadge = el("span", "head-badge");
+  mistakesP.head.append(mBadge);
+  let mRows: { li: HTMLElement; tick: number }[] = [];
+
+  function renderMistakes(): void {
+    const mistakes = findMistakes(replay);
+    mBadge.textContent = String(mistakes.length);
+    mBadge.classList.toggle("bad", mistakes.length > 0);
+    const mList = el("ul", "mlist");
+    mRows = mistakes.map((m) => {
+      const li = el("li");
+      const b = el("button", `mrow${m.esi ? ` esi-edge-${m.esi}` : ""}`);
+      b.type = "button";
+      b.append(el("span", "m-t", `t${m.tick}`), icon(m.icon), el("span", "m-x", m.text));
+      b.addEventListener("click", () => {
+        playback.pause();
+        playback.seek(m.tick);
+      });
+      li.append(b);
+      mList.append(li);
+      return { li, tick: m.tick };
     });
-    li.append(b);
-    mList.append(li);
-    return { li, tick: m.tick };
-  });
-  if (mistakes.length) mistakesP.body.append(mList);
-  else mistakesP.body.append(el("p", "muted", "No deaths, faints or walk-outs: a clean run."));
+    if (mistakes.length) mistakesP.body.replaceChildren(mList);
+    else mistakesP.body.replaceChildren(el("p", "muted", "No deaths, faints or walk-outs: a clean run."));
+  }
+  renderMistakes();
 
   const help = el("p", "keys", "SPACE play · ←/→ step (SHIFT ×10) · HOME/END · +/- speed · drag the timeline");
 
@@ -469,18 +524,16 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
       ? `${acts.total} ACTION${acts.total === 1 ? "" : "S"}${acts.rejected ? ` · ${acts.rejected} ✗` : ""}`
       : "";
     decisionsBadge.classList.toggle("bad", acts.rejected > 0);
-    const dl = el("ul", "lines");
-    acts.lines.forEach((l, i) => dl.append(lineEl(l, i)));
-    if (acts.kept.length) {
-      dl.append(
-        lineEl(
-          { icon: "dot", text: `Kept ${acts.kept.length} staff where they were`, tone: "muted", detail: acts.kept.join(" ") },
-          acts.lines.length,
-        ),
-      );
+    if (playback.live && t.tick === playback.tickCount - 1) {
+      // The agent is deciding this tick right now.
+      const live = replay.meta.live;
+      const waiting = el("div", `thinking ${live?.state ?? ""}`);
+      waiting.append(el("span", "thinking-dots"), el("span", "", live ? LIVE_STATE[live.state] ?? live.state : ""));
+      decisionsBadge.textContent = "LIVE";
+      decisions.body.replaceChildren(waiting);
+    } else {
+      renderDecisions(t, acts);
     }
-    if (!acts.total) dl.append(el("li", "empty", "No actions: the AI passed this tick."));
-    decisions.body.replaceChildren(dl);
 
     const hl = el("ul", "lines");
     const prev = replay.ticks[t.tick - 1]?.obs;
@@ -496,6 +549,28 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
     );
 
     for (const r of mRows) r.li.classList.toggle("now", r.tick === t.tick);
+  }
+
+  function renderDecisions(t: ReplayTick, acts: ReturnType<typeof describeActions>): void {
+    const out: HTMLElement[] = [];
+    if (t.thought) {
+      const q = el("blockquote", "thought");
+      q.append(el("span", "thought-l", "THINKING"), el("p", "", t.thought));
+      out.push(q);
+    }
+    const dl = el("ul", "lines");
+    acts.lines.forEach((l, i) => dl.append(lineEl(l, i)));
+    if (acts.kept.length) {
+      dl.append(
+        lineEl(
+          { icon: "dot", text: `Kept ${acts.kept.length} staff where they were`, tone: "muted", detail: acts.kept.join(" ") },
+          acts.lines.length,
+        ),
+      );
+    }
+    if (!acts.total) dl.append(el("li", "empty", "No actions: the AI passed this tick."));
+    out.push(dl);
+    decisions.body.replaceChildren(...out);
   }
 
   function setSpeedIndex(delta: number): void {
@@ -569,6 +644,22 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
         hud.classList.toggle("fast", fast);
       }
       scrubber.setPosition(playback.tick + (playback.playing ? Math.min(playback.phase, 1) : 0.5));
+    },
+    setReplay(next: Replay) {
+      const grew = next.ticks.length !== replay.ticks.length;
+      const oldEdge = replay.ticks.length - 1;
+      replay = next;
+      renderHeader();
+      if (grew || !next.meta.live || next.meta.live.state === "done") {
+        scrubber.destroy();
+        scrubber = createScrubber(replay, (t) => playback.seek(t));
+        renderTimeline();
+        renderMistakes();
+      }
+      // Only the tick that was the live edge can change (its decision and outcomes just arrived, or the
+      // agent's state changed): render it again, with the usual flashes and banners once it is played.
+      // Any other tick stays as it is, so its list animations don't restart on every message.
+      if (shownTick >= 0 && shownTick === playback.tick && shownTick >= oldEdge) renderTick(performance.now(), !grew);
     },
     destroy() {
       window.removeEventListener("keydown", onKey);

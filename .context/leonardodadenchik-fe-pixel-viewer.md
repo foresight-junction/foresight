@@ -32,13 +32,19 @@ A top-down 2D pixel replay of one ED-72 episode in `frontend/`, showing every ch
 - [x] Issue #97, skeleton with types, frame contract and working stubs; reference replay seed 42
 - [x] Agents 1a–1e on helper branches, all merged (Sat 20:5x)
 - [x] Merge helpers, integration fixes (route(), bed offset, wall face), browser check
-- [ ] PR to main (needs cross-review)
+- [x] Full-screen stage, compact map, spread seating, ambulance runs, 0.25x-16x speeds
+- [x] Live mode: frontend/tools/live + `?live=1`, runs auto-saved; Gemini smoke-tested live
+- [ ] PR to main (owner asked to push and merge)
 
 ## Decisions and notes
 - Sat 20:05. Vite + TypeScript + Canvas 2D, no game engine: small, fast to build, no new runtime deps. Dev deps typescript, vite, vitest only.
 - Sat 20:05. All art drawn in code; no image assets, so nothing copied.
+- Sat 21:05. Map compacted 48x28 -> 37x23 tiles and the canvas fills the stage (integer backing zoom, CSS fit), so sprites show ~30% bigger and rooms look full. Waiting patients take a free chair picked by id (spread over the room), standing room only once all 21 chairs are taken. `?tick=N` opens a replay at tick N.
+- Sat 21:15. Ambulance runs: ESI 1-2 and bus-crash arrivals come by ambulance (Frame.vehicles). It reverses into the bay from the top edge, opens its rear doors at PHASE.next, lets riders out one by one, drives off; two ambulances when more than 3 riders. Sirens flash and wash the bay red/blue at night. `?tick=12.45` opens part-way through a tick.
+- Sat 22:10. Live mode: frontend/tools/live (helper 1f) runs the real hospital MCP server locally with a recorder; Gemini (or a scripted policy) plays through MCP; ticks stream over SSE (/live proxied by Vite) into a growing Replay (`?live=1`). Runs auto-save to public/replays/runs/ (gitignored), open with `?replay=runs/<file>`. Speeds 0.25x-16x.
 
 ## Handoff
-- Done: skeleton runs end to end (`pnpm --dir frontend dev`).
+- Done: replay viewer (`pnpm --dir frontend dev`, then `?replay=<file>`) and live mode (`?live=1` with `frontend/tools/live/serve.py` running, see its README). Not done: a clean full Gemini live run to ship as a replay (the first one crashed at tick 116 on a console encoding bug, now fixed).
 - How to test: `pnpm --dir frontend install && pnpm --dir frontend lint && pnpm --dir frontend build && pnpm --dir frontend test`.
+- Live backend tests: `PYTHONPATH="ed72/environment/hospital;ed72/solution;eval/baselines;frontend/tools/live" uv run --no-project --python 3.12 --with pytest --with fastmcp==4.2.0 --with mcp==2.3.0 python -m pytest -q frontend/tools/live/tests`.
 - Regenerate a replay: `PYTHONPATH="ed72/environment/hospital:ed72/solution" uv run --no-project --python 3.12 python frontend/tools/export_replay.py --policy reference --seed 42` (on Windows use `;` in PYTHONPATH).

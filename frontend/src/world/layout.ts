@@ -1,17 +1,19 @@
 // Top-down map of the department: tiles and the pixel positions every entity moves between.
 // Owner: agent B (map + renderer).
 //
-// Plan (48 x 28 tiles, 16 px each). Outside: ambulance bay + sidewalk on the left, street at the bottom.
+// Plan (37 x 23 tiles, 16 px each). Outside: ambulance bay + sidewalk on the left, street at the bottom.
+// Rooms are kept tight around their beds and seats: the canvas scales the whole map to the screen, so a
+// smaller map shows every person and object bigger.
 //
-//   +-------------+--------+----------------------+
-//   | RESUS  3    |   CT   |  ACUTE  8 beds       |
-//   amb door      +--------+----------------------+
-//   |============ main corridor =================|
-//   | WAITING     | FAST TRACK  |hall| STAFF ROOM |
-//   entrance      | 6 beds      |    +------------+
-//   |             |             |lobby  | MORGUE |
-//   +-------------+-------------+--EXIT-+--------+
-//   ~~~~~~~~~~~~~~~~~~~~~~ street ~~~~~~~~~~~~~~~~~
+//   +---------+----+----------------+
+//   | RESUS 3 | CT | ACUTE 8 beds   |
+//   amb door  +----+----------------+
+//   |======== main corridor =======|
+//   | WAITING | FAST TRACK |hall|STAFF|
+//   entrance  | 6 beds     |    +-----+
+//   |         |            |lobby|MRG|
+//   +---------+------------+-EXIT+---+
+//   ~~~~~~~~~~~~~ street ~~~~~~~~~~~~~
 //
 // Every Point is the top-left pixel of a 16x16 entity cell (same convention as Frame entities).
 
@@ -19,8 +21,8 @@ import type { Zone } from "../replay/types";
 import type { Point } from "../replay/frame";
 
 export const TILE = 16;
-export const MAP_COLS = 48;
-export const MAP_ROWS = 28;
+export const MAP_COLS = 37;
+export const MAP_ROWS = 23;
 
 export type TileKind =
   | "void"
@@ -39,10 +41,14 @@ export interface Layout {
   beds: Record<string, Point>; // bed id (R1..R3, A1..A8, F1..F6) -> top-left pixel of the bed
   bedZone: Record<string, Zone>;
   ct: Point;
-  entrance: Point; // where arriving patients appear
+  entrance: Point; // where walk-in patients appear
+  // Top-left of a parked ambulance (32x48 sprite) in the bay: index 0 when one ambulance comes, both
+  // when two do. They drive in from above the map, so the bay must touch the top edge.
+  ambulanceParks: [Point, Point, Point];
   exit: Point; // where discharged / left patients walk to
   morgue: Point; // where dead patients fade out
-  waitingSlot(i: number): Point; // i-th waiting seat (0-based), must work for any i
+  waitingSlot(i: number): Point; // i-th waiting spot (0-based), must work for any i
+  waitingSeats: number; // spots 0..waitingSeats-1 are chairs; the rest are standing room
   restSlot(i: number): Point; // i-th spot in the rest room
   staffSlot(zone: Zone, i: number): Point; // i-th staff spot in a zone
   offstage: Point; // fainted / sick / not-yet-arrived agency staff
@@ -71,22 +77,25 @@ export type RoomId =
 
 // Interior floor of every room (walls excluded). The renderer uses these for tints and overlays.
 export const ROOMS: Record<RoomId, Rect> = {
-  resus: { c0: 6, r0: 1, c1: 17, r1: 8 },
-  ct: { c0: 19, r0: 1, c1: 25, r1: 8 },
-  acute: { c0: 27, r0: 1, c1: 46, r1: 8 },
-  corridor: { c0: 6, r0: 10, c1: 46, r1: 11 },
-  waiting: { c0: 6, r0: 13, c1: 18, r1: 23 },
-  fast_track: { c0: 20, r0: 13, c1: 32, r1: 23 },
-  hall: { c0: 34, r0: 12, c1: 35, r1: 20 },
-  lobby: { c0: 34, r0: 21, c1: 40, r1: 23 },
-  rest: { c0: 37, r0: 13, c1: 46, r1: 19 },
-  morgue: { c0: 42, r0: 21, c1: 46, r1: 23 },
+  resus: { c0: 5, r0: 1, c1: 13, r1: 6 },
+  ct: { c0: 15, r0: 1, c1: 18, r1: 6 },
+  acute: { c0: 20, r0: 1, c1: 35, r1: 6 },
+  corridor: { c0: 5, r0: 8, c1: 35, r1: 9 },
+  waiting: { c0: 5, r0: 11, c1: 14, r1: 18 },
+  fast_track: { c0: 16, r0: 11, c1: 25, r1: 18 },
+  hall: { c0: 27, r0: 10, c1: 28, r1: 16 },
+  lobby: { c0: 27, r0: 17, c1: 31, r1: 18 },
+  rest: { c0: 30, r0: 11, c1: 35, r1: 15 },
+  morgue: { c0: 33, r0: 17, c1: 35, r1: 18 },
 };
 
 // Outer shell of the building (walls included); everything outside it is open air (sidewalk, bay, street).
-export const BUILDING: Rect = { c0: 5, r0: 0, c1: 47, r1: 24 };
-export const AMBULANCE_BAY: Rect = { c0: 0, r0: 0, c1: 4, r1: 10 };
-export const STREET_ROW = 25; // first row of the street (sidewalk), rows below are road
+export const BUILDING: Rect = { c0: 4, r0: 0, c1: 36, r1: 19 };
+export const AMBULANCE_BAY: Rect = { c0: 0, r0: 0, c1: 3, r1: 7 };
+export const AMBULANCE_DOOR_ROW = 4; // upper of the two ambulance doors into Resus
+export const ENTRANCE_ROW = 14; // upper of the two main entrance doors into Waiting
+export const EXIT_COL = 28; // left of the two exit doors onto the street
+export const STREET_ROW = 20; // first row of the street (sidewalk), rows below are road
 
 const ROOM_FLOOR: Record<RoomId, TileKind> = {
   resus: "resus_floor",
@@ -102,17 +111,17 @@ const ROOM_FLOOR: Record<RoomId, TileKind> = {
 };
 
 const DOORS: [number, number][] = [
-  [5, 5], [5, 6], // ambulance doors into Resus
-  [5, 18], [5, 19], // main entrance into Waiting
-  [11, 9], [12, 9], // Resus
-  [22, 9], // CT
-  [36, 9], [37, 9], // Acute
-  [13, 12], [14, 12], // Waiting -> corridor
-  [30, 12], [31, 12], // Fast-track -> corridor
-  [19, 17], // Waiting -> Fast-track
-  [36, 15], [36, 16], // Staff room -> hall
-  [41, 22], // Morgue
-  [37, 24], [38, 24], // Exit to the street
+  [4, AMBULANCE_DOOR_ROW], [4, AMBULANCE_DOOR_ROW + 1], // ambulance doors into Resus
+  [4, ENTRANCE_ROW], [4, ENTRANCE_ROW + 1], // main entrance into Waiting
+  [7, 7], [8, 7], // Resus
+  [17, 7], // CT
+  [28, 7], [29, 7], // Acute
+  [10, 10], [11, 10], // Waiting -> corridor
+  [24, 10], [25, 10], // Fast-track -> corridor
+  [15, 14], // Waiting -> Fast-track
+  [29, 12], [29, 13], // Staff room -> hall
+  [32, 18], // Morgue
+  [EXIT_COL, 19], [EXIT_COL + 1, 19], // Exit to the street
 ];
 
 // Furniture is drawn by the renderer; `blocks` furniture is avoided by route() unless it is the goal.
@@ -132,7 +141,6 @@ export type FurnitureKind =
   | "cabinet" // morgue drawers
   | "sink"
   | "bench"
-  | "ambulance"
   | "wheelchair"
   | "lamp"; // street lamp
 
@@ -150,50 +158,53 @@ function furniture(): Furniture[] {
   const add = (kind: FurnitureKind, c0: number, r0: number, c1 = c0, r1 = r0, blocks = true): void => {
     out.push({ kind, c0, r0, c1, r1, blocks });
   };
-  // Waiting room: 4 rows of 10 seats (aisle at col 13 lines up with the corridor door), triage desk.
+  // Waiting room: 3 rows of 7 seats (aisle at cols 10-11 under the corridor door), triage desk.
   for (const r of SEAT_ROWS) for (const c of SEAT_COLS) add("chair", c, r, c, r, true);
-  add("desk", 15, 13, 18, 13);
-  add("plant", 6, 23);
-  add("vending", 17, 23, 18, 23);
-  add("bench", 8, 23, 11, 23, false);
+  add("desk", 12, 11, 14, 11);
+  add("plant", 5, 18);
+  add("vending", 13, 18, 14, 18);
+  add("bench", 6, 18, 9, 18, false);
+  add("wheelchair", 5, 11);
   // Resus: monitor at each bed head, crash cart in the corner, sink by the door.
-  for (const c of [8, 12, 16]) add("monitor", c - 1, 2);
-  add("cart", 6, 7);
-  add("sink", 17, 7);
+  for (const c of RESUS_BED_COLS) add("monitor", c - 1, 2);
+  add("cart", 5, 6);
+  add("sink", 13, 6);
   // Acute: folded curtains between bays, sink.
-  for (let i = 0; i < 8; i++) add("curtain", 29 + 2 * i - 1, 1, 29 + 2 * i - 1, 1, false);
-  add("sink", 46, 7);
-  add("plant", 27, 7);
+  for (const c of ACUTE_BED_COLS) add("curtain", c - 1, 1, c - 1, 1, false);
+  add("sink", 35, 6);
+  add("plant", 20, 6);
   // CT: operator console.
-  add("console", 19, 7, 20, 7);
+  add("console", 15, 6, 16, 6);
   // Fast-track: plants.
-  add("plant", 20, 23);
-  add("plant", 32, 23);
+  add("plant", 16, 18);
+  add("plant", 25, 18);
   // Staff room: sofa (also rest slots), coffee, lockers, table.
-  add("sofa", 38, 13, 44, 13, false);
-  add("coffee", 45, 13, 46, 13);
-  add("locker", 46, 15, 46, 19);
-  add("table", 40, 16, 43, 16, false);
+  add("sofa", 30, 11, 33, 11, false);
+  add("coffee", 34, 11, 35, 11);
+  add("locker", 35, 13, 35, 15);
+  add("table", 31, 13, 33, 13, false);
   // Morgue drawers.
-  add("cabinet", 46, 21, 46, 23);
+  add("cabinet", 35, 17, 35, 18);
   // Corridor plants, spare wheelchairs.
-  add("plant", 6, 10);
-  add("plant", 46, 10);
-  add("wheelchair", 44, 10);
-  add("wheelchair", 17, 14);
-  add("wheelchair", 39, 22);
+  add("plant", 5, 8);
+  add("plant", 35, 8);
+  add("wheelchair", 33, 8);
+  add("wheelchair", 31, 17);
   // Outside.
-  add("ambulance", 1, 1, 2, 3);
-  add("lamp", 0, 12, 0, 12);
-  add("lamp", 12, STREET_ROW, 12, STREET_ROW);
-  add("lamp", 28, STREET_ROW, 28, STREET_ROW);
-  add("lamp", 44, STREET_ROW, 44, STREET_ROW);
+  add("lamp", 0, 9, 0, 9);
+  add("lamp", 9, STREET_ROW, 9, STREET_ROW);
+  add("lamp", 21, STREET_ROW, 21, STREET_ROW);
+  add("lamp", 33, STREET_ROW, 33, STREET_ROW);
   return out;
 }
 
-const SEAT_ROWS = [15, 17, 19, 21];
-const SEAT_COLS = [8, 9, 10, 11, 12, 14, 15, 16, 17, 18];
-const STAND_ROWS = [16, 18, 20, 22];
+const SEAT_ROWS = [13, 15, 17];
+const SEAT_COLS = [6, 7, 8, 9, 12, 13, 14];
+const STAND_ROWS = [14, 16];
+const RESUS_BED_COLS = [6, 9, 12];
+const ACUTE_BED_COLS = [21, 23, 25, 27, 29, 31, 33, 35];
+const FAST_BED_COLS = [17, 20, 23];
+const FAST_BED_ROWS = [11, 15];
 
 export const FURNITURE: Furniture[] = furniture();
 
@@ -216,18 +227,18 @@ function lights(): Light[] {
     outdoor,
   });
   return [
-    at(9, 4, 60), at(15, 4, 60), // Resus
-    at(22, 5, 52), // CT
-    at(31, 4, 56), at(37, 4, 56), at(43, 4, 56), // Acute
-    ...[9, 17, 25, 33, 41].map((c) => at(c, 10, 46)), // corridor
-    at(10, 17, 64, "warm"), at(15, 20, 60, "warm"), // Waiting
-    at(24, 17, 58), at(29, 17, 58), // Fast-track
-    at(41, 16, 60, "warm"), // staff room
-    at(35, 16, 34), at(37, 22, 40), // hall, lobby
-    at(44, 22, 34, "cold"), // morgue
+    at(7, 4, 54), at(11, 4, 54), // Resus
+    at(16, 4, 46), // CT
+    at(23, 4, 54), at(28, 4, 54), at(33, 4, 54), // Acute
+    ...[9, 16, 23, 30].map((c) => at(c, 8, 46)), // corridor
+    at(8, 14, 60, "warm"), at(12, 16, 56, "warm"), // Waiting
+    at(19, 14, 56), at(23, 14, 56), // Fast-track
+    at(32, 13, 52, "warm"), // staff room
+    at(27, 13, 32), at(29, 17, 36), // hall, lobby
+    at(34, 17, 30, "cold"), // morgue
     // Outside: street lamps, the entrance canopy and the ambulance bay flood light.
-    at(0, 12, 54, "warm", true), at(12, 25, 58, "warm", true), at(28, 25, 58, "warm", true),
-    at(44, 25, 58, "warm", true), at(3, 18, 50, "warm", true), at(2, 5, 56, "cool", true),
+    at(0, 9, 54, "warm", true), at(9, STREET_ROW, 58, "warm", true), at(21, STREET_ROW, 58, "warm", true),
+    at(33, STREET_ROW, 58, "warm", true), at(2, ENTRANCE_ROW, 50, "warm", true), at(2, 4, 56, "cool", true),
   ];
 }
 
@@ -246,11 +257,11 @@ function bedLayout(): { beds: Record<string, Point>; bedZone: Record<string, Zon
     beds[id] = T(c, r);
     bedZone[id] = zone;
   };
-  [8, 12, 16].forEach((c, i) => put(`R${i + 1}`, "resus", c, 2));
-  for (let i = 0; i < 8; i++) put(`A${i + 1}`, "acute", 29 + 2 * i, 2);
-  [22, 26, 30].forEach((c, i) => {
-    put(`F${i + 1}`, "fast_track", c, 14);
-    put(`F${i + 4}`, "fast_track", c, 19);
+  RESUS_BED_COLS.forEach((c, i) => put(`R${i + 1}`, "resus", c, 2));
+  ACUTE_BED_COLS.forEach((c, i) => put(`A${i + 1}`, "acute", c, 2));
+  FAST_BED_COLS.forEach((c, i) => {
+    put(`F${i + 1}`, "fast_track", c, FAST_BED_ROWS[0]);
+    put(`F${i + 4}`, "fast_track", c, FAST_BED_ROWS[1]);
   });
   return { beds, bedZone };
 }
@@ -277,40 +288,41 @@ function slotFn(spots: [number, number][]): (i: number) => Point {
   };
 }
 
+// Chairs first (the model spreads patients over them), then standing room in the aisles.
+const SEAT_SPOTS: [number, number][] = SEAT_ROWS.flatMap((r) => SEAT_COLS.map((c): [number, number] => [c, r]));
+
 export const WAITING_SPOTS: [number, number][] = [
-  ...SEAT_ROWS.flatMap((r) => SEAT_COLS.map((c): [number, number] => [c, r])),
+  ...SEAT_SPOTS,
   ...STAND_ROWS.flatMap((r) => SEAT_COLS.map((c): [number, number] => [c, r])),
-  ...rowSpots(14, 6, 13),
-  ...[15, 16, 17, 20, 21, 22, 23].map((r): [number, number] => [7, r]),
+  ...rowSpots(12, 6, 11),
+  ...[13, 14, 15, 16, 17].map((r): [number, number] => [5, r]),
 ];
 
 export const REST_SPOTS: [number, number][] = [
-  ...rowSpots(13, 38, 44),
-  ...rowSpots(15, 38, 45),
-  ...rowSpots(17, 38, 45),
-  ...rowSpots(19, 38, 45),
-  ...rowSpots(14, 38, 45),
-  ...rowSpots(18, 38, 45),
+  ...rowSpots(11, 30, 33),
+  ...rowSpots(12, 30, 35),
+  ...rowSpots(14, 30, 34),
+  ...rowSpots(15, 30, 34),
+  [30, 13], [34, 13],
 ];
 
 // First spots stand right beside each bed (doctors come first in obs.staff), then rows in the aisle.
 export const STAFF_SPOTS: Record<Zone, [number, number][]> = {
   resus: [
-    [9, 3], [13, 3], [17, 3], [7, 4], [11, 3], [15, 3],
-    ...rowSpots(5, 7, 17),
-    ...rowSpots(6, 7, 17),
-    ...rowSpots(7, 7, 16),
+    [7, 3], [10, 3], [13, 3], [5, 4], [8, 4], [11, 4],
+    ...rowSpots(5, 5, 13),
+    ...rowSpots(6, 6, 12),
   ],
   acute: [
-    [30, 3], [34, 3], [38, 3], [42, 3], [32, 3], [36, 3], [40, 3], [44, 3], [28, 3],
-    ...rowSpots(5, 28, 45),
-    ...rowSpots(6, 28, 45),
+    [22, 3], [26, 3], [30, 3], [34, 3], [24, 3], [28, 3], [32, 3], [20, 3],
+    ...rowSpots(5, 20, 35),
+    ...rowSpots(6, 21, 34),
   ],
   fast_track: [
-    [23, 15], [27, 15], [31, 15], [23, 20], [27, 20], [31, 20],
-    [21, 15], [25, 15], [29, 15], [21, 20], [25, 20], [29, 20],
-    ...rowSpots(17, 21, 32),
-    ...rowSpots(22, 21, 31),
+    [18, 12], [21, 12], [24, 12], [18, 16], [21, 16], [24, 16],
+    [16, 12], [19, 12], [22, 12], [16, 16], [19, 16], [22, 16],
+    ...rowSpots(14, 16, 25),
+    ...rowSpots(18, 17, 24),
   ],
 };
 
@@ -340,27 +352,34 @@ export function buildLayout(): Layout {
     tiles: buildTiles(),
     beds,
     bedZone,
-    ct: { x: 21 * TILE + 8, y: 3 * TILE },
-    entrance: { x: 2 * TILE, y: 18 * TILE + 8 },
-    exit: { x: 37 * TILE + 8, y: STREET_ROW * TILE },
-    morgue: T(44, 22),
+    ct: { x: 16 * TILE, y: 2 * TILE },
+    entrance: { x: 2 * TILE, y: ENTRANCE_ROW * TILE + 8 },
+    // [one ambulance: centred, two ambulances: left, right]
+    ambulanceParks: [
+      { x: TILE, y: TILE },
+      { x: 0, y: TILE },
+      { x: 2 * TILE, y: TILE },
+    ],
+    exit: { x: EXIT_COL * TILE + 8, y: STREET_ROW * TILE },
+    morgue: T(33, 17),
     waitingSlot: slotFn(WAITING_SPOTS),
+    waitingSeats: SEAT_SPOTS.length,
     restSlot: slotFn(REST_SPOTS),
     staffSlot: (zone, i) => staffFns[zone](i),
     // Just past the right edge of the street: staff walk out of the exit and off the map.
     offstage: { x: MAP_COLS * TILE + 8, y: (STREET_ROW + 1) * TILE },
     labels: [
       // Zone signs hang on the corridor-facing wall, next to each door.
-      { text: "RESUS", at: { x: 7 * TILE + 8, y: 9 * TILE + 8 } },
-      { text: "CT", at: { x: 24 * TILE + 8, y: 9 * TILE + 8 } },
-      { text: "ACUTE", at: { x: 31 * TILE, y: 9 * TILE + 8 } },
-      { text: "WAITING", at: { x: 9 * TILE + 8, y: 12 * TILE + 8 } },
-      { text: "FAST TRACK", at: { x: 22 * TILE + 8, y: 12 * TILE + 8 } },
-      { text: "STAFF ROOM", at: { x: 41 * TILE + 8, y: 12 * TILE + 8 } },
-      { text: "MORGUE", at: { x: 44 * TILE + 8, y: 20 * TILE + 8 } },
-      { text: "EXIT", at: { x: 40 * TILE + 8, y: 24 * TILE + 8 } },
-      { text: "EMERGENCY", at: { x: 2 * TILE + 8, y: 16 * TILE + 8 } },
-      { text: "AMBULANCE", at: { x: 2 * TILE + 8, y: 9 * TILE + 8 } },
+      { text: "RESUS", at: { x: 10 * TILE + 8, y: 7 * TILE + 8 } },
+      { text: "CT", at: { x: 16 * TILE, y: 7 * TILE + 8 } },
+      { text: "ACUTE", at: { x: 22 * TILE, y: 7 * TILE + 8 } },
+      { text: "WAITING", at: { x: 7 * TILE + 8, y: 10 * TILE + 8 } },
+      { text: "FAST TRACK", at: { x: 18 * TILE + 8, y: 10 * TILE + 8 } },
+      { text: "STAFF ROOM", at: { x: 32 * TILE + 8, y: 10 * TILE + 8 } },
+      { text: "MORGUE", at: { x: 34 * TILE, y: 16 * TILE + 8 } },
+      { text: "EXIT", at: { x: 31 * TILE, y: 19 * TILE + 8 } },
+      { text: "EMERGENCY", at: { x: 2 * TILE + 8, y: (ENTRANCE_ROW - 2) * TILE + 8 } },
+      { text: "AMBULANCE", at: { x: 2 * TILE, y: 7 * TILE + 8 } },
     ],
   };
 }

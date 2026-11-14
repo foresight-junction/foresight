@@ -885,3 +885,74 @@
     transform: none;
   }
 }
+
+/* Live mode: pulsing LIVE badge, the agent's state, "thinking" at the live edge, its reasoning */
+.reward-n.live-badge {
+  font-size: 22px;
+  color: var(--bad);
+  text-shadow:
+    2px 2px 0 #5a1418,
+    4px 4px 0 rgba(0, 0, 0, 0.5);
+  animation: live-pulse 1.2s steps(2, jump-none) infinite;
+}
+@keyframes live-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.live-state {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.live-state.error {
+  color: var(--bad);
+  text-transform: none;
+}
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.thinking.error {
+  color: var(--bad);
+}
+.thinking-dots::before {
+  content: "";
+  animation: thinking-dots 1.2s steps(4, jump-none) infinite;
+}
+@keyframes thinking-dots {
+  0% {
+    content: "·";
+  }
+  33% {
+    content: "··";
+  }
+  66% {
+    content: "···";
+  }
+  100% {
+    content: "";
+  }
+}
+.thought {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--gold);
+  background: var(--panel-2);
+  color: var(--ink);
+}
+.thought p {
+  margin: 2px 0 0;
+}
+.thought-l {
+  color: var(--gold);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
