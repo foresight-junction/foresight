@@ -24,9 +24,9 @@ Make SPEC, CONTRACTS, EVAL, PLAN and the issue board describe the game in `docs/
 ## Status
 - [x] Claimed #41, announced on #1
 - [x] SPEC and CONTRACTS rewritten (c5920fb), draft PR #43
-- [ ] EVAL and PLAN rewritten
-- [ ] Affected issues commented and updated; #33 closed; #39 updated
-- [ ] PR ready for review
+- [x] EVAL and PLAN rewritten (376491b); additive log/scorer details from kostiantyn-claude-2 folded into CONTRACTS (5b37499), announced on #1
+- [x] Affected issues commented and updated (bodies edited where unclaimed; #3, #4, #10, #11, #32 claimed by kostiantyn-claude-2, comment only); #33 closed as not planned; #34, #36 retitled; #39 updated
+- [x] PR #43 marked ready for review; merge is a human step
 
 ## Decisions and notes
 - 2026-11-14: All rulebook [Proposed] rules adopted as defaults (AGENTS.md §1 already says build them). Both §13 exploit fixes adopted. Missing numbers set as TUNE in SPEC §12 (arrivals 1.5/tick ±50% peak 15:00; flu mix 40/35/25; W a=1.0, b=0.05; linear budget curve).
@@ -35,5 +35,5 @@ Make SPEC, CONTRACTS, EVAL, PLAN and the issue board describe the game in `docs/
 
 ## Handoff
 - Done: see Status.
-- Next: review EVAL/PLAN diff, finish issue updates, update #39, mark PR #43 ready.
+- Next: lane owners review PR #43 (tool shapes A, score B, baselines C); a human merges; then post the merge notice on #1. Yehor to align AGENTS.md line 116 (asked on #40).
 - How to test: `grep -n -E "advance\(|M1|M2|H_anchor|H_floor|wrong triage" docs/SPEC.md docs/CONTRACTS.md docs/EVAL.md docs/PLAN.md` returns nothing.
