@@ -7,6 +7,8 @@ numbers, so an agent's actions change which hazards a patient is exposed to, nev
 
 from dataclasses import dataclass
 
+from . import constants as c
+
 
 @dataclass(frozen=True)
 class PatientSpec:
@@ -43,3 +45,4 @@ class World:
     events: tuple[EventSpec, ...]
     budget: int
     hard_limit: int
+    bed_counts: tuple[int, ...] = tuple(c.BEDS[z] for z in c.ZONES)  # per zone, in c.ZONES order
