@@ -6,7 +6,8 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 
 - **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
-- **Read these before any task:** `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
+- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys, Sat 14 Nov, in Russian). It defines the department, patients, staff, hazards, events, actions, tick order, observation and score. Where `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/PLAN.md` or an issue body disagree with it, this file wins until those docs are updated to match. Rules marked **[Proposed]** are its recommended defaults; build them unless a human says otherwise.
+- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
 - **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
   - Reference run: `harbor run -p ed72 -a oracle`
