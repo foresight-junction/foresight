@@ -7,7 +7,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 - **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
 - **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys's rulebook, in Russian): department, patients, staff, hazards, events, actions, tick order, observation and score. Rules marked **[Proposed]** are its defaults. Decisions on its open items (section 14) are recorded in `docs/SPEC.md`; the rulebook itself changes only through Denys or a decision on #1.
-- **Realignment in progress: #41 (W0, wave 0, Kostiantyn).** `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/EVAL.md`, `docs/PLAN.md` and many issue bodies still describe the earlier ED-72 game from PR #29 (15-minute ticks, `advance`, hidden triage errors, harm modules). Until #41 lands, where they disagree with the rulebook, the rulebook wins: follow it and comment on the issue. The rulebook does not cover the harness, so the Harbor packaging and isolation in SPEC section 9 and the CONTRACTS services and admin-endpoint rules stay as they are.
+- **Realigned: #41 / PR #43.** `docs/SPEC.md` (English summary of the rulebook plus decisions), `docs/CONTRACTS.md` v1 (tools `rules`, `observe`, `step`; observation, actions, event log, score object), `docs/EVAL.md` and `docs/PLAN.md` match the rulebook. If anything still disagrees with it, the rulebook wins: follow it and comment on the issue. The rulebook does not cover the harness, so the Harbor packaging and isolation in SPEC section 9 and the CONTRACTS services and admin-endpoint rules apply as written.
 - **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment; section 9 harness), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/EVAL.md` (how we are judged and measured), `docs/PLAN.md` (lanes, timeline, tasks), then issues #39 (execution order) and #41 (realignment).
 - **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
@@ -58,10 +58,10 @@ Tool-specific extras are in `CLAUDE.md` (Claude), section 9 (Codex) and `GEMINI.
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:1` to `wave:7` (execution order, see #39).
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:0` to `wave:8` (execution order, see #39).
 - **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
 - **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
-- **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). Until #41 lands, take only issues that #41 lists as already consistent with the rulebook (for example the harness tasks #21, #22, #11 and #32 A9); the env, reward and reference issues it lists for rescoping wait for their updated bodies.
+- **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). #41 has landed and the issue bodies are realigned to the rulebook; if a body still disagrees with `docs/SPEC.md` or `docs/CONTRACTS.md`, follow the docs and comment on the issue.
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
@@ -115,7 +115,7 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
-- Every folder with a `pyproject.toml` is its own uv project. The board's target layout is `ed72/` (`docs/SPEC.md` section 9, built by D2 #22), with the sim, tools and scorer in `ed72/environment/hospital/`. Kostiantyn's ED engine lives in `backend/app/edsim/` with a `frontend/` viewer on `kostiantyn/env-ed-sim`. Tooling supports both: `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
+- Every folder with a `pyproject.toml` is its own uv project. The board's target layout is `ed72/` (`docs/SPEC.md` section 9, built by D2 #22), with the sim, tools and scorer in `ed72/environment/hospital/`. The older engine in `backend/app/edsim/` and its `frontend/` viewer on `kostiantyn/env-ed-sim` model a different game and are not used for ED-72 (SPEC section 9). Tooling still supports both layouts: `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
 - Ruff settings for the whole repo are in `ruff.toml` (line length 110). `spikes/` and `harbor/unfindable/` are excluded as historical reference.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
@@ -132,7 +132,7 @@ Refs #<issue>
 Agent: <agent id>
 ```
 
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add assess tool`
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add step tool`
 
 ## 8. Definition of done
 
@@ -158,7 +158,7 @@ Judges rerun our code and spend 15 minutes trying to cheat the reward. These rul
 2. **The reward is computed from the hospital's event log only.** Never from files the agent can write. No LLM judge anywhere in the reward.
 3. **No hidden rules.** A rule the scorer applies, and every sim rate table, must be written in `HANDBOOK.md` in the same PR. If the agent cannot find out, it is unfair, and unfair difficulty scores zero on 30 points.
 4. **The reference policy uses only the public tools.** It never reads the seed or ground truth. If it cannot decide what to do for a patient, fix the environment.
-5. **These must hold after every merge:** reference >= 0.9, do-nothing = 0, FCFS-by-label / discharge-all / transfer-all / divert-all / call-in-everyone / random <= 0.05, same seed and actions give the same score. Any PR touching `scoring/`, patients, events or tool behaviour pastes the baseline table in its description.
+5. **These must hold after every merge** (`docs/EVAL.md` section 5): do-nothing = 0; stop-early < reactive proxy < reference on every shipped seed; divert-all < reference and about 47 points or less; every exploit baseline (rest-everyone, admit-light-only, admit-without-coverage, fill-beds-at-the-last-tick, spend-to-the-limit) < reference; same seed and actions give the same score. Any PR touching `scoring/`, patients, events or tool behaviour pastes the baseline table in its description.
 6. **`tests/test.sh` always writes a number** to `/logs/verifier/reward.txt`, 0 on any error.
 7. **Synthetic data only.** Invented patients, staff and records. Never copy real personal data into the repo, a prompt or a test.
 8. **Rules freeze Sat 22:00.** After that: bug fixes and knob tuning only. No code changes after Sun 09:00.
