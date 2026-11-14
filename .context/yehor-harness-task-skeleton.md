@@ -7,7 +7,7 @@
 - **Created:** Sat 16:12
 
 ## Goal
-Create the ED-72 Harbor task packaging with the required main/hospital isolation, collect hook, and MCP sidecar wiring. Validate the task config and, once simulator stub files are available, run both oracle and nop through Harbor to confirm reward collection.
+Package the ED-72 task for Harbor with an isolated main image, hospital sidecar, collect hook, and MCP wiring.
 
 ## Files and folders I own
 - `ed72/task.toml`
@@ -18,25 +18,24 @@ Create the ED-72 Harbor task packaging with the required main/hospital isolation
 - `.context/yehor-harness-task-skeleton.md`
 
 ## Don't touch
-- All simulator, scorer, tool server, verifier, tests, instructions, and solution files owned by lanes A, B, or C.
+- Simulator, scorer, tool server, verifier, tests, instructions, and solution files owned by lanes A, B, or C.
 
 ## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
 - Depends on `hospital` at `http://hospital:8000/mcp` over streamable HTTP, `/health`, separate verifier mode, and sidecar-collected `/evidence/report.json`. No contract changes.
 
 ## Status
-- [x] Packaging updated for the v1 hospital server and handbook path; isolated main and hospital Docker images build.
-- [x] Harbor smoke with current #5 server/ward and #45 collector/verifier passed with temporary simulator/scorer modules.
-- [ ] Run the task with the real simulator/scorer and handbook after their files land.
+- [x] Harbor task packaging and explicit main/hospital image isolation.
+- [x] Harbor 0.25.0 lint and production `nop` run passed against the synced branch with the merged handbook, server, engine, scorer, and verifier. Nop: 1/1, no exceptions, reward 0.
+- [x] Real #16 reference completed through Harbor against current main and the same production packaging. Oracle: 1/1, no exceptions, reward 0.999552 (score 99.9552), spend €7,000, 146 tool calls, 140 ticks with actions, ended at tick 143. This used the exact pushed reference branch in a temporary overlay because its code is not on main yet.
+- [ ] Ask integrator whether #22 can go ready before the #16 reference PR merges; keep #58 draft until that decision.
 
 ## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 2026-11-14: Mirror Harbor 0.25.0 packaging verified by #21, renamed to `hospital` and ED-72. The ED-72 simulator/scorer and report schema remain lane-owned.
-- 2026-11-14: Do not set `ED72_CONFIG` until lane A selects the file path. `ED72_SEED` is set only by compose, as the contract requires.
-- 2026-11-14: PR #43 merged and selected the `ed72/` layout. The hospital service builds from `ed72/environment` with `hospital/Dockerfile`, so it can copy `workspace/HANDBOOK.md` to `/app/HANDBOOK.md` and still use explicit COPYs for the hospital sources.
-- 2026-11-14: The #5 server reads `HANDBOOK.md` beside `server.py`. Its `mock_sim.py` is only imported with `USE_MOCKS=1` and its docstring says it is not copied into the hospital image; production compose leaves `USE_MOCKS` unset.
-- 2026-11-14: Hospital Dockerfile copies only `hospital/server.py`, `collect.py`, `start.sh`, `ed72_sim/`, and `workspace/HANDBOOK.md`; main Dockerfile copies only the handbook and executable `ward` CLI.
+- 2026-11-14: Hospital builds from `ed72/environment` so `workspace/HANDBOOK.md` is available to the sidecar; Dockerfiles use explicit copies to keep the main image isolated.
+- 2026-11-14: Leave `ED72_CONFIG` unset while calibration owns config selection. The server's `generate_world(seed)` and verifier's `load_config(None)` both use constants defaults. No config JSON copy is needed until a shared custom path is selected; then server and replay must use the same file.
+- 2026-11-14: The branch is synced through main `59d55c8` (current merge commit `3c222c3`). The reference run used main `dd5c768`, which already had the real engine, verifier, and handbook; later main merges did not change those inputs.
+- 2026-11-14: The first #16 run found that `ward rules` prints plain handbook text while the reference expected JSON. The #16 branch now handles raw text and passes. Kostiantyn selected an optional JSON output mode for a #5 follow-up; that change is still pending, and #16 may switch to it.
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- Done: Built both Dockerfiles from a temporary environment-root context containing the exact current #5 `server.py`/`ward`, exact #45 `collect.py`/tests, marker handbook, and generated fake `ed72_sim` modules. Main-image inspection found `/app/HANDBOOK.md` and `/usr/local/bin/ward`, with no `/app/server.py`, `collect.py`, `mock_sim.py`, or `ed72_sim/`. Hospital-image inspection found the server, collect hook, simulator package, handbook, and writable `/evidence`, with no `mock_sim.py` or default `USE_MOCKS`. Harbor 0.25.0 lint passed; oracle passed 1/1 at mocked reward 0.708 and nop 1/1 at mocked reward 0.252. Logs are in `/tmp/ed72-actual-source-smoke-results/`. These scores verify packaging/reward plumbing only; they do not validate the real simulator or policy. `bash -n` passes. The checked-in task still needs real `server.py`, `collect.py`, `ed72_sim/`, tests, and HANDBOOK from lanes A/B. OpenCode model smoke remains #21.
+- Done: Harbor lint, production nop, and full reference Harbor validation passed. The reference overlay used main `dd5c7689254c864a7bb0a1bdb03fbdb96ab067af`, #16 ref branch `5264305d86b6e957f6c5e8472ba51bccc015c497`, and this branch's packaging. It used the #16 raw-rules adapter as committed; no temporary source patch was applied. Temporary job artifacts are under `/tmp/ed72-unpatched-ref.XkMQb7/jobs/`.
+- Done: #5 server, #7 handbook, and #64 config are merged. #16 reference is on PR #76 and is a dependency of the full reference check; #58 stays draft pending integrator guidance.
+- How to test packaging on this branch: `HARBOR_TELEMETRY=0 PYTHONIOENCODING=utf-8 uvx harbor==0.25.0 lint ed72`, then `HARBOR_TELEMETRY=0 PYTHONIOENCODING=utf-8 uvx harbor==0.25.0 run -p ./ed72 -a nop`.
