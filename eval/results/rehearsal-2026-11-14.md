@@ -66,5 +66,5 @@ One `ward step` round trip (new MCP session each call) takes about 3.5 s on this
 ## Later heads
 
 After the run the tree also merged cleanly with main 9d4b573, reward-episode-end 5e75484,
-reward-verifier 6f2c400 and env-tool-server 56f75af; the offline check still gives nop 0 and the
-placeholder policy 0.773134.
+reward-verifier 6f2c400 and env-tool-server 56f75af (tree 139bff1). The offline check still gives
+nop 0, and a second Harbor run (`ed72-rehearsal-oracle-2`) gave reward 0.773134 again, 0 exceptions, 7m 42s.
