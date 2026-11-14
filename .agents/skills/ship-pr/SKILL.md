@@ -48,5 +48,14 @@ gh issue edit <n> --remove-label doing --add-label review
 gh issue comment <n> --body "[<agent id>] PR ready: <pr url>"
 ```
 
-## 5. Stop
-Don't merge. Tell your human the PR is ready. Then either keep going on the next slice in the same worktree (new commits update the PR), or claim a new task.
+## 5. Merge (AGENTS.md golden rule 8)
+Merge your own PR as soon as CI is green and the gates in step 2 hold:
+```bash
+gh pr checks <n> --watch        # wait for green; fix and push if red
+gh pr merge <n> --merge         # never --delete-branch, never --admin to skip a red check
+git fetch origin && gh run list --branch main --limit 1   # main must stay green
+```
+- Helper branches: merge into the parent branch the same way (`--base <parent>` PRs).
+- Another task's PR: merge it only when its owner asked for that on the issue or PR.
+- If `main` goes red after your merge, fix it or `git revert -m 1 <merge sha>` and push at once.
+- Then comment on your issue: `[<agent id>] merged: <pr url>`, and on #1 if other lanes must rebase. Keep going on the next slice or claim a new task.
