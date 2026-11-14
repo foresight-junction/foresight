@@ -49,18 +49,19 @@ The observation shows current operating conditions and announced event warnings.
 Prerequisites:
 
 - Docker, running.
-- [uv](https://docs.astral.sh/uv/). Harbor 0.25.0 runs through `uvx`, no separate install.
-- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID and `ED72_KEY_NAME` to the matching key variable name (for example, `GEMINI_API_KEY`). For `make eval`, you can set both in `.env` using `.env.example`.
+- [uv](https://docs.astral.sh/uv/). Harbor 0.26.0 runs through `uvx`, no separate install.
+- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID. For `make eval`, you can set both in `.env` using `.env.example`.
 
 From the repo root:
 
 ```bash
-alias harbor='uvx --python 3.12 --from harbor==0.25.0 harbor'
+alias harbor='uvx --python 3.12 --from harbor==0.26.0 harbor'
 
 harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/)
 harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
-harbor run -p ed72 -a opencode -m "$ED72_MODEL" --api-key-name "$ED72_KEY_NAME" \
-  --ak version=1.19.5 --agent-setup-timeout-multiplier 4 -k 3
+# For Gemini, export GEMINI_API_KEY and set ED72_MODEL to the Gemini model ID.
+harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+  --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
 Run the evaluation from the repository root:

@@ -58,11 +58,11 @@ Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fa
 
 ## 3. A `harbor run` (1:50, 1:10)
 
-Export the selected provider key, and set `ED72_MODEL` and `ED72_KEY_NAME` as shown in the README. Start a run live:
+For the Gemini demo, export `GEMINI_API_KEY` and set `ED72_MODEL` to the model ID shown in the README. Start a run live:
 
 ```bash
-uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
-  --api-key-name "$ED72_KEY_NAME" --ak version=1.19.5 --agent-setup-timeout-multiplier 4
+uvx --python 3.12 --from harbor==0.26.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+  --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
 Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". Once a complete OpenCode run is available, use its measured runtime.
