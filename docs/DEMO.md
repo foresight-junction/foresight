@@ -1,6 +1,6 @@
 # ED-72 demo script (10 minutes)
 
-For the live demo to the judges and for the demo video. Status: draft (#25). The hook and the close are for a human to write. The model walkthrough and gap discussion need the run matrix (#18) and failure analysis (#19).
+For the live demo to the judges and for the demo video. Status: draft (#25). The hook and the close are for a human to write. The walkthrough uses the completed Gemini calibration. The repeated-run comparison depends on #18.
 
 The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficulty (30), reward integrity (25), craft (15). Each segment below says which criterion it is for.
 
@@ -20,10 +20,9 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 ## Before the demo
 
-- [ ] `make eval` has finished on the final code and `eval/results/summary.md` is current.
-- [ ] One agent trial is picked for segment 4: the same trial the README links as its run log. Use the [seed-42 Gemini calibration](../eval/results/2026-11-14-gemini-seed42/README.md).
-- [ ] Open the chosen trial’s `agent/trajectory.json`, `verifier/reward.txt` and `verifier/score_full.json`. These files cover the walkthrough. The frozen task collects the report while the raw simulator log stays in the hospital container.
-- [ ] Terminal open in the repo root, font at least 18 pt, with these files ready in editor tabs: `docs/SPEC.md` §3, the trial's `verifier/score_full.json`, `eval/results/summary.md`.
+- [ ] Open the [seed-42 Gemini trial](../eval/results/2026-11-14-gemini-seed42/README.md) and its trajectory, reward and score report.
+- [ ] Prepare the two terminal commands in section 4. Set the terminal font to at least 18 pt.
+- [ ] If the matrix is available, open its results beside the calibration table.
 - [ ] `.env` is closed and never shown. Don't run `env` or `cat .env` on screen.
 
 ## 1. Hook (0:00, 0:40)
@@ -69,17 +68,26 @@ The agent container has the handbook, the `ward` CLI and the OpenCode runtime. T
 
 ## 4. One agent episode (3:00, 2:00)
 
-Open the saved [Gemini trajectory](../eval/results/2026-11-14-gemini-seed42/trajectory.json) and identify two or three decisions from #19. For each, show the tick, the latest observation the agent had, and its next actions. In `verifier/score_full.json`, match affected patients by ID and show their final outcomes or first covered ticks. Use the corresponding handbook rule to explain the available action. Compare with the reference at the same seed when the evidence supports it.
+Use the saved trial to show how the agent planned coverage at tick 123.
+
+```bash
+TRIAL=eval/results/2026-11-14-gemini-seed42
+jq -r '.steps[] | select(.step_id == 21) | .observation.results[].content
+  | split("\n")[] | select(startswith("[Tick 123] Action rejected:"))' "$TRIAL/trajectory.json"
+jq '.patients[] | select(.id == "P436")' "$TRIAL/score_full.json"
+```
+
+- The generated policy omitted `agency_ordered` and `agency_left` from its unavailable-status check. At tick 123 the tool returned nine `staff_unavailable` rejections, including an attempted assignment of doctor AD1 to Resus. The published excerpt shows 190 such rejections across ticks 121–143.
+- The agent had `staff[].status` and `staff[].ticks_until_change` before choosing its assignments. [Handbook §3](../ed72/environment/workspace/HANDBOOK.md#3-staff-coverage-and-fatigue) explains which staff can be assigned and how they contribute to coverage. Filter for available staff, then recalculate coverage before admitting patients.
+- P436, an ESI 1 patient, was admitted that tick, received no covered care and died. The verifier flagged F7. Fixing the assignments was feasible. Whether that alone would have prevented this death is unknown.
 
 ## 5. Score breakdown (5:00, 1:00)
 
-Open the trial's `verifier/score_full.json`. Show:
-- `O`, `T`, `W`, `B` and the formula `Score = 60·O + 20·T + O·(10·W + 10·B)`, `reward = Score / 100`.
-- `totals`: arrived, discharged, died, left, never admitted, faints.
-- `failures`: the F-code counts. They do not change the reward.
-- `ended`: `tick_143` if the agent played to the end.
+```bash
+jq '{reward, O, T, W, B, totals, failures, ended}' "$TRIAL/score_full.json"
+```
 
-Say: the score is computed only from the hospital's event log, after the agent stops. No LLM judge. `reward.txt` holds the one number Harbor reads.
+Show how the formula weights patient outcomes and timeliness, then point to F7 and the final tick. The hospital derives the score from its event log. Harbor reads the scalar from [reward.txt](../eval/results/2026-11-14-gemini-seed42/reward.txt).
 
 ## 6. A cheat attempt that fails (6:00, 1:15)
 

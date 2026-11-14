@@ -7,25 +7,10 @@
 - **Created:** Sat 20:09
 
 ## Goal
-One or two lines: what this branch delivers and how we'll know it works.
+Make the saved baseline and Gemini calibration usable in the live demo, including one verified staffing decision and its fairness evidence.
 
-## Files and folders I own
-- 
-
-## Don't touch
-- 
-
-## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
-
-## Status
-- [ ] 
-
-## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 
+## Files
+`docs/DEMO.md` and this handoff.
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- 
+The demo points to the published trajectory and score report. The command output shows nine unavailable-staff rejections at tick 123 and the F7 outcome for P436. The hook and close remain for Yehor. Use #18 for repeated-run results when available.
