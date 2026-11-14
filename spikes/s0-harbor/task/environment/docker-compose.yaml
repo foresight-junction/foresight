@@ -1,0 +1,18 @@
+services:
+  main:
+    depends_on:
+      unfindable:
+        condition: service_healthy
+
+  unfindable:
+    build:
+      context: ./sidecar
+    env_file:
+      - ./sidecar/verifier.env
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

@@ -1,0 +1,5 @@
+.venv/
+build/
+jobs/
+task/environment/sidecar/verifier.env
+task/tests/verifier_token

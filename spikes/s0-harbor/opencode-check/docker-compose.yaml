@@ -1,0 +1,20 @@
+services:
+  unfindable:
+    build:
+      context: ../task/environment/sidecar
+    env_file:
+      - ../task/environment/sidecar/verifier.env
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  oc:
+    image: node:22-slim
+    command: ["sh", "-c", "sleep infinity"]
+    depends_on:
+      unfindable:
+        condition: service_healthy

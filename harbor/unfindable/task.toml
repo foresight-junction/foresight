@@ -1,0 +1,31 @@
+schema_version = "1.4"
+
+artifacts = [
+  { source = "/evidence/finalize.json", service = "unfindable" },
+]
+
+[task]
+name = "unfindable/address-service-pilot"
+description = "Handle privacy-sensitive population register requests under changing rules"
+
+[agent]
+timeout_sec = 900
+
+[verifier]
+environment_mode = "separate"
+timeout_sec = 120
+
+[[verifier.collect]]
+service = "unfindable"
+command = "python /app/collect.py"
+timeout_sec = 30
+
+[environment]
+build_timeout_sec = 900
+cpus = 1
+memory_mb = 2048
+
+[[environment.mcp_servers]]
+name = "unfindable"
+transport = "streamable-http"
+url = "http://unfindable:8000/mcp"
