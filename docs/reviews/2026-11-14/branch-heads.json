@@ -1,0 +1,206 @@
+[
+  {
+    "branch": "kostiantyn/docs-agent-merge",
+    "sha": "ad0f0f79fcd8afa49ce3527fc8815fdaee15b515"
+  },
+  {
+    "branch": "kostiantyn/docs-agents-gate",
+    "sha": "caf9f3eeffe87bcd40c83f95c35e2f4717b4cb2f"
+  },
+  {
+    "branch": "kostiantyn/docs-board-check-ref",
+    "sha": "7085a2d7d45786e87eaf9bd2a29082cf2cc5c779"
+  },
+  {
+    "branch": "kostiantyn/docs-board-sync",
+    "sha": "8a2f50800f17f73db0df3bcadbccf12a40fa5267"
+  },
+  {
+    "branch": "kostiantyn/docs-check-seq",
+    "sha": "a5c98d7bb827cc40418bcbe8c89e806cc96b1ee7"
+  },
+  {
+    "branch": "kostiantyn/docs-integrator",
+    "sha": "7fbc8e820712a2c60812a47d1362c668903094dd"
+  },
+  {
+    "branch": "kostiantyn/docs-plan-d9",
+    "sha": "6694b50f78847ba75a0a37bfa808aa0ea75ffae2"
+  },
+  {
+    "branch": "kostiantyn/docs-plan-sync",
+    "sha": "4c3e86e88f74453bf73fc8fea17e92d1641008ff"
+  },
+  {
+    "branch": "kostiantyn/docs-push-guard",
+    "sha": "9d1519cc577801b99392515e00d84d1487ecee0a"
+  },
+  {
+    "branch": "kostiantyn/docs-rules-realign",
+    "sha": "bd8284ca970f80ca7e0b3d616e83f89093992647"
+  },
+  {
+    "branch": "kostiantyn/env-config-guards",
+    "sha": "f1429fe64d132aedadffd9577f8854d035ac92ea"
+  },
+  {
+    "branch": "kostiantyn/env-crn",
+    "sha": "cdf34c319e60a57685dd6e95fd9b2dfe24560d25"
+  },
+  {
+    "branch": "kostiantyn/env-difficulty",
+    "sha": "9aec3bdc00f856d5d980046e244a240edd1618ba"
+  },
+  {
+    "branch": "kostiantyn/env-ed-sim",
+    "sha": "7164ddc6f20120582eec70051a4cedbfe9469c66"
+  },
+  {
+    "branch": "kostiantyn/env-events",
+    "sha": "ef831cb3afed364c7de0b2c2b88756ec63571543"
+  },
+  {
+    "branch": "kostiantyn/env-handbook",
+    "sha": "78e72f83144f66eb0406326337b62da9c2c55a4b"
+  },
+  {
+    "branch": "kostiantyn/env-sim-core",
+    "sha": "bd3daf84cbf2315488823db7df8a1ebd7749991a"
+  },
+  {
+    "branch": "kostiantyn/env-unfindable-slice",
+    "sha": "57d26a735ead698e65df44ac8823517c2348c025"
+  },
+  {
+    "branch": "kostiantyn/env-world",
+    "sha": "a999ab28d782e3ef784e46a492c0b105932da3e6"
+  },
+  {
+    "branch": "kostiantyn/harness-eol-lf",
+    "sha": "92a67f6d8f51a40f3cdc0c878182ee347c8b3984"
+  },
+  {
+    "branch": "kostiantyn/ref-failure-analysis",
+    "sha": "9f6e5d6dd4cb1beb4f857d4af40887c725437a26"
+  },
+  {
+    "branch": "kostiantyn/ref-policy",
+    "sha": "02b146bcce08f209db8708bbd5221b568ab5ad8e"
+  },
+  {
+    "branch": "kostiantyn/reward-episode-end",
+    "sha": "5e7548473b177b14218940a207041e00f16c2b5c"
+  },
+  {
+    "branch": "kostiantyn/reward-exploit-probes",
+    "sha": "a67a7ce0b0a8bbac1d89d95def8cbd943b6555be"
+  },
+  {
+    "branch": "kostiantyn/reward-redteam-1",
+    "sha": "407ffd7e988ea965b3e7b77896f9978569b9d79d"
+  },
+  {
+    "branch": "kostiantyn/reward-scorer",
+    "sha": "ba5e0f5c5211b743751ed0f5b24a43e8d28c2708"
+  },
+  {
+    "branch": "kostiantyn/reward-verifier",
+    "sha": "6f2c400ff5f5e6aa2fb9ce1dbcfacab139f353db"
+  },
+  {
+    "branch": "leonardodadenchik/harness-model-budget",
+    "sha": "8fc2de7420a231f4b9717b391ce0465df0088365"
+  },
+  {
+    "branch": "leonardodadenchik/reward-rulebook-confirm",
+    "sha": "e83e88d0ee39663aa5f90f14bf6f34a5fab1100b"
+  },
+  {
+    "branch": "main",
+    "sha": "b6234af4011eb1276b976605b0b31c94a23c7de8"
+  },
+  {
+    "branch": "mykhailo/env-extra-events",
+    "sha": "2df7b8a8543738d7f891c400a86674ca17b3cd6b"
+  },
+  {
+    "branch": "mykhailo/env-rules-audit",
+    "sha": "95e95b800e24a3570e70f89a509fd8a1c1294d7d"
+  },
+  {
+    "branch": "mykhailo/env-server-config",
+    "sha": "c281e045024213c671a9def94ddbe1678dceb1a0"
+  },
+  {
+    "branch": "mykhailo/env-tool-server",
+    "sha": "56f75af9ac80d1c543ee36eae2b132d94e428a30"
+  },
+  {
+    "branch": "mykhailo/harness-seeds",
+    "sha": "5da7e31eb935a564e4df01020ade269e5f58fad8"
+  },
+  {
+    "branch": "mykhailo/ref-ablations",
+    "sha": "29d633dbb0e3fc89770afcc2016c4c6e8f96f04c"
+  },
+  {
+    "branch": "mykhailo/ref-first-run",
+    "sha": "5b56bf166c9b7934e1eb13f28df91268c2908b9a"
+  },
+  {
+    "branch": "mykhailo/reward-redteam-2",
+    "sha": "97ee2a3e1cde9ddcbf99bfbe9fc22bdb1402022e"
+  },
+  {
+    "branch": "research",
+    "sha": "beb57ca7adf058fb1018726fd5c31f4c7e27402c"
+  },
+  {
+    "branch": "yehor/docs-align-board",
+    "sha": "eadb98b740a127bfcbf22d89740477e0c8f642a0"
+  },
+  {
+    "branch": "yehor/docs-ed-pivot",
+    "sha": "088484d96900ba3e4c5c3b7a928f52a530b4ccd2"
+  },
+  {
+    "branch": "yehor/env-difficulty-sweep",
+    "sha": "f92eb91fc2583b8470f9baa1a02f69d1414938c4"
+  },
+  {
+    "branch": "yehor/env-firewall",
+    "sha": "9e955e771180841ecd2c05e3aca74dfbdcbbfbfb"
+  },
+  {
+    "branch": "yehor/harness-agent-comms",
+    "sha": "9d2264e46ecdf3316a3d4373035764f78641bd49"
+  },
+  {
+    "branch": "yehor/harness-dev-setup",
+    "sha": "4f68a80a5881950b6e3e1faae52cd44a51f9b653"
+  },
+  {
+    "branch": "yehor/harness-eval",
+    "sha": "a7c6027302f8a0af36f6fce911f648ca9a2f5be0"
+  },
+  {
+    "branch": "yehor/harness-harbor-spike",
+    "sha": "00b37f1de823f1a8f46bddf60d3f687bbbf4fd7a"
+  },
+  {
+    "branch": "yehor/harness-readme",
+    "sha": "3e5bac3b4b5c221313d5ce908fc53d0c2e80f54c"
+  },
+  {
+    "branch": "yehor/harness-task-skeleton",
+    "sha": "4d1d3b2bfb43ee09eecef8431e76b328c67dbe05"
+  },
+  {
+    "branch": "yehor/reward-baselines",
+    "sha": "5f2b2be1c0cf8963f7b111b8be68aeee5dd8c278"
+  },
+  {
+    "branch": "yehor/reward-rulebook-check",
+    "sha": "8868ca32c125a6a6ccac90da9e0987f3247e4455"
+  }
+]
