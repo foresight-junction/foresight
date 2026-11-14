@@ -48,14 +48,14 @@ gh issue edit <n> --remove-label doing --add-label review
 gh issue comment <n> --body "[<agent id>] PR ready: <pr url>"
 ```
 
-## 5. Merge (AGENTS.md golden rule 8)
-Merge your own PR as soon as CI is green and the gates in step 2 hold:
+## 5. Hand it to the integrator (AGENTS.md golden rule 8)
+Only the integrator (AGENTS.md section 1) merges into `main`. When CI is green and the gates in step 2 hold:
 ```bash
 gh pr checks <n> --watch        # wait for green; fix and push if red
-gh pr merge <n> --merge         # never --delete-branch, never --admin to skip a red check
-git fetch origin && gh run list --branch main --limit 1   # main must stay green
+gh pr ready <n>
+gh pr comment <n> --body "[<agent id>] ready to merge"
 ```
-- Helper branches: merge into the parent branch the same way (`--base <parent>` PRs).
-- Another task's PR: merge it only when its owner asked for that on the issue or PR.
-- If `main` goes red after your merge, fix it or `git revert -m 1 <merge sha>` and push at once.
-- Then comment on your issue: `[<agent id>] merged: <pr url>`, and on #1 if other lanes must rebase. Keep going on the next slice or claim a new task.
+- Name stacked dependencies in the description (`Depends on #N`) so the base merges first.
+- If the integrator comments a blocker, fix it, push, and reply on the PR.
+- Helper branches: the task's lead merges them into the parent branch (`--base <parent>` PRs) with `gh pr merge <n> --merge`, never `--delete-branch` or `--admin`.
+- After the merge, comment on your issue: `[<agent id>] merged: <pr url>`. Keep going on the next slice or claim a new task.
