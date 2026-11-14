@@ -10,15 +10,18 @@ from pathlib import Path
 from typing import Any
 
 from . import constants as c
+from .rules.events_extra import EXTRA_EVENTS, default_extra_events
+from .rules.layouts import DEFAULT_LAYOUT, load_layout
 
 _EVENT_FIELDS = ("window", "duration", "warning")
 
 
 def _default_events() -> dict[str, dict[str, Any]]:
-    return {
+    core = {
         kind: {"window": tuple(spec["window"]), "duration": spec["duration"], "warning": spec["warning"]}
         for kind, spec in c.EVENTS.items()
     }
+    return core | default_extra_events()
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,7 @@ class Config:
     events: dict[str, dict[str, Any]] = field(default_factory=_default_events)
     budget: float = c.BUDGET
     hard_limit: float = c.HARD_LIMIT
+    layout: str = DEFAULT_LAYOUT
 
 
 def _is_int(value: object) -> bool:
@@ -63,7 +67,8 @@ def _mix(name: str, raw: object) -> dict[int, float]:
 def _event(kind: str, raw: object, base: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError(f"events.{kind} must be an object")  # noqa: TRY004
-    unknown = set(raw) - set(_EVENT_FIELDS)
+    allowed = (*_EVENT_FIELDS, "enabled") if kind in EXTRA_EVENTS else _EVENT_FIELDS
+    unknown = set(raw) - set(allowed)
     if unknown:
         raise ValueError(f"events.{kind}: unknown key(s) {sorted(unknown)}")
     spec = dict(base)
@@ -80,6 +85,10 @@ def _event(kind: str, raw: object, base: dict[str, Any]) -> dict[str, Any]:
             if not _is_int(raw[key]) or raw[key] < minimum:
                 raise ValueError(f"events.{kind}.{key} must be an integer >= {minimum}")
             spec[key] = raw[key]
+    if "enabled" in raw:
+        if not isinstance(raw["enabled"], bool):
+            raise ValueError(f"events.{kind}.enabled must be true or false")
+        spec["enabled"] = raw["enabled"]
     return spec
 
 
@@ -111,6 +120,9 @@ def load_config(path: str | None) -> Config:
                 raise ValueError(f"unknown event kind {kind!r}")
             events[kind] = _event(kind, spec, events[kind])
         values["events"] = events
+    if "layout" in raw:
+        load_layout(raw["layout"])
+        values["layout"] = raw["layout"]
     config = Config(**values)
     if config.arrival_mean < 0:
         raise ValueError("arrival_mean must be >= 0")

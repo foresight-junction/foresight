@@ -1,0 +1,4 @@
+{
+  "description": "The rulebook department (section 3): 17 beds.",
+  "beds": {"resus": 3, "acute": 8, "fast_track": 6}
+}

@@ -8,8 +8,12 @@
     "staff_sickness": {"window": [28, 35], "duration": 20, "warning": 0},
     "flu_wave": {"window": [50, 61], "duration": 6, "warning": 10},
     "ct_breakdown": {"window": [66, 75], "duration": 16, "warning": 0},
-    "bus_crash": {"window": [96, 109], "duration": 2, "warning": 8}
+    "bus_crash": {"window": [96, 109], "duration": 2, "warning": 8},
+    "doctor_sickness": {"window": [80, 89], "duration": 12, "warning": 4, "enabled": false},
+    "second_mci": {"window": [124, 133], "duration": 2, "warning": 8, "enabled": false},
+    "monitor_fault": {"window": [40, 47], "duration": 8, "warning": 3, "enabled": false}
   },
   "budget": 12000,
-  "hard_limit": 24000
+  "hard_limit": 24000,
+  "layout": "default"
 }
