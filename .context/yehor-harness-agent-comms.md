@@ -28,6 +28,7 @@ Agents can check in one command whether a worktree or task is in use before hand
 - Sat 17:15: BUSY = a live process with cwd in the worktree, or a commit, push or uncommitted edit within 30 min. Busy exits 1, so scripts can gate on it.
 - Inbox narrows with GitHub search (`in:comments`) first: ~2 s instead of ~11 s for fetching every open issue's comments.
 - Processes come from `lsof -d cwd`, so they're only visible on the same laptop. For other laptops, status shows only the pushed tip and comments, and says so.
+- Sat 17:25 cross-review (Codex CLI, MCP was down) found 7 issues, all fixed: real push time from GitHub's `/activity` API (commit time misses old commits pushed now), a fresh issue comment counts as busy, missing or failing lsof dies instead of reporting "no processes", `status -z --untracked-files=all` for quoted paths and new folders, deletions use the folder's mtime, a process exiting mid-display no longer aborts, inbox's own-comment filter matches `[id]` exactly. The overview skips the push and comment lookups (about 3 s per call); the detail view does them.
 
 ## Handoff
 - Done: everything above, tested by hand against live worktrees (correctly flagged yehor-reward-baselines BUSY while another agent ran pytest there, and mykhailo/env-tool-server from another laptop via its 2-minute-old push).

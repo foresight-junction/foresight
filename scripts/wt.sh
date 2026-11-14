@@ -183,7 +183,10 @@ my_pids() {
 }
 
 load_procs() {
+  command -v lsof >/dev/null || die "lsof not found. Install it: without it status can't see running agents."
   CWDS="$(lsof -w -d cwd -Fpn 2>/dev/null | awk '/^p/{pid=substr($0,2)} /^n/{print pid "\t" substr($0,2)}' || true)"
+  # this shell always has a cwd, so an empty list means lsof failed
+  [ -n "$CWDS" ] || die "lsof listed no processes, so status can't tell who is working. Check lsof works."
   MINE="$(my_pids)"
 }
 
@@ -196,14 +199,21 @@ procs_in() {
 }
 
 newest_edit() {
-  local f newest=0 t
-  while IFS= read -r f; do
-    f="${f#???}"; f="${f##* -> }"
-    t="$(mtime "$1/$f")"
+  local e f newest=0 t skip=0
+  while IFS= read -r -d '' e; do
+    # with -z a rename or copy is followed by an extra entry holding the old path
+    if [ "$skip" = 1 ]; then skip=0; continue; fi
+    case "${e:0:2}" in *R*|*C*) skip=1 ;; esac
+    f="$1/${e:3}"
+    # a deleted file has no mtime, but its folder's mtime changed when it went
+    [ -e "$f" ] || f="$(dirname "$f")"
+    t="$(mtime "$f")"
     if [ "$t" -gt "$newest" ]; then newest="$t"; fi
-  done < <(git -C "$1" status --porcelain)
+  done < <(git -C "$1" status --porcelain -z --untracked-files=all)
   echo "$newest"
 }
+
+recent() { [ "$1" -gt 0 ] && [ $(( NOW - $1 )) -lt "$IDLE_SEC" ]; }
 
 # Fills: path, branch, ref, commit_t, remote_t, unpushed, dirty, edit_t, pids, busy
 inspect() {
@@ -226,7 +236,7 @@ inspect() {
   if [ -n "$pids" ]; then busy=1; fi
   local t
   for t in "$commit_t" "$remote_t" "$edit_t"; do
-    if [ "$t" -gt 0 ] && [ $(( NOW - t )) -lt "$IDLE_SEC" ]; then busy=1; fi
+    if recent "$t"; then busy=1; fi
   done
 }
 
@@ -251,7 +261,7 @@ cmd_status() {
       | awk '/^worktree /{w=substr($0,10)} /^branch /{print w "\t" substr($0,19)}')
     echo
     echo "COMMIT/EDIT = time since last commit / newest uncommitted file change. BUSY = a process runs"
-    echo "there or something changed in the last ${WT_IDLE_MIN:-30}m. Other laptops: wt.sh status <branch>."
+    echo "there or something changed in the last ${WT_IDLE_MIN:-30}m. wt.sh status <slug> also checks pushes and comments."
     return 0
   fi
 
@@ -273,17 +283,27 @@ cmd_status() {
   echo "branch:        $branch"
   echo "worktree:      ${path:-not on this laptop}"
   echo "last commit:   $(ago "$commit_t") ago  $(git log -1 --format='%h %s' "$ref")"
-  if [ "$remote_t" -gt 0 ]; then
-    echo "pushed tip:    $(ago "$remote_t") ago  ($unpushed local commits not pushed)"
+  local push_t=0
+  if [ "$remote_t" -gt 0 ] && have_gh; then
+    # a commit made hours ago can be pushed a minute ago, so ask GitHub when the push happened
+    push_t="$(gh api "repos/{owner}/{repo}/activity?ref=refs/heads/$branch&per_page=1" \
+      --jq '.[0].timestamp // null | if . then fromdateiso8601 else 0 end' 2>/dev/null || echo 0)"
+  fi
+  if [ "$push_t" -gt 0 ]; then
+    echo "last push:     $(ago "$push_t") ago  ($unpushed local commits not pushed)"
+    if recent "$push_t"; then busy=1; fi
+  elif [ "$remote_t" -gt 0 ]; then
+    echo "last push:     unknown (GitHub didn't say), pushed tip was committed $(ago "$remote_t") ago"
   else
-    echo "pushed tip:    never pushed"
+    echo "last push:     never pushed"
   fi
   if [ -n "$path" ]; then
     echo "uncommitted:   $dirty files, newest change $(ago "$edit_t") ago"
     if [ -n "$pids" ]; then
       echo "processes:"
       # shellcheck disable=SC2086
-      ps -o pid=,etime=,command= -p "$(echo $pids | tr ' ' ',')" | cut -c1-110 | sed 's/^/  /'
+      ps -o pid=,etime=,command= -p "$(echo $pids | tr ' ' ',')" | cut -c1-110 | sed 's/^/  /' \
+        || echo "  (they exited just now)"
     else
       echo "processes:     none"
     fi
@@ -295,10 +315,15 @@ cmd_status() {
   issue="$( { if [ -n "$path" ] && [ -f "$path/$ctx" ]; then cat "$path/$ctx"; else git show "$ref:$ctx"; fi; } \
     2>/dev/null | sed -n 's/^- \*\*Issue:\*\* #\([0-9]*\).*/\1/p' | head -1 || true)"
   if [ -n "$issue" ] && have_gh; then
+    local comments comment_t
+    comments="$(gh issue view "$issue" --json comments -q '
+      (.comments[-1].createdAt // null | if . then fromdateiso8601 else 0 end),
+      (.comments[-3:][] | "  " + ((now - (.createdAt | fromdateiso8601)) / 60 | floor | tostring)
+        + "m ago  " + (.body | split("\n")[0] | .[0:100]))')"
+    comment_t="$(echo "$comments" | head -1)"
+    if recent "$comment_t"; then busy=1; fi
     echo "issue #$issue latest comments:"
-    gh issue view "$issue" --json comments -q '.comments[-3:][] |
-      "  " + ((now - (.createdAt | fromdateiso8601)) / 60 | floor | tostring) + "m ago  "
-      + (.body | split("\n")[0] | .[0:100])'
+    echo "$comments" | tail -n +2
   fi
 
   echo
@@ -320,7 +345,7 @@ cmd_inbox() {
   gh issue list --state all --limit 30 --search "\"$1\" in:comments,body sort:updated-desc" \
     --json number,comments --jq '
       [.[] | .number as $n | .comments[]
-        | select((.body | test("(^|[^a-z0-9-])'"$1"'($|[^a-z0-9-])")) and (.body | startswith("['"$1"'") | not))
+        | select((.body | test("(^|[^a-z0-9-])'"$1"'($|[^a-z0-9-])")) and (.body | startswith("['"$1"']") | not))
         | {n: $n, at: .createdAt, body: (.body | split("\n")[0] | .[0:110])}]
       | sort_by(.at) | .[-10:][]
       | ((now - (.at | fromdateiso8601)) / 60 | floor | tostring) + "m ago  #" + (.n | tostring) + "  " + .body'
