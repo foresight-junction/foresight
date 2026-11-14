@@ -1,0 +1,10 @@
+[project]
+name = "ed72-baselines"
+version = "0.1.0"
+description = "ED-72 scripted baselines and exploit probes, played over the public tools only"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
