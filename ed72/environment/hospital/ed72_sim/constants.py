@@ -89,7 +89,7 @@ HARD_LIMIT: Final = 24000
 # Score (§11, SPEC §6)
 LOSS_DISCHARGED: Final = 0.0
 LOSS_IN_BED_COVERED: Final = 0.3
-LOSS_DIVERTED: Final = 0.75  # TUNE: rulebook §13 fix; keeps permanent diversion under about 47 points at 4.0 arrivals
+LOSS_DIVERTED: Final = 0.75  # TUNE: rulebook §13 fix; keeps divert-all under about 47 points at 4.0
 LOSS_FAILED: Final = 1.0  # died, left, never admitted, or in a bed at the end with no covered tick
 W_TIRED_WEIGHT: Final = 1.0  # TUNE
 W_FAINT_WEIGHT: Final = 0.05  # TUNE
