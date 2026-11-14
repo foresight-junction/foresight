@@ -16,9 +16,10 @@ JOBS_DIR="$REPO_ROOT/eval/results/jobs/$RUN_ID"
 SUMMARY="$REPO_ROOT/eval/results/summary.md"
 OPENCODE_VERSION="1.19.5"
 AGENT_RUNS=3
-# Stop-early is a Harbor custom agent from #12 (eval/baselines/); this script only calls it.
-STOP_EARLY_FILE="$REPO_ROOT/eval/baselines/harbor_agent.py"
-STOP_EARLY_AGENT="eval.baselines.harbor_agent:StopEarlyAgent"
+# Stop-early is a Harbor custom agent in #12's ed72_baselines package; this script only calls it.
+STOP_EARLY_PATH="$REPO_ROOT/eval/baselines"
+STOP_EARLY_FILE="$STOP_EARLY_PATH/ed72_baselines/harbor_agent.py"
+STOP_EARLY_AGENT="ed72_baselines.harbor_agent:StopEarlyAgent"
 MODE="${1:-all}"
 
 export HARBOR_TELEMETRY=0
@@ -82,7 +83,7 @@ run_job reference -a oracle -n 1
 run_job do-nothing -a nop -n 1
 
 if [ -f "$STOP_EARLY_FILE" ]; then
-  PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" run_job stop-early -a "$STOP_EARLY_AGENT" -n 1
+  PYTHONPATH="$STOP_EARLY_PATH${PYTHONPATH:+:$PYTHONPATH}" run_job stop-early -a "$STOP_EARLY_AGENT" -n 1
 else
   echo "run_all: SKIP stop-early: $STOP_EARLY_FILE not found (built by #12)." >&2
 fi
