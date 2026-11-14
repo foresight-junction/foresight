@@ -11,7 +11,7 @@ You are the only lead agent in your worktree. For each task:
 1. `claim-task` skill → read `.context/<branch-slug>.md` and the issue's comments.
 2. Plan 3 to 7 steps and write them into the context file's **Status** section. For anything bigger than a small fix, use the superpowers `brainstorming` and `writing-plans` skills first, kept short since this is a hackathon.
 3. Build in small slices. After each working slice: `noslop` → `pre-commit-gate` → commit → push.
-4. When a slice works end to end: `cross-review` → `ship-pr`.
+4. When a slice works end to end: `cross-review` → `ship-pr`, which ends with you merging your PR once CI is green (AGENTS.md golden rule 8).
 
 ## Subagents
 
