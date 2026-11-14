@@ -36,6 +36,7 @@ A factual README skeleton ordered for a judge, and a 10-minute demo script with 
 - Sat: docs/CHALLENGE.md "Starting points" still describes the old game (15 beds, `assess`, 8+13 tools, M1-M4 harm). README follows SPEC and the rulebook.
 
 ## Handoff
-- Draft PR #70 is synced with frozen main (474829a). The README links the verified oracle/nop calibration and the five-seed tuning table. The demo uses the trajectory and verifier report collected by Harbor.
+- PR #70 merged at `083a723`. The follow-up aligns the README and demo with #89's preinstalled OpenCode image. Harbor 0.25.0 remains the `make eval` default and still runs OpenCode setup. Harbor 0.26.0 can reuse the installed version. #17 records the Gemini credential requirement and the pending model calibration.
+- The README links the verified oracle/nop calibration and five-seed tuning table. The demo uses the trajectory and verifier report collected by Harbor.
 - Yehor writes the hand-authored slots, then times and records the playthrough and submits it. Model results, a Harbor model-log link and failure analysis are pending #17–#19. #83 tracks the missing Harbor stop-early adapter.
 - Verify the calibration with `make eval-baselines`. Check the remaining author slots with `rg -n 'HUMAN:|TODO\(' README.md docs/DEMO.md`.

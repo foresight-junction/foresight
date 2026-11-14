@@ -50,7 +50,7 @@ Prerequisites:
 
 - Docker, running.
 - [uv](https://docs.astral.sh/uv/). Harbor 0.25.0 runs through `uvx`, no separate install.
-- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID and `ED72_KEY_NAME` to the matching key variable name (for example, `GEMINI_API_KEY`). For `make eval`, you can set both in `.env` using `.env.example`.
+- For agent runs only, set `ED72_MODEL` to a provider/model ID and export the provider key. The direct Harbor command takes the name of that shell variable in `ED72_KEY_NAME`. `make eval` reads `ED72_MODEL` and the provider key from the shell or `.env` and selects `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` from the model prefix.
 
 From the repo root:
 
@@ -60,8 +60,10 @@ alias harbor='uvx --python 3.12 --from harbor==0.25.0 harbor'
 harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/)
 harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
 harbor run -p ed72 -a opencode -m "$ED72_MODEL" --api-key-name "$ED72_KEY_NAME" \
-  --ak version=1.19.5 --agent-setup-timeout-multiplier 4 -k 3
+  --ak version=1.19.5 --agent-setup-timeout-multiplier 4
 ```
+
+The task image preinstalls OpenCode 1.19.5. Harbor 0.26.0 can reuse that installation. The pinned Harbor 0.25.0 runner still performs its OpenCode setup. The ED-72 Gemini calibration found that OpenCode needed `GOOGLE_GENERATIVE_AI_API_KEY` in the agent environment. [Calibration status and key setup (#17)](https://github.com/xand1ex999/guinness/issues/17).
 
 Run the evaluation from the repository root:
 
@@ -71,7 +73,7 @@ make eval-baselines      # reference and do-nothing, with no API key required
 make eval-summary        # rebuild eval/results/summary.md from the latest run
 ```
 
-`make eval` pins OpenCode 1.19.5 and writes each job under `eval/results/jobs/<run id>/`. The frozen build skips the Harbor stop-early adapter. [Harbor stop-early adapter (#83)](https://github.com/xand1ex999/guinness/issues/83). To rerun the scripted baselines in process, including stop-early, run:
+`make eval` pins OpenCode 1.19.5 and writes each job under `eval/results/jobs/<run id>/`. The separate in-process baseline suite includes stop-early. [Harbor adapter (#83)](https://github.com/xand1ex999/guinness/issues/83). Run the scripted baselines on seeds 1–5:
 
 ```bash
 (cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3 4 5)
@@ -106,7 +108,7 @@ The score is a pure function of the hospital's append-only event log (`/var/lib/
 
 ## Reward integrity
 
-- **The answer is not in the agent's container.** The `main` image holds `HANDBOOK.md` and the `ward` CLI only (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
+- **The answer is not in the agent's container.** The `main` image packages `HANDBOOK.md`, the `ward` CLI and the OpenCode runtime (`ed72/environment/Dockerfile`). The simulator, seed and scorer live in the `hospital` sidecar (`ed72/environment/docker-compose.yaml`).
 - **The verifier cannot read agent-written files.** `ed72/task.toml` sets `environment_mode = "separate"` and a `[[verifier.collect]]` hook that runs `collect.py` inside `hospital`. `tests/test.sh` reads only `/evidence/report.json` from there. Shared mode is not used because a spike showed a root agent could forge the reward in it.
 - **No admin back door.** The only HTTP endpoint besides MCP is `GET /health`. There is no finalise, reset, undo, seed or ground-truth endpoint.
 - **Tool outputs are tested for leaks** (#31, `ed72/environment/hospital/tests/test_firewall.py`). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer.
@@ -126,7 +128,7 @@ The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tic
 |---|---|---:|---:|
 | Reference (oracle) | `harbor run -p ed72 -a oracle` | 42 | 0.989617 |
 | Do-nothing (nop) | `harbor run -p ed72 -a nop` | 42 | 0.000000 |
-| OpenCode model | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | Pending [#17](https://github.com/xand1ex999/guinness/issues/17) |
+| OpenCode model | OpenCode command under [How to run it](#how-to-run-it) | 42 | Pending [#17](https://github.com/xand1ex999/guinness/issues/17) |
 
 The reference scored exactly 0.989617 on seed 42 both in process and through Harbor. Across seeds 1–5, the reference averaged 98.4 points out of 100 (range 96.78–99.69). Stop-early scored below the reactive proxy on all five seeds, and the proxy averaged 61.8. Do-nothing scored zero on every seed, divert-all peaked at 47.93 points, and the highest-scoring shortcut peaked at 72.72. Every tested shortcut scored below the reference on every seed. [Per-seed tuning table](docs/TUNING.md).
 

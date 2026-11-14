@@ -54,18 +54,20 @@ print(json.dumps(sim.observe(), indent=1))
 ")
 ```
 
-Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fatigue 0) and the empty `warnings`.
+Point at `waiting`, `beds` (each bed's `patient` field is `null`), `staff` (everyone in `rest` at fatigue 0) and the empty `warnings`.
 
 ## 3. A `harbor run` (1:50, 1:10)
 
-Export the selected provider key, and set `ED72_MODEL` and `ED72_KEY_NAME` as shown in the README. Start a run live:
+For a fresh live run, set `ED72_MODEL` and `ED72_KEY_NAME` and export the provider key as shown in the README. To reproduce the saved trial exactly, use its recorded Harbor version and arguments. See the Gemini key setup if using that provider. [Calibration notes (#17)](https://github.com/xand1ex999/guinness/issues/17).
+
+Start the live run with the README defaults:
 
 ```bash
 uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
   --api-key-name "$ED72_KEY_NAME" --ak version=1.19.5 --agent-setup-timeout-multiplier 4
 ```
 
-Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". Once a complete OpenCode run is available, use its measured runtime.
+The agent's container has the handbook, the `ward` CLI and the OpenCode runtime. The simulator, seed and scorer are in the `hospital` sidecar. Leave the live run going and switch to the saved trial. Quote that trial's measured runtime.
 
 ## 4. One agent episode (3:00, 2:00)
 
