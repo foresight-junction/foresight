@@ -11,25 +11,25 @@ You are the only lead agent in your worktree. For each task:
 1. `claim-task` skill → read `.context/<branch-slug>.md` and the issue's comments.
 2. Plan 3 to 7 steps and write them into the context file's **Status** section. For anything bigger than a small fix, use the superpowers `brainstorming` and `writing-plans` skills first, kept short since this is a hackathon.
 3. Build in small slices. After each working slice: `noslop` → `pre-commit-gate` → commit → push.
-4. When a slice works end to end: `cross-review` → `ship-pr`, which ends with you merging your PR once CI is green (AGENTS.md golden rule 8).
+4. When a slice works end to end: `cross-review` → `ship-pr`, then hand the green PR to Yehor (AGENTS.md golden rule 8).
 
-## Orchestrator role (optional)
+## Release orchestration
 
-Any lead may become an orchestrator (AGENTS.md section 1): create an integration branch from `main` (e.g. `<owner>/final`), start up to 5 helper agents with a clear brief each (goal, files they own, how to test, "PR into `<owner>/final`", "commit and push at least every 30 minutes", "message the orchestrator or the other agents when your work touches theirs"), merge each helper PR into the integration branch when it is ready, run all tests on it, and then merge one PR from it into `main`. Only one Harbor or Docker run at a time per laptop: the orchestrator schedules them.
+Yehor (@yehorm14) is the sole release orchestrator and merger under AGENTS.md §§1–2. Use the issue, branch, worktree, and PR base Yehor assigned. Ask Yehor for a separate assignment when parallel work needs another owner. Owners may run focused tests for assigned work. Coordinate shared Docker and Harbor capacity with Yehor and run at most one job at a time per laptop. Yehor controls the launch of #18's final paid batch.
 
 ## Subagents
 
 - Use subagents in parallel for **independent** pieces: e.g. one writes the endpoint while another writes its tests, or several read different parts of the codebase or docs at once.
 - Give each subagent the **exact list of files it may edit**. Two subagents never edit the same file.
 - Before you give a subagent or Codex an existing worktree, run `scripts/wt.sh status <slug>`. If it says BUSY, another agent is still working there (often a Codex run that hasn't commented yet), so give the subagent a new worktree instead.
-- For larger parallel edits, give each one its own worktree (`scripts/wt.sh new <owner> <area> <task> claude`) and merge the helper branches into yours.
+- For larger parallel edits, ask Yehor to assign a worktree and PR base to each helper.
 - Research subagents (reading docs, checking whether an API exists) are cheap and catch hallucinated APIs early. Use them.
 
 ## Codex (the `codex` MCP tool)
 
 1. **Cross-review:** see the `cross-review` skill. This is the main use.
 2. **Second opinion:** when a bug survives 2 of your fix attempts, ask Codex to diagnose it independently before your third attempt.
-3. **Isolated build tasks:** create a helper worktree (`scripts/wt.sh new <owner> <area> <task> codex`), call Codex with `cwd` set to that folder, and give it one small, clear task: the files it owns, the contract to follow, and how to test it. Comment on your issue that you delegated it. When it finishes, review the diff yourself and merge the helper branch into yours.
+3. **Isolated build tasks.** With Yehor's assignment, call Codex in the helper worktree and specify the owned files, contract and tests. Review the resulting diff and send the helper PR to Yehor.
 
 Never give Codex vague or large tasks. It blocks you while it runs, and long tasks can time out.
 

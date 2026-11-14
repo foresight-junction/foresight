@@ -17,7 +17,7 @@ Task board = GitHub Issues (`scripts/wt.sh board`). This file is the map; the is
 | **C. Reference and experiments** | `area:ref` | Reference policy, agent runs, failure analysis | The gap (30) + the explanation half of difficulty |
 | **D. Harness, repro and story** | `area:harness` | Harbor packaging, one-command eval, CI, README, demo, submission, stretch | Craft (15) + tiebreaker |
 
-Fill in names in AGENTS.md section 1. One integrator, `kostiantyn-claude-4`, merges every PR into `main` in dependency order (AGENTS.md golden rule 8) and watches that `main`'s CI stays green.
+Yehor (@yehorm14) is the sole release orchestrator and merger. Follow the active assignments and dependencies in #39 and #113 and the merge process in AGENTS.md golden rule 8. Yehor authorizes the one paid final batch in #18 after the selected changes are integrated, CI is green and the release manifest is frozen.
 
 ## Timeline
 | When | Milestone | Proof |
