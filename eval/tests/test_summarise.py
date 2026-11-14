@@ -271,3 +271,13 @@ def test_manifest_derived_from_recorded_task_path(tmp_path: Path, monkeypatch: p
     trial = summarise.load_trial(d)
     assert trial is not None
     assert trial.seed == "5" and trial.config != "unknown" and trial.instruction != "unknown"
+
+
+def test_unknown_provenance_trials_are_never_pooled_with_each_other(tmp_path: Path) -> None:
+    root = tmp_path / "jobs"
+    for job, reward in (("old-a", 0.1), ("old-b", 0.9)):
+        _trial(root, job, f"ed72__{job}", "opencode", reward=reward, model=("g", "m"), report=_report(reward))
+    trials = [summarise.load_trial(d) for d in summarise.find_trial_dirs([root])]
+    rows = [r for r in summarise.build_rows([t for t in trials if t]) if r.seed == "unknown"]
+    assert sorted(r.mean for r in rows) == pytest.approx([0.1, 0.9])
+    assert all(r.runs == 1 for r in rows)

@@ -180,11 +180,15 @@ class Row:
 
 
 def build_rows(trials: list[Trial]) -> list[Row]:
-    groups: dict[tuple[str, str, str, str, str], list[Trial]] = {}
+    groups: dict[tuple[str, ...], list[Trial]] = {}
     for t in trials:
-        groups.setdefault((t.policy, t.model, t.seed, t.config, t.instruction), []).append(t)
+        key: tuple[str, ...] = (t.policy, t.model, t.seed, t.config, t.instruction)
+        if UNKNOWN in key[2:]:
+            # Unknown provenance could hide a different seed, config or prompt, so each such trial stays alone.
+            key += (t.job, t.name)
+        groups.setdefault(key, []).append(t)
     rows = []
-    for (policy, model, seed, config, instruction), group in groups.items():
+    for (policy, model, seed, config, instruction, *_), group in groups.items():
         # A trial with no reward counts as 0, as Harbor's own mean metric does.
         rewards = [t.reward if t.reward is not None else 0.0 for t in group]
         reports = [t.report for t in group if t.report is not None]
