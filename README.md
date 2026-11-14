@@ -101,7 +101,7 @@ Score  = 60·O + 20·T + O·(10·W + 10·B)        reward = Score / 100  →  /l
 
 | Part | Weight | Measures |
 |---|---|---|
-| **O**, outcome | 60 | `1 − weighted loss / total weight` over every patient who arrived (weights 10/5/2/1/0.5 for ESI 1–5). Loss: discharged 0; still in a bed at the end with at least one covered tick 0.3; diverted 0.7; died, left, never admitted or never covered 1 |
+| **O**, outcome | 60 | `1 − weighted loss / total weight` over every patient who arrived (weights 10/5/2/1/0.5 for ESI 1–5). Loss: discharged 0; still in a bed at the end with at least one covered tick 0.3; diverted 0.75; died, left, never admitted or never covered 1 |
 | **T**, timeliness | 20 | Weighted share of patients whose first *covered* bed tick met the target (0/1/4/8/12 ticks for ESI 1–5) |
 | **W**, staff wellbeing | 10 × O | `max(0, 1 − share of on-shift staff-ticks above fatigue 60 − 0.05 × faints)` |
 | **B**, budget | 10 × O | 1 up to €12 000, then linear to 0 at €24 000 |

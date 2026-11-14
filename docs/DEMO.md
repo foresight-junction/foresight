@@ -95,7 +95,7 @@ Show the exploit baselines (`eval/baselines/`, works on `main` today). Each one 
 
 Pick one row and explain why it loses, using SPEC §11:
 - `fill_beds_at_last_tick`: the 0.3 end-of-episode credit needs at least one covered tick. Patients held back to fill late kept facing waiting hazards and count as late in T.
-- `divert_all`: every diverted patient loses 0.7 of its weight and is late.
+- `divert_all`: every diverted patient loses 0.75 of its weight and is late.
 
 Read the numbers off the screen; don't quote them from memory.
 
