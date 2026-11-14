@@ -154,6 +154,21 @@ def test_same_world_and_actions_give_the_same_log() -> None:
     advance(Simulation(world), 1)  # smoke: a fresh sim from the same world is still usable
 
 
+def test_record_call_logs_an_agent_line_without_advancing() -> None:
+    sim = Simulation(make_world([patient(1, 0, 3)]))
+    before = sim.observe()
+    sim.record_call("step", {"actions": []}, {"error": "call_cap_reached"})
+    assert sim.events[-1] == {
+        "seq": len(sim.events) - 1,
+        "t": 0,
+        "src": "agent",
+        "tool": "step",
+        "args": {"actions": []},
+        "result": {"error": "call_cap_reached"},
+    }
+    assert sim.tick == 0 and sim.observe() == before
+
+
 def test_run_to_end_after_an_agent_stops_writes_no_agent_lines() -> None:
     sim = Simulation(make_world([patient(1, 0, 3)]))
     for _ in range(5):

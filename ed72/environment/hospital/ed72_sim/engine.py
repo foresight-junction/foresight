@@ -49,6 +49,11 @@ class Simulation:
         while not self.finished:
             self._finish_tick()
 
+    def record_call(self, tool: str, args: dict, result: dict) -> None:
+        """Log a call the server answered without resolving a tick: rules, observe, or a refused call.
+        A refused call carries "error" in its result; collect.py and the scorer never replay it."""
+        self._write({"src": "agent", "tool": tool, "args": args, "result": result})
+
     def _finish_tick(self) -> None:
         self._step6_treat()
         self._step7_hazards()
