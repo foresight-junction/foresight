@@ -32,6 +32,7 @@ To run a model through OpenCode, use the command from our Gemini calibration run
 ```bash
 export GEMINI_API_KEY=...
 harbor run -p ed72 -a opencode -m gemini/gemini-3.8-flash \
+  --api-key-name GEMINI_API_KEY \
   --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
@@ -48,18 +49,58 @@ Only Gemini has been run end to end.
 To run the whole evaluation in one command, set `ED72_MODEL` (for example `gemini/gemini-3.8-flash`) and the matching key in `.env` (copy `.env.example`). `eval/run_all.sh` picks the key and the mapping from the model prefix:
 
 ```bash
-make eval              # reference, do-nothing, then 3 OpenCode runs on $ED72_MODEL, seed 42 or $ED72_SEED
-make eval-baselines    # reference and do-nothing only, no API key needed
+make eval              # reference, do-nothing, stop-early, then 3 paid OpenCode runs
+make eval-baselines    # all three baselines, no API key needed
 make eval-summary      # rebuild eval/results/summary.md from the latest run
 ```
 
-`make eval` pins OpenCode 1.19.5. It writes each job under `eval/results/jobs/<run id>/` and the results table to `eval/results/summary.md`. Stop-early is not a Harbor agent, so `make eval` prints a SKIP line for it. Stop-early and the other scripted baselines run in process:
+`make eval` pins OpenCode 1.19.5 and uses seed 42 unless `ED72_SEED` is set. It writes each job under `eval/results/jobs/<run id>/` and the results table to `eval/results/summary.md`. If any required baseline fails, it stops before paid model calls. The scripted baselines can also run in process:
 
 ```bash
 (cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3 4 5)
 ```
 
 The first build of the agent image takes about 14 minutes because it preinstalls OpenCode. After that, agent setup takes seconds.
+
+### Windows: run from Ubuntu (WSL 2)
+
+1. Install Ubuntu with `wsl --install -d Ubuntu` in an administrator PowerShell if needed. Start Docker Desktop, enable Ubuntu under **Settings → Resources → WSL Integration**, and apply. Wait for Docker to finish restarting **before** starting a run. Applying Docker settings during a run stops its containers and loses the result.
+2. Open an **Ubuntu** terminal. Install the tools and clone into the Linux home directory:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y git make curl jq ca-certificates
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   export PATH="$HOME/.local/bin:$PATH"
+   git clone https://github.com/xand1ex999/guinness.git "$HOME/guinness"
+   cd "$HOME/guinness"
+   docker info >/dev/null && docker compose version
+   ```
+
+   Cloning requires GitHub access. If the repo is already on Windows, use its local path as the clone source instead, for example `git clone /mnt/c/Users/<user>/Desktop/guinness "$HOME/guinness"`; this copies committed files only. In later Ubuntu tabs, just run `export PATH="$HOME/.local/bin:$PATH"` and `cd "$HOME/guinness"`.
+
+3. Run one Gemini trial. Paste the API key at the hidden prompt; it is not saved in shell history:
+
+   ```bash
+   read -r -s -p 'Gemini API key: ' GEMINI_API_KEY; printf '\n'
+   GEMINI_API_KEY=$(printf '%s' "$GEMINI_API_KEY" | tr -d '[:space:]')
+   export GEMINI_API_KEY
+   uvx --python 3.12 --from harbor==0.26.0 harbor run \
+     -p ed72 -a opencode -m gemini/gemini-3.8-flash \
+     --api-key-name GEMINI_API_KEY \
+     --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' \
+     --ak version=1.19.5 -k 1 -n 1 --max-retries 0 -o "$HOME/ed72-runs"
+   ```
+
+   Results are under `~/ed72-runs/<job>/`. Check `result.json` for zero errored trials, then read `<trial>/verifier/reward.txt`. A zero reward accompanied by an exception is a failed run; inspect `<trial>/exception.txt` and `<trial>/trial.log`. Open the results in Windows Explorer with `explorer.exe "$(wslpath -w "$HOME/ed72-runs")"`.
+
+4. To run the full evaluation instead, use the same exported key:
+
+   ```bash
+   ED72_MODEL=gemini/gemini-3.8-flash make eval
+   ```
+
+   This runs reference, do-nothing and stop-early, then **three paid Gemini sessions**. Read `eval/results/summary.md`; raw jobs are under `eval/results/jobs/<run id>/`. For baselines only, run `make eval-baselines` without a key. The team's final campaign still requires Yehor's launch direction.
 
 **What a run produces.** Each trial directory holds:
 
