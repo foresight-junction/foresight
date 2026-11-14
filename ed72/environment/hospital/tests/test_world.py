@@ -1,7 +1,16 @@
+from functools import cache
+
 from ed72_sim import constants as c
+from ed72_sim.model import World
 from ed72_sim.world import generate_world
 
 SEEDS = range(1, 41)
+
+
+@cache
+def world_of(seed: int) -> World:
+    """The statistical tests share worlds; a World is frozen, so sharing cannot leak state between them."""
+    return generate_world(seed)
 
 
 def test_same_seed_equal_and_different_seeds_differ() -> None:
@@ -24,7 +33,7 @@ def test_ids_sequential_and_sorted_by_tick() -> None:
 
 def test_events_inside_windows_and_sick_nurses() -> None:
     for seed in SEEDS:
-        events = {e.kind: e for e in generate_world(seed).events}
+        events = {e.kind: e for e in world_of(seed).events}
         assert list(events) == list(c.EVENTS)
         for kind, cfg in c.EVENTS.items():
             lo, hi = cfg["window"]
@@ -39,7 +48,7 @@ def test_events_inside_windows_and_sick_nurses() -> None:
 
 def test_surge_patients() -> None:
     for seed in SEEDS:
-        world = generate_world(seed)
+        world = world_of(seed)
         events = {e.kind: e for e in world.events}
         for source, kind, per_tick, esis in (
             ("flu", "flu_wave", c.FLU_EXTRA_PER_TICK, {3, 4, 5}),
@@ -66,7 +75,7 @@ def test_patient_draws() -> None:
 def test_base_rate_and_ct_share() -> None:
     base_counts, high = [], []
     for seed in SEEDS:
-        base = [p for p in generate_world(seed).patients if p.source == "base"]
+        base = [p for p in world_of(seed).patients if p.source == "base"]
         base_counts.append(len(base))
         high += [p for p in base if p.esi in c.CT_ESI]
     expected = c.ARRIVAL_MEAN * c.TICKS
@@ -76,7 +85,7 @@ def test_base_rate_and_ct_share() -> None:
 
 def test_daily_arrival_curve() -> None:
     def base_at(seed: int, ticks: tuple[int, ...]) -> int:
-        return sum(1 for p in generate_world(seed).patients if p.source == "base" and p.arrival_tick in ticks)
+        return sum(1 for p in world_of(seed).patients if p.source == "base" and p.arrival_tick in ticks)
 
     # 15:00 falls on ticks 14, 62, 110; 03:00 on ticks 38, 86, 134
     assert sum(base_at(s, (14, 62, 110)) for s in SEEDS) > sum(base_at(s, (38, 86, 134)) for s in SEEDS)
