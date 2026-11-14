@@ -483,11 +483,8 @@ def test_a_failed_log_write_leaves_no_unlogged_state(tmp_path):
     assert not host.sim.observe()["diversion"]["active"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="EXPLOIT E1 (low): refused steps (episode_over, call_cap) log every action, past the 50 cap",
-)
 def test_refused_step_logs_at_most_50_actions(tmp_path):
+    """E1, fixed in c281e04: a refused step logged every action it was sent, past the 50 cap."""
     host = make_host(tmp_path)
     for _ in range(c.TICKS):
         host.call("step", {"actions": []})
