@@ -126,6 +126,10 @@ def load_config(path: str | None) -> Config:
     config = Config(**values)
     if config.arrival_mean < 0:
         raise ValueError("arrival_mean must be >= 0")
-    if config.budget <= 0 or config.hard_limit < config.budget:
-        raise ValueError("need 0 < budget <= hard_limit")
+    # Above 1 the daily cycle gives negative off-peak arrival rates, and generate_world would fail.
+    if not 0 <= config.arrival_amplitude <= 1:
+        raise ValueError("arrival_amplitude must be in [0, 1]")
+    # The budget score divides by hard_limit - budget, so the range must not be empty.
+    if config.budget <= 0 or config.hard_limit <= config.budget:
+        raise ValueError("need 0 < budget < hard_limit")
     return config
