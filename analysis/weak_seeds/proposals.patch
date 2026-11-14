@@ -1,0 +1,34 @@
+--- a/ed72/solution/policy.py
++++ b/ed72/solution/policy.py
+@@ -14,6 +14,8 @@
+ # Planning cap: permanent staff normally rest before the 60-point tired threshold, which keeps them
+ # at full coverage and leaves a reserve for patients who cannot wait.
+ FRESH_FATIGUE = 50
++FATIGUE_TIRED = 60
++BACKLOG_TO_WIDEN = 3
+ URGENT_ESI = 2
+ # Uncovered patients that justify an agency order, and how many orders may be in transit at once.
+ BACKLOG_TO_HIRE = 4
+@@ -23,7 +25,7 @@
+ BACKLOG_TO_OVERSPEND = 8
+ OVERSPEND_LIMIT = 16000
+ # An order arrives 4 ticks later (section 3), so a late one has too few ticks left to pay for itself.
+-LAST_HIRE_TICK = 135
++LAST_HIRE_TICK = 115
+ LAST_CT_BREAKDOWN_START = 75
+ REPAIR_COST = 2000
+ AGENCY_PRICES = (("doctor", 900), ("nurse", 350))
+@@ -150,9 +152,10 @@
+         unplaced = len(observation["waiting"]) - len(admissions)
+         locations, covered = staff_plan(patients, observation["staff"], FRESH_FATIGUE)
+         uncovered = _uncovered(patients, covered)
+-        if any(p["esi"] <= URGENT_ESI for p in uncovered):
+-            # Tired staff count for less and cost wellbeing, but a waiting ESI 1-2 can die this tick.
+-            locations, covered = staff_plan(patients, observation["staff"])
++        if any(p["esi"] <= URGENT_ESI for p in uncovered) or len(uncovered) + unplaced >= BACKLOG_TO_WIDEN:
++            # Widen the pool, but only to staff still below the tired threshold (60): planning tired
++            # staff costs W and fatigue deaths and was worse in every test.
++            locations, covered = staff_plan(patients, observation["staff"], FATIGUE_TIRED)
+             uncovered = _uncovered(patients, covered)
+         actions.extend(self._backlog_hires(observation, locations, len(uncovered) + unplaced, spent))
+         covered_ids = {
