@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Reproduce the reported ED-72 results (docs/EVAL.md section 3) and write eval/results/summary.md.
 #
-#   eval/run_all.sh            reference, do-nothing, stop-early, then 3 agent runs on $ED72_MODEL
-#   eval/run_all.sh baselines  reference, do-nothing, stop-early (no API key needed)
+#   eval/run_all.sh            reference, do-nothing, then 3 agent runs on $ED72_MODEL
+#   eval/run_all.sh baselines  reference and do-nothing (no API key needed)
 #
 # Needs Docker, uv, and for the agent runs ED72_MODEL (e.g. gemini/gemini-3.8-flash) plus that
 # provider's key, from the shell or the repo's .env. HARBOR overrides the pinned Harbor command.
@@ -23,7 +23,7 @@ STOP_EARLY_AGENT="ed72_baselines.harbor_agent:StopEarlyAgent"
 MODE="${1:-all}"
 
 export HARBOR_TELEMETRY=0
-read -r -a HARBOR_CMD <<<"${HARBOR:-uvx --python 3.12 --from harbor==0.25.0 harbor}"
+read -r -a HARBOR_CMD <<<"${HARBOR:-uvx --python 3.12 --from harbor==0.26.0 harbor}"
 
 die() {
   echo "run_all: $*" >&2
@@ -58,7 +58,9 @@ if [ "$MODE" = all ]; then
   case "${ED72_MODEL%%/*}" in
     anthropic) KEY_NAME=ANTHROPIC_API_KEY ;;
     openai) KEY_NAME=OPENAI_API_KEY ;;
-    gemini | google) KEY_NAME=GEMINI_API_KEY ;;
+    gemini | google)
+      KEY_NAME=GEMINI_API_KEY
+      ;;
     *) die "ED72_MODEL '$ED72_MODEL' must start with anthropic/, openai/, gemini/ or google/" ;;
   esac
   [ -n "${!KEY_NAME:-}" ] || die "$KEY_NAME is not set (shell or $ENV_FILE), needed for $ED72_MODEL"
@@ -68,7 +70,7 @@ mkdir -p "$JOBS_DIR"
 FAILED=()
 
 # A failed job is recorded and the rest still run, so the summary shows whatever finished.
-# Harbor can exit 0 with errored trials; summarise.py exits non-zero if any trial has no reward.
+# Harbor can exit 0 with errored trials; summarise.py exits non-zero when it finds a failed trial.
 run_job() {
   local job="$1"
   shift
@@ -85,13 +87,15 @@ run_job do-nothing -a nop -n 1
 if [ -f "$STOP_EARLY_FILE" ]; then
   PYTHONPATH="$STOP_EARLY_PATH${PYTHONPATH:+:$PYTHONPATH}" run_job stop-early -a "$STOP_EARLY_AGENT" -n 1
 else
-  echo "run_all: SKIP stop-early: $STOP_EARLY_FILE not found (built by #12)." >&2
+  echo "run_all: SKIP stop-early: $STOP_EARLY_FILE not found. Run the in-process baseline table (see #83)." >&2
 fi
 
 if [ "$MODE" = all ]; then
-  run_job agent -a opencode -m "$ED72_MODEL" --api-key-name "$KEY_NAME" \
-    --ak "version=$OPENCODE_VERSION" --agent-setup-timeout-multiplier 3 \
-    -k "$AGENT_RUNS" -n "$AGENT_RUNS"
+  agent_args=(-a opencode -m "$ED72_MODEL" --api-key-name "$KEY_NAME" --ak "version=$OPENCODE_VERSION")
+  if [ "$KEY_NAME" = GEMINI_API_KEY ]; then
+    agent_args+=(--ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}')
+  fi
+  run_job agent "${agent_args[@]}" -k "$AGENT_RUNS" -n "$AGENT_RUNS"
 fi
 
 if ! uv run --no-project --python 3.12 python "$REPO_ROOT/eval/summarise.py" "$JOBS_DIR" --out "$SUMMARY"; then

@@ -49,18 +49,19 @@ The observation shows current operating conditions and announced event warnings.
 Prerequisites:
 
 - Docker, running.
-- [uv](https://docs.astral.sh/uv/). Harbor 0.25.0 runs through `uvx`, no separate install.
-- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID and `ED72_KEY_NAME` to the matching key variable name (for example, `GEMINI_API_KEY`). For `make eval`, you can set both in `.env` using `.env.example`.
+- [uv](https://docs.astral.sh/uv/). Harbor 0.26.0 runs through `uvx`, no separate install.
+- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID. For `make eval`, you can set both in `.env` using `.env.example`.
 
 From the repo root:
 
 ```bash
-alias harbor='uvx --python 3.12 --from harbor==0.25.0 harbor'
+alias harbor='uvx --python 3.12 --from harbor==0.26.0 harbor'
 
 harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/)
 harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
-harbor run -p ed72 -a opencode -m "$ED72_MODEL" --api-key-name "$ED72_KEY_NAME" \
-  --ak version=1.19.5 --agent-setup-timeout-multiplier 4 -k 3
+# For Gemini, export GEMINI_API_KEY and set ED72_MODEL to the Gemini model ID.
+harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+  --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
 Run the evaluation from the repository root:
@@ -106,7 +107,7 @@ The score is a pure function of the hospital's append-only event log (`/var/lib/
 
 ## Reward integrity
 
-- **The answer is not in the agent's container.** The `main` image holds `HANDBOOK.md` and the `ward` CLI only (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
+- **The answer is not in the agent's container.** The `main` image packages `HANDBOOK.md`, the `ward` CLI and the OpenCode runtime (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
 - **The verifier cannot read agent-written files.** `ed72/task.toml` sets `environment_mode = "separate"` and a `[[verifier.collect]]` hook that runs `collect.py` inside `hospital`. `tests/test.sh` reads only `/evidence/report.json` from there. Shared mode is not used because a spike showed a root agent could forge the reward in it.
 - **No admin back door.** The only HTTP endpoint besides MCP is `GET /health`. There is no finalise, reset, undo, seed or ground-truth endpoint.
 - **Tool outputs are tested for leaks** (#31, `ed72/environment/hospital/tests/test_firewall.py`). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer.
@@ -120,13 +121,15 @@ The shortcuts we expect judges to try first, and the rule that stops each, are l
 
 ## Results
 
-The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tick. The calibration runs used Harbor 0.26.0 on commit `ca9031c`. [Run details and job paths](https://github.com/xand1ex999/guinness/issues/17).
+The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tick. The oracle and nop calibration runs used Harbor 0.26.0 on commit `ca9031c`. [Run details and job paths](https://github.com/xand1ex999/guinness/issues/17).
 
 | Policy | Harbor command | Seed | Reward |
 |---|---|---:|---:|
 | Reference (oracle) | `harbor run -p ed72 -a oracle` | 42 | 0.989617 |
 | Do-nothing (nop) | `harbor run -p ed72 -a nop` | 42 | 0.000000 |
-| OpenCode model | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | Pending [#17](https://github.com/xand1ex999/guinness/issues/17) |
+| OpenCode, Gemini 3.8 Flash | [Gemini command](#how-to-run-it) | 42 | 0.811712 |
+
+The Gemini calibration completed tick 143 with zero Harbor exceptions. [Trajectory, score report and reward](eval/results/2026-11-14-gemini-seed42/README.md).
 
 The reference scored exactly 0.989617 on seed 42 both in process and through Harbor. Across seeds 1–5, the reference averaged 98.4 points out of 100 (range 96.78–99.69). Stop-early scored below the reactive proxy on all five seeds, and the proxy averaged 61.8. Do-nothing scored zero on every seed, divert-all peaked at 47.93 points, and the highest-scoring shortcut peaked at 72.72. Every tested shortcut scored below the reference on every seed. [Per-seed tuning table](docs/TUNING.md).
 

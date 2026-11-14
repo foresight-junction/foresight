@@ -257,10 +257,9 @@ def main(argv: list[str] | None = None) -> int:
     args.out.write_text(text)
     print(text, end="")
     print(f"summarise: wrote {args.out}", file=sys.stderr)
-    # tests/test.sh always writes a reward, so a missing one is a harness or verifier failure.
-    unrewarded = [f"{t.job}/{t.name}" for t in trials if t.reward is None]
-    if unrewarded:
-        print(f"summarise: trials with no reward: {', '.join(unrewarded)}", file=sys.stderr)
+    errors = [f"{t.job}/{t.name}: {t.error}" for t in trials if t.error is not None]
+    if errors:
+        print(f"summarise: failed trials: {', '.join(errors)}", file=sys.stderr)
         return 3
     return 0
 
