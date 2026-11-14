@@ -97,25 +97,28 @@ def build_server(host: ToolHost) -> FastMCP:
     return mcp
 
 
-def _make_sim(seed: int, log_path: Path) -> Sim:
-    if os.environ.get("USE_MOCKS") == "1":
-        from mock_sim import MockSimulation  # MOCK: until #3/#4 land on main
-
-        return MockSimulation(seed, log_path)
-    from ed72_sim.engine import Simulation
-    from ed72_sim.world import generate_world
-
-    return Simulation(generate_world(seed), log_path)
-
-
-def main() -> None:
-    from ed72_sim.constants import EVENT_LOG_PATH
-
-    log_path = Path(EVENT_LOG_PATH)
+def _fresh_log(path: str) -> Path:
+    log_path = Path(path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     # A restarted server restarts the sim at tick 0, so the old log would no longer replay.
     log_path.write_text("", encoding="utf-8")
-    sim = _make_sim(int(os.environ["ED72_SEED"]), log_path)
+    return log_path
+
+
+def _make_sim(seed: int) -> Sim:
+    if os.environ.get("USE_MOCKS") == "1":
+        from mock_sim import EVENT_LOG_PATH, MockSimulation  # MOCK: until #46/#48 land on main
+
+        return MockSimulation(seed, _fresh_log(EVENT_LOG_PATH))
+    from ed72_sim.constants import EVENT_LOG_PATH
+    from ed72_sim.engine import Simulation
+    from ed72_sim.world import generate_world
+
+    return Simulation(generate_world(seed), _fresh_log(EVENT_LOG_PATH))
+
+
+def main() -> None:
+    sim = _make_sim(int(os.environ["ED72_SEED"]))
     host = ToolHost(sim, HANDBOOK_PATH.read_text(encoding="utf-8"))
     build_server(host).run(transport="streamable-http", host="0.0.0.0", port=8000, path="/mcp")
 

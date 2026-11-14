@@ -12,6 +12,7 @@ import random
 from pathlib import Path
 
 TICKS = 144
+EVENT_LOG_PATH = "/var/lib/ed72/events.jsonl"
 BEDS = {"resus": ["R1", "R2", "R3"], "acute": [f"A{i}" for i in range(1, 9)], "fast_track": ["F1", "F2"]}
 
 
