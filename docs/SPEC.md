@@ -120,7 +120,7 @@ Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead
 - Every rule the scorer uses and every rate table is written in the agent-visible `HANDBOOK.md` (served by `rules`). A scorer rule or rate without a handbook line is a bug.
 - Everything needed for a good decision is in the observation; only the future (arrivals, unannounced events, dice rolls) is hidden.
 - The reference policy uses only the public tools. It never reads the seed, the event log or the sim source.
-- Reference policy (rulebook §12): admit by severity and keep resus beds free for critical patients; send light cases to Fast-track; staff each zone from the least tired people, which rotates rest automatically; order agency staff when a warning is about 9 ticks away; repair the CT at once; keep staff on shift when a surge is near. It lives in `ed72/solution/`.
+- Reference policy (rulebook §12): admit by severity and keep resus beds free for critical patients; send light cases to Fast-track; staff each zone from the least tired people, which rotates rest automatically; keep permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered; order agency staff when a warning is about 9 ticks away, and again whenever four or more patients go uncovered with no fresh person of that role left (within the budget, or up to €16 000 once eight or more are uncovered); repair the CT at once; keep staff on shift when a surge is near. It lives in `ed72/solution/`.
 
 ## 9. Harbor layout
 ```
@@ -175,7 +175,7 @@ Recorded for issue #41. "Adopted" means build it; `TUNE` values are tuned in A6 
 
 | Rulebook §14 item | Decision |
 |---|---|
-| Arrival rate and daily cycle | `TUNE`: mean 3.0 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 432 patients before events) |
+| Arrival rate and daily cycle | `TUNE`: mean 4.0 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 576 patients before events) |
 | Flu-wave severity mix | `TUNE`: ESI 3 40%, ESI 4 35%, ESI 5 25% |
 | W penalty weights and what "staff time" means | `TUNE`: a = 1.0 per unit share of on-shift staff-ticks above fatigue 60; b = 0.05 per faint; only on-shift ticks count |
 | Budget curve above €12 000 | Adopted: straight line to 0 at €24 000 |

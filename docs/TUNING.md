@@ -82,3 +82,55 @@ At 3.0, do-nothing is 0, stop-early is below reactive proxy, the reference beats
 ## Why 3.0
 
 The selected configuration produced the strongest separation between the reference and the tested baselines while keeping divert-all near 47 points. The reference outscored the reactive proxy and every exploit on all five seeds. The original red-team greedy comparison remains pinned to its 1.5-arrival setup. The tables above cover the new default.
+
+## Update, Sat 14 Nov 22:40: proposal to move the default to 4.0 (issue #69)
+
+Status: proposed on `yehor/ref-gap-planner`. The difficulty value is Kostiantyn's decision.
+
+### Why reopen it
+
+A local run of OpenCode with Kimi K3.1 Pro on seed 42 at 3.0 scored **0.9876**; the oracle scored 0.9896. The model made 144 `step` calls with no exploit, no deaths and no faints. Gemini 3.8 Flash scored 0.8117 on the same seed. At 3.0 a strong model has no gap.
+
+At 3.0 the two slow resources never bind. In the reference run on seed 42 the most tired person peaks at fatigue 31 (tired starts at 60) and spend is €7 000 of €12 000, so W and B are a free 20 points and turn-by-turn severity-first play is enough.
+
+Doctor time is the limit. With full zones a patient needs about 1.05 doctor-ticks (0.04·6 + 0.14·2 + 0.34·1 + 0.30·0.5 + 0.18·0.25). A doctor who stays fresh works 2.5 / (2.5 + 1.6) = 61% of ticks, so six doctors supply about 3.66 doctor-ticks per tick. The permanent team saturates near 3.5 arrivals per tick. Above that, the score depends on buying agency cover in time (4 ticks of delay, 16 of stay), on deciding when leaving the budget pays, and on keeping staff under the tired threshold. All of these follow from handbook numbers.
+
+### What changes
+
+- `arrival_mean` 3.0 → 4.0. No other knob, rule, tool or score change.
+- The reference plans for scarcity (`ed72/solution/policy.py`): it keeps permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered, and orders agency staff whenever four or more patients go uncovered and no fresh person of that role is left. It stays within the budget until eight or more are uncovered, then spends up to €16 000. It reads only the observation.
+
+### Scores at 4.0 (out of 100, local sim, no model)
+
+| Policy | Seed 42 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference (this branch) | 94.02 | 93.37 | 88.59 | 94.01 | 92.67 | 94.05 |
+| Previous reference (main) | 57.29 | 71.55 | 64.16 | 67.46 | 57.14 | 64.36 |
+| Severity-first | 29.28 | 30.58 | 26.06 | 29.83 | 37.45 | 32.44 |
+| Reactive proxy | 48.05 | 47.33 | 44.69 | 50.12 | 49.66 | 47.43 |
+| Stop-early | 5.83 | 4.23 | 5.37 | 5.01 | 4.73 | 5.11 |
+| Do-nothing | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| Divert-all | 44.75 | 48.75 | 48.99 | 44.35 | 46.02 | 43.20 |
+| Rest-in-quiet-periods | 29.28 | 29.81 | 26.06 | 40.23 | 34.55 | 33.66 |
+| Admit-light-only | 14.68 | 11.81 | 11.66 | 11.07 | 12.86 | 12.13 |
+| Admit-without-coverage | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| Fill-beds-at-last-tick | 1.98 | 1.77 | 1.69 | 1.68 | 1.71 | 1.69 |
+| Spend-to-limit | 39.61 | 46.78 | 34.31 | 43.12 | 46.15 | 35.64 |
+| Random | 5.15 | 4.71 | 4.81 | 6.50 | 5.35 | 4.74 |
+
+Do-nothing is 0, stop-early is below the reactive proxy, and the reference beats the reactive proxy and every exploit on all six seeds. Divert-all's worst score is 48.99. The same seed and actions give the same score.
+
+Reference mean and range on twelve seeds (42, 1–11), by arrival mean:
+
+| Arrival mean | Reference (this branch) | Previous reference (main) |
+|---|---|---|
+| 3.0 | 98.4 (96–100) | 96.6 (86–100) |
+| 3.6 | 95.3 (90–98) | 79.0 (58–98) |
+| 3.8 | 92.6 (82–96) | 68.7 (52–94) |
+| 4.0 | 92.0 (84–95) | 60.6 (49–72) |
+
+The previous reference plays about as well as Kimi did at 3.0 (98.96 against 98.76 on seed 42), so its row is the nearest scripted estimate of a strong model that keeps playing turn by turn. A stronger stand-in, the previous reference plus hiring two doctors and a nurse whenever ten patients wait, averages 72.7 (58–86) at 4.0. Neither is a model run.
+
+### Not measured yet
+
+No model has been run at 4.0. The Kimi and Gemini scores above are at 3.0. The gap at 4.0 needs one agent run per model before the README table is updated.
