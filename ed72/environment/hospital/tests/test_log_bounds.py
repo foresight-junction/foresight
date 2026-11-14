@@ -104,3 +104,30 @@ def test_bounded_log_leaves_reward_calls_and_end_unchanged_and_replays(tmp_path,
     control_report = collect.collect(1, control.sim._log_path, tmp_path / "control.json")
     assert replayed["reward"] == control_report["reward"]
     assert replayed["score"] == control_report["score"]
+
+
+def test_successful_step_with_huge_extras_adds_a_few_kb_and_replays_the_same(tmp_path):
+    # Before the fix: 50 actions with ~80 kB extras were applied and logged whole, a 4 MiB line per tick.
+    host = make_host(tmp_path)
+    junk = [{"type": "repair", "pad": "x" * 80_000}] * 50
+    before = log_size(host)
+    out = host.call("step", {"actions": junk})
+    assert "error" not in out
+    assert log_size(host) - before < 20_000
+    ref = Simulation(generate_world(1))
+    ref.step([{"type": "repair"}] * 50)
+    host.sim.run_to_end()
+    ref.run_to_end()
+    replayed = collect.collect(1, host.sim._log_path, tmp_path / "r.json")
+    assert replayed["reward"] == score(ref.events)["reward"]
+
+
+def test_rejected_action_echo_carries_only_contract_fields(tmp_path):
+    # N5 on the real path: NaN and deep nesting in extras never reach last_rejected, so the reply serialises.
+    host = make_host(tmp_path)
+    nested: list = []
+    for _ in range(150):
+        nested = [nested]
+    out = host.call("step", {"actions": [{"type": "nope", "x": float("nan"), "y": nested, "staff": 5}]})
+    assert out["observation"]["last_rejected"][0]["action"] == {"type": "nope", "staff": "<non-str>"}
+    json.dumps(out, allow_nan=False)

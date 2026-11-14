@@ -457,15 +457,8 @@ def test_odd_values_that_parse_are_logged_and_replay_exactly(raw, tmp_path):
     assert replay == score(host.sim.events)
 
 
-@pytest.mark.xfail(
-    sys.platform == "win32",
-    strict=True,
-    # pydantic-core's Windows build caps serialisation depth below 100; on Linux (CI, the hospital
-    # image) the 120-deep echo serialises, so there this is a plain regression test.
-    reason="N5 (Windows only): a step whose reply cannot be serialised returns is_error "
-    "although the tick advanced",
-)
 def test_a_step_that_advanced_the_tick_does_not_reply_with_an_error(raw):
+    """N5, fixed in #14: the sim now gets only CONTRACTS fields, so `last_rejected` never echoes deep nesting."""
     host, mcp = raw
     res = mcp.step_raw('{"actions":[{"type":"repair","x":' + "[" * 120 + "]" * 120 + "}]}")
     assert host.sim.tick == 1

@@ -39,7 +39,7 @@ def _loggable_actions(actions: Any) -> list:
     out: list = []
     for action in actions[:MAX_ACTIONS]:
         if not isinstance(action, dict):
-            out.append("<non-dict>")
+            out.append(action[:MAX_LOGGED_CHARS] if isinstance(action, str) else "<non-dict>")
             continue
         kept = {}
         for key in LOGGED_ACTION_FIELDS:
@@ -84,8 +84,10 @@ class ToolHost:
             return result
 
     def _step(self, actions: list[dict]) -> dict:
-        # Only what the sim applied reaches its log, so collect.py's replay stays exact.
-        out = self.sim.step(actions[:MAX_ACTIONS])
+        # Only what the sim applied reaches its log, so collect.py's replay stays exact. The sim reads only
+        # the CONTRACTS fields, so cutting the rest first changes no decision but bounds the logged bytes
+        # and the `last_rejected` echo (50 actions with 80 kB extras were a 4 MiB line per tick, #14).
+        out = self.sim.step(_loggable_actions(actions))
         if "error" in out:
             return out
         extra = [{"index": i, "ok": False, "reason": "bad_action"} for i in range(MAX_ACTIONS, len(actions))]
