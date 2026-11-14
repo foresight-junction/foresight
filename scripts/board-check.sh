@@ -145,13 +145,27 @@ for n, i in tasks.items():
         owns[n] = [p.rstrip("/") for p in re.findall(r"`([^`\s]+)`", claimed) if "/" in p or "." in p]
         if claimed != m.group(1):
             owns[n] = [p for p in owns[n] if not p.endswith("ed72_sim")] + [f"{p}/*" for p in owns[n] if p.endswith("ed72_sim")]
+def depends_on(n: int, target: int) -> bool:
+    """True when target is reachable from n through the #39 dependency chain."""
+    todo, seen_d = list(deps.get(n, [])), set()
+    while todo:
+        d = todo.pop()
+        if d == target:
+            return True
+        if d not in seen_d:
+            seen_d.add(d)
+            todo.extend(deps.get(d, []))
+    return False
+
+
 overlaps = 0
 for a in sorted(owns):
     for b in sorted(owns):
         if a < b:
             for pa in owns[a]:
                 for pb in owns[b]:
-                    if pa == pb or pa.startswith(pb + "/") or pb.startswith(pa + "/"):
+                    sequential = depends_on(a, b) or depends_on(b, a)  # one runs after the other
+                    if not sequential and (pa == pb or pa.startswith(pb + "/") or pb.startswith(pa + "/")):
                         overlaps += 1
                         report(False, f"#{a} `{pa}` overlaps #{b} `{pb}`")
 report(overlaps == 0, f"{overlaps} ownership overlap(s)")
