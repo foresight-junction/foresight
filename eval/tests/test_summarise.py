@@ -82,11 +82,26 @@ def _trial(
 def _hermetic_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Fixture trials record the relative task path "ed72"; keep it from resolving to the real task dir.
     monkeypatch.setattr(summarise, "REPO_ROOT", tmp_path / "no-repo")
+    monkeypatch.delenv("ED72_SEED", raising=False)
 
 
-def _manifest(job_dir: Path, seed: int | None = 42, config: str = "c" * 64, instr: str = "i" * 64) -> None:
+def _manifest(
+    job_dir: Path,
+    seed: int | None = 42,
+    config: str = "c" * 64,
+    instr: str = "i" * 64,
+    reference: str = "r" * 64,
+) -> None:
     # MOCK: hand-written manifest.json, same keys as eval/manifest.py write_manifest.
-    data = {"seed": seed, "config_sha256": config, "instruction_sha256": instr}
+    data = {
+        "seed": seed,
+        "config_sha256": config,
+        "instruction_sha256": instr,
+        "task_sha256": "t" * 64,
+        "reference_sha256": reference,
+        "source_commit": "5" * 40,
+        "source_dirty": False,
+    }
     (job_dir / "manifest.json").write_text(json.dumps(data))
 
 
@@ -131,7 +146,10 @@ def test_render_orders_by_mean_and_reports_gap(jobs: Path) -> None:
     assert table[0].startswith("| reference (oracle) |")
     assert table[1].startswith("| opencode | `gemini/gemini-3.8-flash` |")
     assert table[2].startswith("| do-nothing (nop) |")
-    assert "- opencode `gemini/gemini-3.8-flash` seed 42 config cccccccc instruction iiiiiiii: +0.587" in text
+    assert (
+        "- opencode `gemini/gemini-3.8-flash` seed 42 config cccccccc instruction iiiiiiii task tttttttt reference rrrrrrrr source 55555555: +0.587"
+        in text
+    )
     assert (
         "| ed72-agent | ed72__c3 | opencode | gemini/gemini-3.8-flash | - | - | AgentTimeoutError |" in text
     )
@@ -145,7 +163,10 @@ def test_unfinished_trial_is_left_out(tmp_path: Path) -> None:
     assert summarise.main([str(root), "--out", str(out)]) == 0
     text = out.read_text()
     assert "1 finished trials, 1 still running (left out)." in text
-    assert "| reference (oracle) | - | unknown | unknown | unknown | 1 | 0 | 1.000 |" in text
+    assert (
+        "| reference (oracle) | - | unknown | unknown | unknown | unknown | unknown | unknown | 1 | 0 | 1.000 |"
+        in text
+    )
 
 
 def test_reward_txt_and_artifact_report_fallbacks(tmp_path: Path) -> None:
@@ -281,3 +302,65 @@ def test_unknown_provenance_trials_are_never_pooled_with_each_other(tmp_path: Pa
     rows = [r for r in summarise.build_rows([t for t in trials if t]) if r.seed == "unknown"]
     assert sorted(r.mean for r in rows) == pytest.approx([0.1, 0.9])
     assert all(r.runs == 1 for r in rows)
+
+
+def _agent(root: Path, job: str, trial: str, reward: float, reference: str = "r" * 64) -> None:
+    _trial(root, job, trial, "opencode", reward=reward, model=("g", "m"), report=_report(reward))
+    _manifest(root / job, reference=reference)
+
+
+def test_completeness_is_scoped_to_each_plan_root(tmp_path: Path) -> None:
+    # Yehor's #120 case: A and B each plan one `agent` attempt; A has two trials, B none.
+    entry = {"job": "agent", "policy": "opencode", "model": "g/m", "seed": 42}
+    a, b = tmp_path / "a", tmp_path / "b"
+    for root in (a, b):
+        summarise.manifest.write_plan(root, [entry])
+    _agent(a, "agent", "ed72__a1", 0.5)
+    _agent(a, "agent", "ed72__a2", 0.6)
+    per_root = [
+        (
+            summarise.manifest.load_plan(r),
+            [t for t in map(summarise.load_trial, summarise.find_trial_dirs([r])) if t],
+            {},
+        )
+        for r in (a, b)
+    ]
+    comp = summarise.completeness_by_root(per_root)
+    assert (comp.matched, len(comp.missing), len(comp.unplanned)) == (1, 1, 1)
+    assert summarise.main([str(a), str(b), "--out", str(tmp_path / "s.md")]) == 4
+
+
+def test_missing_in_one_root_is_not_filled_by_another_roots_extra_trial(tmp_path: Path) -> None:
+    # The P2 case: A plans a reference it never ran; B plans one and ran two.
+    ref = {"job": "reference", "policy": "oracle", "seed": 42}
+    a, b = tmp_path / "a", tmp_path / "b"
+    summarise.manifest.write_plan(a, [ref])
+    summarise.manifest.write_plan(b, [ref])
+    for name in ("ed72__b1", "ed72__b2"):
+        _trial(b, "reference", name, "oracle", reward=0.9, report=_report(0.9))
+    _manifest(b / "reference")
+    per_root = [
+        (
+            summarise.manifest.load_plan(r),
+            [t for t in map(summarise.load_trial, summarise.find_trial_dirs([r])) if t],
+            {},
+        )
+        for r in (a, b)
+    ]
+    comp = summarise.completeness_by_root(per_root)
+    assert (comp.matched, len(comp.missing), len(comp.unplanned)) == (1, 1, 1)
+    assert comp.missing[0]["job"] == "reference"
+
+
+def test_rows_and_gaps_split_on_reference_identity(tmp_path: Path) -> None:
+    root = tmp_path / "jobs"
+    for job, ref_hash, reward in (("ref-r", "r" * 64, 0.9), ("ref-q", "q" * 64, 0.7)):
+        _trial(root, job, f"ed72__{job}", "oracle", reward=reward, report=_report(reward))
+        _manifest(root / job, reference=ref_hash)
+    _agent(root, "agent", "ed72__x", 0.5, reference="r" * 64)
+    rows = summarise.build_rows(
+        [t for t in map(summarise.load_trial, summarise.find_trial_dirs([root])) if t]
+    )
+    assert len([r for r in rows if r.policy != "opencode"]) == 2
+    gaps = summarise._gaps(rows)
+    assert len(gaps) == 1 and "reference rrrrrrrr" in gaps[0] and gaps[0].endswith("+0.400")
