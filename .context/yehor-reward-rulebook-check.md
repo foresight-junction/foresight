@@ -21,11 +21,21 @@ Prepare a replay matrix for every decision in SPEC §12 and identify what is nee
 ## Status
 - [x] Read rulebook §§2–14 and the SPEC §12 decisions in PR #43.
 - [x] Drafted a complete comparison matrix and boundary-case replay plan below.
-- [ ] Obtain prototype source/revision/run instructions and a deterministic fixed-sequence entry point.
-- [ ] Ask Denys to confirm decisions and run paired cases; record output and every difference.
+- [x] Obtain Denys's confirmation on #35.
+- [ ] Track Denys's SPEC confirmation PR.
 - [ ] If any rule changes, announce on #1 and use `contract-change`; coordinate matching handbook text with #7.
 
-## Comparison matrix — all entries pending
+## Denys's confirmation
+
+Denys confirmed all adopted SPEC §12 rules and the three TUNE starting values on issue #35.
+He said there is no JavaScript prototype and removed the prototype-parity requirement.
+The matrix below preserves potential Python replay test cases. Its statuses describe
+literal replay evidence, which has not been collected.
+
+Denys owns the confirmation PR from `leonardodadenchik/reward-rulebook-confirm`.
+The #67 and #69 tasks own calibration measurements. No gameplay contract changed here.
+
+## Comparison matrix
 
 | Rulebook §14 item | SPEC §12 choice | Probe or confirmation needed | Status |
 |---|---|---|---|
@@ -59,6 +69,6 @@ Prepare a replay matrix for every decision in SPEC §12 and identify what is nee
 - 2026-11-14: SPEC adopts both rulebook §13 exploit fixes: timeliness begins on first covered tick; end loss 0.3 requires a covered tick. These need direct score-boundary probes.
 
 ## Handoff
-- Done: comparison matrix and paired-replay cases prepared in this context file only.
-- Next: wait for prototype location/revision and Denys's confirmation; execute the paired cases, record differences, and propose any contract/rule change through the required workflow.
-- How to verify: no implementation checks apply yet. Once the JS runner is available, use identical injected exogenous inputs where supported; otherwise verify same-seed reproducibility within each engine and compare cross-engine mechanics/distributions without assuming equal RNG streams.
+
+Denys's confirmation is linked in #35. The SPEC confirmation PR is his. Use the matrix
+above to derive synthetic Python regression cases if #10 or #15 needs additional coverage.
