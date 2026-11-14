@@ -45,6 +45,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **A7 P2** Extra event types and a second hospital layout.
 - **A8 P1** (#31) Tool-output firewall tests: no tool output ever contains the future, the seed or a score.
 - **A9 P1** (#32) Action-independent randomness: same seed gives the same arrivals and dice whatever the agent does.
+- **A10 P0** (#67) Tune the difficulty values before the 22:00 freeze: one candidates table for Kostiantyn, then one PR that updates `config/default.json`, SPEC section 12, HANDBOOK.md and the baseline table together.
 
 ### B. Reward and integrity (`area:reward`)
 - **B1 P0** Scorer: O, T, W, B and reward = score / 100. No anchors, no planner. Pure function over the event log, unit tested (TDD).
@@ -63,6 +64,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **C4 P1** Failure analysis by F1..F10 (SPEC section 2) and by O, T, W, B: three trajectory excerpts, one chart. docs/FINDINGS.md.
 - **C5 P1** Fairness audit: for each agent mistake, confirm the needed info was in HANDBOOK or the observation. Fix the handbook where it was not.
 - **C6 P2** (#36) Reference ablations of the rulebook levers (F1 to F6): switch each lever off and measure the drop.
+- **C7 P1** (#69) Difficulty sweep in `eval/tuning/` over the SPEC section 7 knobs; feeds A10.
 
 ### D. Harness, repro and story (`area:harness`)
 - **D1 P0** Harbor spike: mostly done on Kostiantyn's branch (`docs/unfindable/SPIKE_S0_RESULTS.md`). Remaining: one real OpenCode model run against a stub hospital sidecar that serves `rules`, `observe` and `step`.
@@ -73,6 +75,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **D6 P2** Three seeds as three task folders + check the images build on x86 and ARM.
 - **D7 P2** Stretch (`area:train`): fine-tune a small open model (about 4B) on reference trajectories on Modal, show before and after on one held-out seed.
 - **D8 P1** (#37) Provider configuration and a measured run budget (timeout, call cap).
+- **D9 P1** (#83) Stop-early baseline as a Harbor agent, so `make eval` runs every judge run in EVAL section 3.
 
 ## Standing rules for this challenge (also in AGENTS.md section 10)
 1. Nothing that reveals the answer goes into the agent's container.

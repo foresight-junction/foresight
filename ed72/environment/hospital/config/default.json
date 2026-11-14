@@ -1,0 +1,15 @@
+{
+  "arrival_mean": 3.0,
+  "arrival_amplitude": 0.5,
+  "arrival_peak_hour": 15.0,
+  "flu_mix": {"3": 0.40, "4": 0.35, "5": 0.25},
+  "bus_mix": {"1": 0.20, "2": 0.30, "3": 0.50},
+  "events": {
+    "staff_sickness": {"window": [28, 35], "duration": 20, "warning": 0},
+    "flu_wave": {"window": [50, 61], "duration": 6, "warning": 10},
+    "ct_breakdown": {"window": [66, 75], "duration": 16, "warning": 0},
+    "bus_crash": {"window": [96, 109], "duration": 2, "warning": 8}
+  },
+  "budget": 12000,
+  "hard_limit": 24000
+}

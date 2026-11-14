@@ -1,0 +1,9 @@
+[project]
+name = "ed72-exploit-probes"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["../..", "../../ed72/environment/hospital", "../../ed72/solution"]
+testpaths = ["tests", "../../ed72/environment/hospital/ed72_sim/scoring/tests/test_probes.py", "../../ed72/environment/hospital/ed72_sim/scoring/tests/test_scoring_budget.py"]

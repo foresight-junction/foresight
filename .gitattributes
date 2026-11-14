@@ -1,0 +1,11 @@
+# Keep LF in the working tree on every OS. With core.autocrlf=true (the Windows default) shell
+# scripts get CRLF, and Harbor copies them into the Linux images, where they fail (#22, 15:58).
+* text=auto eol=lf
+*.sh text eol=lf
+ed72/environment/ward text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary

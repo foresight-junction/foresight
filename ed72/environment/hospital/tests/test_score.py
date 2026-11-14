@@ -188,6 +188,8 @@ def test_agent_counters_and_ended() -> None:
 
 def test_f1_resus_held_by_low_acuity_while_esi1_dies() -> None:
     log = Log().arrive("P1", 4).sim(0, "admitted", patient="P1", zone="resus", bed="R1")
+    for pid, bed in (("P3", "R2"), ("P4", "R3")):
+        log.arrive(pid, 2).sim(0, "admitted", patient=pid, zone="resus", bed=bed)
     log.arrive("P2", 1, t=1).sim(3, "death", patient="P2", cause="waiting")
     r = score(log.end())
     assert r["failures"]["F1"] == 1
@@ -202,6 +204,12 @@ def test_f1_not_raised_when_resus_empty_or_held_by_high_acuity() -> None:
     freed = Log().arrive("P1", 4).sim(0, "admitted", patient="P1", zone="resus", bed="R1")
     freed.sim(1, "discharged", patient="P1").arrive("P2", 1).sim(3, "death", patient="P2", cause="waiting")
     assert score(freed.end())["failures"]["F1"] == 0
+
+
+def test_f1_not_raised_while_a_resus_bed_is_free() -> None:
+    log = Log().arrive("P1", 4).sim(0, "admitted", patient="P1", zone="resus", bed="R1")
+    log.arrive("P2", 1, t=1).sim(3, "death", patient="P2", cause="waiting")
+    assert score(log.end())["failures"]["F1"] == 0
 
 
 def test_f6_diversion_with_free_allowed_bed() -> None:

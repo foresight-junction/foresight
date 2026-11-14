@@ -52,7 +52,9 @@ def failure_analysis(events: list[dict]) -> tuple[dict[str, int], dict[str, list
 
 
 def _resus_held_by_low_acuity(bed_zone: dict[str, str], esi: dict[str, int]) -> bool:
-    return any(zone == "resus" and esi[p] >= 3 for p, zone in bed_zone.items())
+    # Blocking only counts when resus is full: with a free resus bed the death was not caused by it.
+    in_resus = [p for p, zone in bed_zone.items() if zone == "resus"]
+    return len(in_resus) >= c.BEDS["resus"] and any(esi[p] >= 3 for p in in_resus)
 
 
 def _allowed_bed_free(level: int, bed_zone: dict[str, str]) -> bool:

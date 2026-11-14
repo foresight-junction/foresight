@@ -290,6 +290,21 @@ Reference implementation of the same idea (a different world model; port the pat
 BODY
 mk A9 env crn p0 1 "Action-independent randomness (common random numbers) for fair model comparison" "$B"
 
+read -r -d '' B <<'BODY' || true
+**Objective:** choose the difficulty values (SPEC §7 knobs) so the game has a measurable gap before the **Sat 22:00 rules freeze**. Today a naive greedy policy scores 99.4 (red team #62), severity-first 97–99 and `spend_to_limit` 88.9 (#8, #12), so there is no gap between models.
+
+**Rules:** rulebook §3 to §7 (arrivals, events, budget), §11 score, §12 baselines; SPEC §7 (knobs) and §12 (TUNE values); EVAL §5 gate; AGENTS.md §10 rules 3, 5 and 9 (raise difficulty only through the knobs: no trick wording, no impossible deadlines, no broken tools).
+
+**Files you own:** `ed72/environment/hospital/config/default.json` (values only; the loader stays with #8 / PR #64), the SPEC §12 TUNE rows through `contract-change`, and a tuning log in `docs/TUNING.md`.
+
+**Depends on:** #8 (knob file, PR #64), #12 (baselines, PR #52), #16 (reference policy). Start now with the baselines and a severity-first stand-in; re-check once #16 lands.
+
+**Rules for this task:** deterministic (seeded, no wall clock); every chosen value is written in HANDBOOK.md (#7) in the same PR, because no rule may be hidden; nothing that reveals the answer goes into the agent container; Kostiantyn decides the final values, and Denys confirms them against his prototype (#35) if it arrives by 20:00.
+
+**Done when:** on seeds 1 to 3, `do_nothing` = 0; `stop_early` < `reactive_proxy` < reference; every exploit baseline (`spend_to_limit`, `rest_in_quiet_periods`, `divert_all`, …) is clearly below the reference; a severity-first player is well below 95, leaving room for models; the table is in the PR and on #8; and the values are merged before 22:00.
+BODY
+mk A10 env tuning p0 5 "Tune difficulty values before the 22:00 rules freeze" "$B"
+
 # ---------- Lane B: reward and integrity ----------
 read -r -d '' B <<'BODY' || true
 > Realigned to docs/ED_Management_Simulator_RU.md by #41 / PR #43. Read docs/SPEC.md and docs/CONTRACTS.md on branch kostiantyn/docs-rules-realign until PR #43 merges.
@@ -576,6 +591,24 @@ Claim with `claim-task`, worktree via `scripts/wt.sh new <owner> ref ablations -
 BODY
 mk C6 ref ablations p1 7 "Reference-policy ablations of the rulebook levers (F1–F6)" "$B"
 
+read -r -d '' B <<'BODY' || true
+Created by yehor-claude-3 at Yehor's request, in answer to the difficulty alarm on #1 (kostiantyn-claude-2), which asks lane C to pick the values.
+
+**Problem:** with today's TUNE values a naive greedy policy scores 99.42–99.73 on seeds 1–3 (#62), and a severity-first player scores 98.5 (PR #52). That leaves no room for a gap between models, which is worth 30 rubric points.
+
+**Goal:** a reproducible sweep over the ED72_CONFIG knobs (PR #64, #8) using the merged baselines in `eval/baselines/`, and a recommended config that keeps the game fair while giving it room:
+- the greedy / severity-first player well below 90;
+- the reactive proxy below greedy, stop-early below the reactive proxy, do-nothing = 0;
+- divert-all at about 47 or less, and every exploit baseline below greedy (and below the reference once #16 lands);
+- idle-then-fill clearly below 0.05 reward (it is at 4.98 points on seed 3 in #62);
+- the same seed and the same actions give the same score.
+
+**Files:** `eval/tuning/` (new). Proposed values go to #8's owner and the integrator. `config/default.json` and SPEC §12 change only through #8 / `contract-change`. Every changed rate must also reach HANDBOOK.md (#7).
+**Depends on:** #8 (PR #64, stacked), #12 (merged). #16, the reference, gets added when it is pushed.
+**Done when:** `eval/tuning/RESULTS.md` has the sweep table and the recommendation, it is posted on #8 and #1, and the chosen values are agreed before the 22:00 freeze.
+BODY
+mk C7 ref tuning-sweep p1 4 "Difficulty sweep: pick ED72_CONFIG values so the model gap exists (before 22:00 freeze)" "$B"
+
 # ---------- Lane D: harness, repro and story ----------
 read -r -d '' B <<'BODY' || true
 Read first: AGENTS.md (section 10), docs/CHALLENGE.md, docs/SPEC.md, docs/CONTRACTS.md.
@@ -730,6 +763,21 @@ Folder ownership (CONTRACTS "Who owns which folder"): Lane A env (`ed72/environm
 - Informs #17 C2, #18 C3, #23 D3.
 BODY
 mk D8 harness model-budget p1 4 "Model provider configuration and measured run budget (tokens, time, cost)" "$B"
+
+read -r -d '' B <<'BODY' || true
+**Objective:** run the stop-early baseline through Harbor, so `make eval` covers every judge run in EVAL §3 (reference, do-nothing, stop-early). Today `make eval-baselines` completes reference 0.9896 and nop 0 on the real packaging, but skips stop-early because `eval/baselines/ed72_baselines/harbor_agent.py` doesn't exist (yehor-codex-4 on #18, 16:04; #12 chose not to ship it).
+
+**Rules:** rulebook §12 (stop-early = reactive proxy for 12 ticks, then stop); EVAL §3 and §5 (stop-early < reactive proxy < reference); SPEC §9 (the agent only touches `main` and the public tools); CONTRACTS v1 tools.
+
+**Files you own:** `eval/baselines/ed72_baselines/harbor_agent.py` and its test. `eval/run_all.sh` already calls `-a ed72_baselines.harbor_agent:StopEarlyAgent` with `PYTHONPATH=eval/baselines` (#53).
+
+**Depends on:** #58 (packaging, merged), #12 (in-process StopEarly policy, merged via #52).
+
+**Rules for this task:** the agent drives only the public `ward`/MCP tools inside `main`. No seed, sim source or scorer access. Deterministic, with no new randomness. Reuse the existing in-process policy rather than writing a second one.
+
+**Done when:** `make eval-baselines` runs stop-early end to end on the packaged task (no "skipped" line); its reward is above 0 and below the reactive proxy on the shipped seed; the result is posted on #18.
+BODY
+mk D9 harness stop-early-agent p1 5 "Stop-early baseline as a Harbor agent for make eval" "$B"
 
 echo
 echo "board: scripts/wt.sh board"
