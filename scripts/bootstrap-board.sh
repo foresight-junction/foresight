@@ -16,7 +16,7 @@ scripts/wt.sh init
 
 echo "creating challenge labels..."
 for a in env reward ref harness train; do gh label create "area:$a" --color 1d76db --force >/dev/null; done
-gh label create p0 --color b60205 --description "needed for the thin slice (Sat 16:00)" --force >/dev/null
+gh label create p0 --color b60205 --description "needed for the thin slice (Sat 18:00)" --force >/dev/null
 gh label create p1 --color fbca04 --description "needed to submit" --force >/dev/null
 gh label create p2 --color c5def5 --description "only if time" --force >/dev/null
 
@@ -39,179 +39,179 @@ mk() {
 READ="Read first: AGENTS.md (section 10), docs/CHALLENGE.md, docs/SPEC.md, docs/CONTRACTS.md."
 
 # ---------- Lane A: world and tools ----------
-mk A1 env world p0 "Seeded synthetic world generator" "$READ
+mk A1 env world p0 "Seeded world generator: patients, staff, beds, equipment, events" "$READ
 
-**Goal:** generate the registry from a seed: ~200 people with fields in tiers T0 to T3, vulnerability multiplier, guardians, consents per purpose with history, custody orders, ~30 requesters (some lying), documents (valid, expired, forged, out of scope). Spec section 3.
+**Goal:** generate the hospital from a seed: about 220 patients over 72 hours (true acuity 1 to 5, triage label, condition, required skill and equipment, treatment duration, health), a staff roster with skills (critical_care, general) and three 8-hour shifts plus an on-call pool, 15 beds (3 resus, 12 general), equipment (4 monitors, 2 ventilators, 1 CT) and the event schedule. Spec section 3.
 
-**Files you own:** \`custodian/environment/registry/custodian_sim/world.py\`, its tests.
+**Files you own:** \`ed72/environment/hospital/ed72_sim/world.py\`, its tests.
 **Depends on:** nothing.
-**Rules:** synthetic data only, invented names. All randomness from the seed. No network, no clock.
-**Done when:** \`generate(seed)\` returns the same world twice for one seed and different worlds for two seeds (tested), and a JSON dump of 3 people and 3 requesters is pasted in the PR."
+**Rules:** synthetic data only, invented names. All randomness from one seeded random.Random. No network, no clock.
+**Done when:** \`generate(seed)\` returns the same world twice for one seed and different worlds for two seeds (tested), and a JSON dump of 3 patients and 3 staff is pasted in the PR."
 
-mk A2 env sim p0 "Sim core: tickets, clock, event log, thin-slice tools" "$READ
+mk A2 env sim p0 "Sim core: tick loop, deterioration, event log, thin-slice tools" "$READ
 
-**Goal:** the episode engine. Ticket queue with deadlines, sim clock advanced by tool costs, append-only event log, and the 8 thin-slice tools: inbox, ticket, policy, verify_requester, consent, record, release, deny (+ clock, end_shift). Thin slice has 10 tickets of 4 types: F1 over-broad request, F2 impersonation, F3 fake emergency, F4 real emergency.
+**Goal:** the episode engine. A 15-minute tick loop, health falling by true acuity, treatment progress and an append-only event log. Thin-slice tools: board, patient, roster, assess, admit, assign, discharge, advance, clock, end_shift. The thin slice runs 24 sim hours.
 
-**Files you own:** \`custodian/environment/registry/custodian_sim/\` except \`world.py\` and \`scoring/\`.
+**Files you own:** \`ed72/environment/hospital/ed72_sim/\` except \`world.py\` and \`scoring/\`.
 **Depends on:** A1 (stub the world until it lands). Tool shapes: docs/CONTRACTS.md.
-**Rules:** closed tickets never reopen. No reset or undo. Bad args return an error object and change only the clock.
-**Done when:** a pytest drives a full 10-ticket episode through the Python API, and replaying the same actions gives a byte-identical event log."
+**Rules:** no reset or undo. The clock moves only on advance (15 to 120 minutes) and advance returns early on a label 1 or 2 arrival or an event. Bad args return an error object and change nothing else. The hospital counts the tool-call cap.
+**Done when:** a pytest drives a 24-hour episode through the Python API, and replaying the same actions gives a byte-identical event log."
 
-mk A3 env server p0 "Tool server: MCP + desk CLI + admin endpoints" "$READ
+mk A3 env server p0 "Tool server: MCP + ward CLI + /health" "$READ
 
-**Goal:** expose the sim's tools over MCP (streamable-http at /mcp) and through a \`desk\` CLI in the agent container. Add GET /health and POST /admin/finalise (idempotent, ends the episode and returns the score object).
+**Goal:** expose the sim's tools over MCP (streamable-http at /mcp) and through a \`ward\` CLI in the agent container (\`ward <tool> --json '<args>'\`). Add GET /health.
 
-**Files you own:** \`custodian/environment/registry/server.py\`, \`custodian/environment/desk\`.
-**Depends on:** A2, B1 (call a stub scorer until B1 lands), D1 (tells us MCP vs CLI as the main path).
-**Rules:** no reset, seed or ground-truth endpoint. Admin endpoints are not listed as tools.
-**Done when:** from the \`main\` container, \`desk inbox\` returns tickets and an MCP client lists the tools."
+**Files you own:** \`ed72/environment/hospital/server.py\`, \`ed72/environment/ward\`.
+**Depends on:** A2, D1 (tells us MCP vs CLI as the main path).
+**Rules:** no reset, seed, ground-truth or finalise endpoint.
+**Done when:** from the \`main\` container, \`ward board\` returns the board and an MCP client lists the tools."
 
-mk A4 env tickets2 p1 "Ticket types round 2: cross-ticket and adversarial cases" "$READ
+mk A4 env rules2 p1 "Rules round 2: fatigue, budget, equipment, transfers, returns, events" "$READ
 
-**Goal:** add F5 consent revoked mid-shift, F6 mosaic (one requester collects pieces over 3 tickets), F8 injection in free text, F9 official policy change mid-shift, police with and without a valid warrant (verify_document), subject access requests. Adds tools: policy_changes, verify_document, release_log, escalate. Grow the shift to ~40 tickets.
+**Goal:** the rules that make the 72 hours hard. Fatigue and sick-out (above 90 the person is off sick for 24 hours). Budget and overtime pricing (1.5x for the first 4 extra hours, then 2x; call-in, transfer and repair have fixed prices). Equipment faults and repairs. Transfers (90-minute drive, 2 ambulances) and diversion. Early-discharge returns. Seeded events with precursor notices. Adds tools: equipment, budget, notices, handbook, order_test, transfer, set_diversion, call_in, extend_shift, send_on_break, repair. The episode grows to 72 hours.
 
-**Files you own:** ticket generators under \`custodian_sim/tickets/\`.
-**Depends on:** A2, B1. Tell lane B the ground truth for each new type before you merge.
-**Done when:** each new type has one test showing the correct action sequence scores full value and the tempting wrong one scores harm, and the reference policy (C1) is still >= 0.9."
+**Files you own:** rule modules under \`ed72/environment/hospital/ed72_sim/rules/\`.
+**Depends on:** A2, B1. Tell lane B the consequence of each new rule before you merge.
+**Done when:** each rule has a test showing its sim consequence, and the reference policy (C1) is still >= 0.9."
 
-mk A5 env handbook p1 "HANDBOOK.md and instruction.md: every scored rule written down" "$READ
+mk A5 env handbook p1 "HANDBOOK.md and instruction.md: every rate table and scored rule written down" "$READ
 
-**Goal:** the agent-visible policy handbook and the task instruction. Every rule the scorer applies must be findable in the handbook. Plain wording, no tricks. This is what protects the 30 points for meaningful difficulty.
+**Goal:** the agent-visible handbook and the task instruction. Every rate table (deterioration, safe wait limits, prices, fatigue) and every rule the scorer applies must be findable in the handbook. Say that about 20% of triage labels are wrong. Plain wording, no tricks. This protects the 30 points for meaningful difficulty.
 
-**Files you own:** \`custodian/environment/workspace/HANDBOOK.md\`, \`custodian/instruction.md\`.
-**Depends on:** A2, B1.
-**Done when:** a table in the PR maps every scorer rule to a handbook section, and a teammate who has not read the code can decide 5 sample tickets correctly from the handbook alone."
+**Files you own:** \`ed72/environment/workspace/HANDBOOK.md\`, \`ed72/instruction.md\`.
+**Depends on:** A2, A4, B1.
+**Done when:** a table in the PR maps every scorer rule and sim rate to a handbook section, and a teammate who has not read the code can plan 5 sample patients correctly from the handbook alone."
 
 mk A6 env knobs p1 "Difficulty config: one file of knobs" "$READ
 
-**Goal:** one registry-side config for n_tickets, share of cross-ticket cases, time budget, ticket-text messiness. Tune with lane C after the 16:00 run.
+**Goal:** one hospital-side config for the number of patients over 72 hours, the share of wrong labels, the share of quiet deterioration, the budget, the evening load and the event timing. Tune with lane C after the 18:00 run.
 
-**Files you own:** \`custodian/environment/registry/config/\`.
+**Files you own:** \`ed72/environment/hospital/config/\`.
 **Depends on:** A2, C2.
-**Done when:** changing one value changes the episode, the reference stays >= 0.9 and finishes with >= 20% of the clock left, and the chosen values are written in docs/SPEC.md."
+**Done when:** changing one value changes the episode, the reference stays >= 0.9, and the chosen values are written in docs/SPEC.md."
 
-mk A7 env export p2 "Research export tickets (F7 small cells)" "$READ
+mk A7 env events p2 "Extra event types and a second hospital layout" "$READ
 
-**Goal:** tickets asking for a de-identified research extract. The agent picks columns, generalisation levels and a minimum group size with the \`export\` tool.
+**Goal:** more ordinary events (for example a lab slowdown or a second monitor fault) and a second bed and equipment layout, so one set of tuned rules is not the whole test.
 
-**Files you own:** \`custodian_sim/tickets/export.py\`.
-**Depends on:** A4, B6.
-**Done when:** an export that leaves a unique person identifiable scores harm, and a sensible one scores value."
+**Files you own:** \`ed72/environment/hospital/ed72_sim/rules/events_extra.py\`, \`ed72/environment/hospital/config/layouts/\`.
+**Depends on:** A4, A6.
+**Done when:** each new event has a notice precursor and a handbook line, and the reference scores >= 0.9 on both layouts."
 
 # ---------- Lane B: reward and integrity ----------
-mk B1 reward scorer p0 "Scorer: value, harm, anchors, normalisation, gate" "$READ
+mk B1 reward scorer p0 "Scorer: per-patient harm, M1 and M2, anchors, floor, normalisation" "$READ
 
-**Goal:** pure function \`score(events, world) -> ScoreObject\` exactly as in docs/SPEC.md section 6 and the score object in docs/CONTRACTS.md. Ground truth per ticket comes from the world and the written rules. Anchor = best of do-nothing, deny-all, approve-all, escalate-all, random.
+**Goal:** pure function \`score(events, world)\` as in docs/SPEC.md section 6 and the score object in docs/CONTRACTS.md. Per patient harm: M1 Outcome (death 100, permanent harm 40) and M2 Timeliness (safe wait 0, 10, 30, 60, 120 minutes for acuity 1 to 5; weight 5, 3, 1.5, 0.5, 0.2 per 10 minutes, cap 30). H_anchor comes from trivial policies replayed on the same seed. H_floor comes from a full-information planner in the hospital image. reward = clip((H_anchor - H) / (H_anchor - H_floor), 0, 1). Use test-driven development.
 
-**Files you own:** \`custodian/environment/registry/custodian_sim/scoring/\`, its tests.
-**Depends on:** A1 for the world shape (agree it at kickoff, then work in parallel on fixtures).
-**Rules:** reads only the event log and the world. No LLM. Deterministic. Scores outcomes, never 'number of calls made'.
-**Done when:** unit tests show: perfect play = 1.0, empty log = 0, deny-all = 0, approve-all = 0, one T3 leak to an unverified requester caps the score at 0.2, late emergency release = 0 value + harm."
+**Files you own:** \`ed72/environment/hospital/ed72_sim/scoring/\`, its tests.
+**Depends on:** A1 for the world shape (agree it early, then work in parallel on fixtures).
+**Rules:** reads only the event log and the world. No LLM. Deterministic. Staff fatigue, budget and bed use are never scored directly.
+**Done when:** unit tests show an empty log = 0, do-nothing = 0, a hand-built perfect log = 1.0, one death costs more than any wait, and the same events give the same score."
 
-mk B2 reward verifier p0 "Verifier tests/test.sh writes reward.txt" "$READ
+mk B2 reward verifier p0 "Verifier: collect.py writes report.json, test.sh always writes a number" "$READ
 
-**Goal:** \`custodian/tests/test.sh\` calls POST /admin/finalise on the registry, writes the reward number to /logs/verifier/reward.txt and the full object to /logs/verifier/score_full.json.
+**Goal:** \`collect.py\` runs inside the hospital container as the \`[[verifier.collect]]\` hook, finalises the episode and writes /evidence/report.json (declared as a sidecar artifact). \`ed72/tests/test.sh\` reads only that file, writes the reward to /logs/verifier/reward.txt and the full object to /logs/verifier/score_full.json. Harbor runs with environment_mode separate.
 
-**Files you own:** \`custodian/tests/\`.
-**Depends on:** A3 (use a stub endpoint until it lands), D2.
-**Rules:** always writes a number in [0,1]. On any error (registry down, bad JSON) write 0. Use absolute paths. Do not trust any file in the agent's container.
-**Done when:** \`harbor run -p custodian -a oracle\` shows a reward, and killing the registry before the verifier gives 0, not a crash."
+**Files you own:** \`ed72/tests/\`, \`ed72/environment/hospital/collect.py\`.
+**Depends on:** D2, A2 (use a stub until it lands).
+**Rules:** always writes a number in [0,1]. On any error write 0. Use absolute paths and set -u. Trust nothing in the agent's container.
+**Done when:** \`harbor run -p ed72 -a oracle\` shows a reward, and a root agent writing reward.txt itself does not change it."
 
 mk B3 reward anchors p1 "Trivial-policy anchors + CI test (all <= 0.05)" "$READ
 
-**Goal:** scripted policies that avoid the task: do-nothing, deny-all, approve-all, escalate-all, random, stop-after-k for k in 1, 5, 20. A test asserts every one scores <= 0.05 on every shipped seed (stop-after-k must score below honest full play).
+**Goal:** scripted policies that avoid the task: do-nothing, first-come-first-served by label, discharge-all, transfer-all, divert-all, call-in-everyone, random, plus stop-early at hour k. A test asserts every one scores <= 0.05 on every shipped seed. Stop-early at hour k must score no more than playing to hour k and then doing nothing.
 
-**Files you own:** \`eval/baselines/\`, \`custodian_sim/scoring/tests/test_anchors.py\`.
+**Files you own:** \`eval/baselines/\`, \`ed72/environment/hospital/ed72_sim/scoring/tests/test_anchors.py\`.
 **Depends on:** B1, A2.
-**Done when:** the table of baseline scores is in the PR and the test runs in CI."
+**Done when:** the baseline score table is in the PR and the test runs in CI."
 
-mk B4 reward redteam1 p1 "Red-team round 1 (Sat 17:00)" "$READ
+mk B4 reward redteam1 p1 "Red-team round 1 (Sat 19:00)" "$READ
 
-**Goal:** 15 minutes attacking the reward the way judges will, done by someone who did NOT write the scorer. Try: write reward.txt yourself, read sim source or seed from the agent container, call /admin/finalise early, look for reset or replay, negative or huge args, release the same ticket twice, release then deny, unknown field names, exhausting the clock, injection text in args, hitting the registry on other ports.
+**Goal:** 15 minutes attacking the reward the way judges will, done by someone who did NOT write the scorer. Try: write reward.txt yourself, read the sim source or seed from the agent container, discharge everyone, transfer everyone, divert everything, unlimited overtime, stop early, burn everything in the last hours, negative or huge advance minutes, assign the same nurse twice, hit the hospital on other ports or paths.
 
 **Files you own:** \`docs/REDTEAM.md\`.
 **Depends on:** B2, A3.
 **Done when:** every attempt is logged with its result, and each working exploit has its own issue labelled p0."
 
-mk B5 reward redteam2 p1 "Red-team round 2 after rules freeze (Sat 23:00) + regression tests" "$READ
+mk B5 reward redteam2 p1 "Red-team round 2 after rules freeze (Sat 23:30) + regression tests" "$READ
 
 **Goal:** repeat B4 on the frozen rules with a different person, and add one regression test per exploit found in either round.
 
-**Files you own:** \`docs/REDTEAM.md\`, regression tests under \`custodian_sim/scoring/tests/\`.
+**Files you own:** \`docs/REDTEAM.md\`, regression tests under \`ed72/environment/hospital/ed72_sim/scoring/tests/\`.
 **Depends on:** B4, A4.
 **Done when:** REDTEAM.md lists what was tried and why each attempt fails. We show this page in the demo."
 
-mk B6 reward exportscore p2 "Export scorer: group-size check + utility" "$READ
+mk B6 reward modules p1 "Modules M3 Disposition and M4 Continuity" "$READ
 
-**Goal:** score F7 export tickets: harm if any group over the quasi-identifiers is smaller than the handbook minimum, value by how much useful detail is kept.
+**Goal:** M3 Disposition: a return after early discharge costs 15 plus the patient's later outcome; leaving without being seen costs 2 to 10 by acuity; harm in transit or after diversion counts. M4 Continuity: outcomes during the 12-hour handover tail, using the same table as M1 to M3.
 
-**Files you own:** \`custodian_sim/scoring/export.py\`.
-**Depends on:** B1, A7.
-**Done when:** unit tests cover a unique-person leak, an over-generalised useless export, and a good one."
+**Files you own:** \`ed72/environment/hospital/ed72_sim/scoring/disposition.py\`, \`ed72/environment/hospital/ed72_sim/scoring/continuity.py\`, their tests.
+**Depends on:** B1, A4.
+**Done when:** unit tests cover an early discharge that returns, a diverted critical patient, and a patient who dies in the tail."
 
 # ---------- Lane C: reference and experiments ----------
 mk C1 ref policy p0 "Reference policy (solution/solve.sh), public tools only" "$READ
 
-**Goal:** a scripted policy that plays the shift through the same tools the agent has and scores >= 0.9. This is our 'stronger reference run'.
+**Goal:** a scripted policy that plays the shift through the same tools the agent has and scores >= 0.9. It assesses every arrival, re-assesses waiting patients by acuity, keeps one resus bed free, rotates breaks before fatigue reaches 70, reads notices every sim hour, holds a budget reserve per remaining day and discharges only on handbook criteria. This is our stronger reference run.
 
-**Files you own:** \`custodian/solution/\`.
+**Files you own:** \`ed72/solution/\`.
 **Depends on:** A2, A3, B1.
-**Rules:** never reads the seed, ground truth, event log or sim source. If it cannot decide a ticket from tool output + handbook, that is a bug in the environment: open an issue for lane A.
-**Done when:** \`harbor run -p custodian -a oracle\` >= 0.9 three times in a row with the identical score."
+**Rules:** never reads the seed, ground truth, event log or sim source. If it cannot decide from tool output and the handbook, that is a bug in the environment: open an issue for lane A.
+**Done when:** \`harbor run -p ed72 -a oracle\` scores >= 0.9 three times in a row with the identical score."
 
-mk C2 ref firstrun p0 "First OpenCode run at 16:00 (calibration)" "$READ
+mk C2 ref firstrun p0 "First OpenCode run at 18:00 (calibration)" "$READ
 
 **Goal:** run OpenCode with our strongest model on the thin slice and tell the team if there is a gap.
 
 **Files you own:** \`eval/results/\`.
 **Depends on:** D2, A3, B2, C1.
-**Done when:** the Harbor run log is committed under eval/results/, and a comment on this issue gives: score, reference score, the 3 biggest mistakes with ticket ids, and a recommendation (keep / harder / fairer)."
+**Done when:** the Harbor run log is committed under eval/results/, and a comment on this issue gives: the score, the reference score, the 3 biggest mistakes with patient ids and F codes, and a recommendation (keep / harder / fairer)."
 
-mk C3 ref matrix p1 "Run matrix: 3 runs x models x seeds" "$READ
+mk C3 ref matrix p1 "Run matrix: 3 seeds x 3 runs x up to 3 models" "$READ
 
-**Goal:** the numbers for the 30-point gap. 3 runs each for 2 to 3 models (OpenAI, Anthropic, Google) on each shipped seed, plus reference, nop and stop-early.
+**Goal:** the numbers for the 30-point gap. 3 seeds x 3 runs for up to 3 models (one each from Anthropic, OpenAI, Google), plus reference, nop and stop-early.
 
 **Files you own:** \`eval/results/\`, \`eval/matrix.yaml\`.
-**Depends on:** D3, A4 merged and rules frozen (21:00).
-**Done when:** eval/results/summary.md has a table with mean and min/max per model, every agent run is below the reference, and all logs are committed."
+**Depends on:** D3, A4 merged, rules frozen (22:00).
+**Done when:** eval/results/summary.md has a table with mean and min/max per model and seed, every agent run is below the reference, and all logs are committed."
 
 mk C4 ref findings p1 "Failure analysis: docs/FINDINGS.md" "$READ
 
-**Goal:** explain where the agent falls short and why, tied to decisions. Use the F1..F10 breakdown from score_full.json and the trajectories.
+**Goal:** explain where the agent falls short and why, tied to decisions. Use the counts per failure code F1 to F10 and the harm per module from score_full.json, and the trajectories.
 
 **Files you own:** \`analysis/\`, \`docs/FINDINGS.md\`.
 **Depends on:** C3 (start on C2's run).
-**Done when:** FINDINGS.md has a failures-by-type chart, 3 trajectory excerpts (what the agent saw, what it did, what the reference did, what it cost), and one honest paragraph on what the agent did well."
+**Done when:** FINDINGS.md has a failures-by-code chart, harm by module, 3 trajectory excerpts, and one honest paragraph on what the agent did well."
 
 mk C5 ref fairness p1 "Fairness audit of every agent mistake" "$READ
 
-**Goal:** for each mistake in C4, check the agent could have known better: the rule is in the handbook and the fact was reachable through a tool within the deadline. Where it was not, fix the environment, not the write-up.
+**Goal:** for each mistake in C4, check the agent could have known better: the rule is in the handbook and the fact was reachable through a tool in time (for example the true acuity through assess, a breakdown through notices). Where it was not, fix the environment, not the write-up.
 
 **Files you own:** a section in \`docs/FINDINGS.md\`.
 **Depends on:** C4, A5.
-**Done when:** each failure type has a line 'rule: handbook section X, fact: tool Y', and any unfair case has an issue for lane A."
+**Done when:** each failure code has a line 'rule: handbook section X, fact: tool Y', and any unfair case has an issue for lane A."
 
 # ---------- Lane D: harness, repro and story ----------
-mk D1 harness spike p0 "Harbor spike: sidecar + OpenCode sees our tools" "$READ
+mk D1 harness spike p0 "Harbor spike: one real OpenCode run against a stub hospital sidecar" "$READ
 
-**Goal:** prove the pipeline before anyone builds on it. Install Harbor (\`uv tool install harbor\`) and Docker. Run Harbor's hello-mcp example with oracle, then with \`-a opencode -m <model>\`. Find out: does OpenCode register MCP servers from \`[[environment.mcp_servers]]\`? Does a docker-compose sidecar work? How do we pass API keys?
+**Goal:** most of the spike is done on Kostiantyn's branch (\`origin/kostiantyn/env-unfindable-slice\`, see \`docs/unfindable/SPIKE_S0_RESULTS.md\`): sidecar, separate mode and the collect hook. What remains: one real \`-a opencode -m <model>\` run against a stub hospital sidecar. Confirm OpenCode sees the MCP tools from \`[[environment.mcp_servers]]\`. OpenCode installs over npm, so main needs internet or a preinstall.
 
 **Files you own:** \`docs/HARBOR-NOTES.md\`.
 **Depends on:** nothing. Do this first, it unblocks A3 and B2.
 **Done when:** HARBOR-NOTES.md has the exact working commands, the MCP-or-CLI decision, and where run logs land. Post the decision on the Contracts issue."
 
-mk D2 harness skeleton p0 "Task skeleton: custodian/ tree, task.toml, compose, Dockerfiles" "$READ
+mk D2 harness skeleton p0 "Task skeleton: ed72/ tree, copy the Unfindable packaging" "$READ
 
-**Goal:** the Harbor task folder from docs/SPEC.md section 9 with stubs, so the other lanes drop their code in. task.toml with timeouts and the MCP server entry, docker-compose.yaml with the registry sidecar and a healthcheck, both Dockerfiles.
+**Goal:** the Harbor task folder from docs/SPEC.md section 9. Copy the packaging from \`origin/kostiantyn/env-unfindable-slice:harbor/unfindable/\` (task.toml with separate mode and the collect hook, compose with the hospital sidecar and a healthcheck, start.sh, Dockerfiles) and rename it to ed72 and hospital, so the other lanes drop their code in.
 
-**Files you own:** \`custodian/task.toml\`, \`custodian/environment/Dockerfile\`, \`custodian/environment/docker-compose.yaml\`, \`custodian/environment/registry/Dockerfile\`.
+**Files you own:** \`ed72/task.toml\`, \`ed72/environment/Dockerfile\`, \`ed72/environment/docker-compose.yaml\`, \`ed72/environment/hospital/Dockerfile\`, \`ed72/environment/hospital/start.sh\`.
 **Depends on:** D1.
-**Rules:** the \`main\` image contains the handbook and the desk CLI only. No sim code, no seed, no scorer.
-**Done when:** with stub code, \`harbor run -p custodian -a oracle\` and \`-a nop\` both finish and write a reward."
+**Rules:** the \`main\` image holds HANDBOOK.md and the ward CLI only. No sim code, no seed, no scorer.
+**Done when:** with stub code, \`harbor run -p ed72 -a oracle\` and \`-a nop\` both finish and write a reward."
 
 mk D3 harness eval p1 "One-command eval: make eval" "$READ
 
-**Goal:** one command that reproduces our reported results: reference, nop, stop-early, 3 agent runs. Writes eval/results/summary.md. Includes the stop-early baseline as a small scripted agent.
+**Goal:** one command that reproduces our reported results: reference, nop, stop-early and 3 agent runs (\`-k 3\`). Writes eval/results/summary.md. Stop-early is a small scripted agent that plays the reference to hour 24 and then calls end_shift.
 
 **Files you own:** \`Makefile\`, \`eval/run_all.sh\`, \`eval/summarise.py\`.
 **Depends on:** D2, B2, C1.
@@ -219,7 +219,7 @@ mk D3 harness eval p1 "One-command eval: make eval" "$READ
 
 mk D4 harness ci p1 "CI for the new layout" "$READ
 
-**Goal:** replace the frontend/backend CI steps: ruff + pytest for custodian_sim and the scorer, plus the anchors test.
+**Goal:** replace the old CI steps with ruff and pytest for ed72_sim and the scorer, plus the anchors test.
 
 **Files you own:** \`.github/workflows/ci.yml\`.
 **Depends on:** A2, B1.
@@ -236,7 +236,7 @@ mk D5 harness story p1 "README, demo script, demo video, submission" "$READ
 
 mk D6 harness seeds p2 "Three seeds as task folders + x86/ARM build check" "$READ
 
-**Goal:** stamp out custodian-s1..s3 from one template so judges can rerun on more than one seed, and confirm the images build on both x86 and Apple Silicon.
+**Goal:** stamp out ed72-s1 to ed72-s3 from one template so judges can rerun on more than one seed, and confirm the images build on both x86 and Apple Silicon.
 
 **Files you own:** \`scripts/make_seeds.sh\`.
 **Depends on:** D2, rules freeze.
@@ -244,11 +244,11 @@ mk D6 harness seeds p2 "Three seeds as task folders + x86/ARM build check" "$REA
 
 mk D7 train stretch p2 "Stretch: small model before and after training" "$READ
 
-**Goal:** the tiebreaker. Collect reference-policy trajectories, fine-tune a small open model on Modal, run it in the environment before and after.
+**Goal:** the tiebreaker. Collect reference-policy trajectories, fine-tune a small open model (about 4B parameters) on Modal, and run it in the environment before and after on one held-out seed.
 
 **Files you own:** \`training/\`.
-**Depends on:** rules freeze at 21:00 and everything P1 green. Do not start before that.
-**Done when:** a two-row table (base vs tuned, same seeds) is in the README, or the task is dropped by 01:00."
+**Depends on:** rules freeze at 22:00 and everything P1 green. Do not start before that.
+**Done when:** a two-row table (base vs tuned, same seed) is in the README, or the task is dropped by 01:00."
 
 echo
 echo "board: scripts/wt.sh board"
