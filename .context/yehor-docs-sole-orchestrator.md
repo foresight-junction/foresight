@@ -8,6 +8,8 @@ Issue #117 records Yehor's sole orchestration and merge authority for the #113 r
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `GEMINI.md`
+- `.agents/skills/claim-task/SKILL.md`
 - `.agents/skills/ship-pr/SKILL.md`
 - `docs/PLAN.md`
 - This context file
@@ -23,4 +25,4 @@ Runtime code, contracts, existing issue scope, and other branches or context fil
 
 ## Handoff
 
-The policy now agrees across AGENTS.md, CLAUDE.md, ship-pr and PLAN.md. Run `git diff --check` and verify merge authority, assigned PR bases and the #18 launch gate in those files. Yehor handles merge after CI.
+The policy now agrees across AGENTS.md, CLAUDE.md, GEMINI.md, claim-task, ship-pr and PLAN.md. Run `git diff --check` and verify merge authority, assigned PR bases and the #18 launch gate in those files. Yehor handles merge after CI.

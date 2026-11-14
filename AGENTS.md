@@ -45,7 +45,7 @@ Team skills live in `.agents/skills/` (Codex reads them there; `.claude/skills` 
 
 | Skill | Use it when |
 |---|---|
-| `claim-task` | Starting any work: find, claim, or create the issue |
+| `claim-task` | Starting any work: verify and claim the assigned issue |
 | `noslop` | After writing any code or user-facing text, before committing |
 | `pre-commit-gate` | Before **every** commit |
 | `cross-review` | Before every PR, and when stuck on a bug after 2 failed fixes |
