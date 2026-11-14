@@ -106,21 +106,21 @@ describe("Playback on the hand-made fixture", () => {
   });
 
   it("brings arrivals in from the entrance", () => {
-    const f = frameAt(pb, 0, 0.6);
+    const f = frameAt(pb, 0, 0.5);
     const p = f.patients.find((x) => x.id === "P004")!;
     expect(p.state).toBe("arriving");
     expect(f.effects.some((e) => e.kind === "arrival")).toBe(true);
-    expect(frameAt(pb, 0, 0.5).patients.find((x) => x.id === "P004")).toBeUndefined();
+    expect(frameAt(pb, 0, 0.35).patients.find((x) => x.id === "P004")).toBeUndefined();
   });
 
   it("walks a discharged patient to the exit and fades them", () => {
-    const leaving = frameAt(pb, 1, 0.8).patients.find((p) => p.id === "P003")!;
+    const leaving = frameAt(pb, 1, 0.6).patients.find((p) => p.id === "P003")!;
     expect(leaving).toMatchObject({ state: "leaving", bed: null, moving: true });
     expect(frameAt(pb, 1, 1).patients.find((p) => p.id === "P003")).toBeUndefined();
   });
 
   it("shows a diverted patient turning away", () => {
-    const f = frameAt(pb, 0, 0.9);
+    const f = frameAt(pb, 0, 0.65);
     expect(f.patients.find((p) => p.id === "P005")).toMatchObject({ state: "leaving" });
     expect(f.effects.some((e) => e.kind === "diverted")).toBe(true);
     expect(frameAt(pb, 1, 0).patients.find((p) => p.id === "P005")).toBeUndefined();
@@ -143,7 +143,9 @@ describe("Playback on the hand-made fixture", () => {
 
   it("drops a fainted nurse, then carries her offstage", () => {
     const fell = frameAt(pb, 1, 0.8).staff.find((s) => s.id === "N1")!;
-    const before = frameAt(pb, 1, 0.5).staff.find((s) => s.id === "N1")!;
+    const before = frameAt(pb, 1, 0.35).staff.find((s) => s.id === "N1")!;
+    const spinning = [0.41, 0.43, 0.46, 0.48].map((ph) => frameAt(pb, 1, ph).staff.find((s) => s.id === "N1")!.facing);
+    expect(new Set(spinning).size).toBeGreaterThan(1);
     expect(fell.status).toBe("fainted");
     expect({ x: fell.x, y: fell.y }).toEqual({ x: before.x, y: before.y });
     const carried = frameAt(pb, 2, 1).staff.find((s) => s.id === "N1")!;
@@ -161,10 +163,10 @@ describe("Playback on the hand-made fixture", () => {
 
   it("brings agency staff in and sends them out", () => {
     expect(frameAt(pb, 1, 0).staff.find((s) => s.id === "AD1")).toBeUndefined();
-    const arriving = frameAt(pb, 2, 0.7).staff.find((s) => s.id === "AD1")!;
+    const arriving = frameAt(pb, 2, 0.55).staff.find((s) => s.id === "AD1")!;
     expect(arriving.moving).toBe(true);
     expect(frameAt(pb, 3, 0).staff.find((s) => s.id === "AD1")).toMatchObject({ ...layout.restSlot(0), status: "resting" });
-    expect(frameAt(pb, 4, 0.8).staff.find((s) => s.id === "AD1")?.status).toBe("agency_left");
+    expect(frameAt(pb, 4, 0.6).staff.find((s) => s.id === "AD1")?.status).toBe("agency_left");
     expect(frameAt(pb, 5, 0).staff.find((s) => s.id === "AD1")).toBeUndefined();
   });
 
@@ -196,6 +198,24 @@ describe("Playback on the hand-made fixture", () => {
     pb.seek(0);
     expect(pb.entityInfo("N1")).toMatchObject({ kind: "staff", status: "resting" });
     expect(pb.entityInfo("nobody")).toBeNull();
+  });
+});
+
+describe("Playback speed", () => {
+  it("drops the crowd stagger at 8x and above", () => {
+    const pb = new Playback(fixtureReplay(), layout);
+    const starts = (fast: boolean): number[] =>
+      ["P001", "P003"].map((id) => {
+        pb.speed = fast ? 8 : 2;
+        for (let ph = 0; ph <= 1; ph += 0.005) {
+          if (frameAt(pb, 1, ph).patients.find((p) => p.id === id)?.moving) return Math.round(ph * 1000) / 1000;
+        }
+        return -1;
+      });
+    const [a, b] = starts(true);
+    expect(a).toBe(b);
+    const [c, d] = starts(false);
+    expect(Math.max(c, d)).toBeGreaterThan(a);
   });
 });
 

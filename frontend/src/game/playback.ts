@@ -6,7 +6,10 @@ import type { Effect, Frame, PatientEntity, StaffEntity } from "../replay/frame"
 import type { Replay, ReplayTick, Staff, Zone } from "../replay/types";
 import type { Layout } from "../world/layout";
 import { buildModel, type PatientRecord, type ReplayModel, type TickMarkers } from "./model";
-import { linearAt, poseAt, stepAt } from "./motion";
+import { linearAt, poseAt, spinFacing, stepAt } from "./motion";
+
+// From this speed on, crowds move in lockstep: staggering at 8x+ reads as lag.
+const FAST_SPEED = 8;
 
 export type { PatientRecord, TickMarkers } from "./model";
 
@@ -100,11 +103,12 @@ export class Playback {
     const t = this.tick;
     const ph = this.phase;
     const tm = this.model.ticks[t];
+    const fast = this.speed >= FAST_SPEED;
     const patients: PatientEntity[] = [];
     for (const p of tm.patients) {
       const alpha = linearAt(p.alpha, ph);
       if (alpha <= 0) continue;
-      const pose = poseAt(p.from, p.legs, ph);
+      const pose = poseAt(p.from, p.legs, ph, fast);
       const state = stepAt(p.state, ph);
       patients.push({
         kind: "patient",
@@ -131,7 +135,8 @@ export class Playback {
       const location = stepAt(s.location, ph);
       if (status === "on_shift" && location !== "rest") zoneCoverage[location] += stepAt(s.countsAs, ph);
       if (alpha <= 0) continue;
-      const pose = poseAt(s.from, s.legs, ph);
+      const pose = poseAt(s.from, s.legs, ph, fast);
+      const spin = s.spin ? spinFacing(s.spin[0], s.spin[1], ph) : null;
       staff.push({
         kind: "staff",
         id: s.id,
@@ -141,7 +146,7 @@ export class Playback {
         status,
         fatigue: linearAt(s.fatigue, ph),
         moving: pose.moving,
-        facing: pose.facing,
+        facing: spin ?? pose.facing,
         alpha,
         x: pose.x,
         y: pose.y,
@@ -158,7 +163,7 @@ export class Playback {
     }
     const status = stepAt(tm.status, ph);
     return {
-      tick: t,
+      tick: this.replay.ticks[t].tick,
       phase: ph,
       patients,
       staff,

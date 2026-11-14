@@ -23,16 +23,22 @@ import type { Layout } from "../world/layout";
 import { jitter, type Key, type Leg } from "./motion";
 import { pointAlong, walkPath } from "./paths";
 
-// Phase windows inside a tick.
+// Phase windows inside a tick. All movement fits in the first ~70%, so at 2x-4x the department keeps
+// moving and the effects linger over the quiet end of the tick into the next one.
 export const PHASE = {
-  act: 0.0, // admits and assigns start walking
-  actEnd: 0.45, // ...and have arrived
-  treat: 0.2, // treatment bars fill from here...
-  treatEnd: 0.55, // ...to here
-  outcome: 0.5, // discharges, deaths, leavers, upgrades
-  faint: 0.6,
-  next: 0.5, // next tick's start: arrivals, diverted, staff returns and departures, event start/end
-  carryEnd: 0.4, // a person who fainted last tick is carried to the infirmary by now
+  windup: 0.06, // anticipation before someone gets up from a seat or bed
+  act: 0.04, // admits and assigns start (after their wind-up); phase 0 stays exactly the observation
+  actEnd: 0.35, // ...and have arrived
+  treat: 0.15, // treatment bars fill from here...
+  treatEnd: 0.45, // ...to here
+  outcome: 0.38, // discharges and leavers get up, upgrades
+  death: 0.5, // after a short hold from `outcome`, the patient dies...
+  deathFade: 0.62, // ...and fades from here to 0.95
+  spin: 0.4, // a staff member spins around...
+  faint: 0.5, // ...and drops
+  next: 0.4, // next tick's start: arrivals, diverted, staff returns and departures, event start/end
+  moveEnd: 0.72, // every walk that ends this tick is done by here
+  carryEnd: 0.3, // a person who fainted last tick is carried to the infirmary by now
 } as const;
 
 const PRE_OBS = new Set(["episode_start", "arrival", "diverted", "event_start", "event_end"]);
@@ -62,6 +68,7 @@ export interface StaffPlan {
   location: Key<Location>[];
   countsAs: Key<number>[];
   fatigue: Key<number>[]; // linear
+  spin: [number, number] | null; // phase window of a spin before fainting
 }
 
 export interface EffectSpec extends Point {
@@ -165,12 +172,21 @@ function matches(place: Place, s: { status: StaffStatus; location: Location }): 
   return place.k === placeKind(s) && (place.k !== "zone" || place.zone === s.location);
 }
 
-function addLeg(plan: { from: Point; legs: Leg[] }, w0: number, w1: number, to: Point): Leg {
+interface LegOpts {
+  lag?: number; // crowd stagger added to the start
+  windup?: boolean; // getting up from a seat or bed
+  settle?: boolean; // arriving at a spot (not walking out of the building)
+}
+
+// Legs of one person never overlap: a leg starts after the previous one (and its wind-up) ends.
+function addLeg(plan: { from: Point; legs: Leg[] }, w0: number, w1: number, to: Point, opts: LegOpts = {}): Leg {
   const prev = plan.legs[plan.legs.length - 1];
   const from = prev ? prev.to : plan.from;
-  const t0 = Math.min(Math.max(w0, prev ? prev.t1 + 0.02 : 0), 0.95);
+  const windup = opts.windup ? PHASE.windup : 0;
+  const base = Math.max(w0, prev ? prev.t1 + 0.02 : 0) + windup;
+  const t0 = Math.min(base + (opts.lag ?? 0), 0.95);
   const t1 = Math.min(1, Math.max(w1, t0 + 0.05));
-  const leg: Leg = { t0, t1, from, to };
+  const leg: Leg = { t0, t1, from, to, lag: Math.max(0, t0 - base), windup, settle: opts.settle ?? false };
   plan.legs.push(leg);
   return leg;
 }
@@ -366,14 +382,17 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
     tick.results.forEach((r) => {
       if (r.ok) return;
       const a = tick.actions[r.index];
-      const at = Math.min(0.05 + r.index * 0.02, 0.4);
+      const at = Math.min(0.03 + r.index * 0.02, 0.3);
       let pt = layout.entrance;
       if (a?.type === "admit" && pPlans.has(a.patient)) pt = pPlans.get(a.patient)!.from;
       else if (a?.type === "assign" && sPlace.has(a.staff) && sPlace.get(a.staff)!.k !== "gone")
         pt = pointOf(sPlace.get(a.staff)!);
       else if (a?.type === "repair") pt = layout.ct;
-      fx("rejected", at, pt, r.reason ?? "rejected", 1.5);
+      fx("rejected", at, pt, r.reason ?? "rejected", 1.6);
     });
+    if (tick.results.some((r) => r.ok && tick.actions[r.index]?.type === "divert")) {
+      fx("diverted", 0.1, layout.entrance, "diversion on", 1.6);
+    }
 
     // --- treatment and outcomes --------------------------------------------------------------------
     const deferred: string[] = [];
@@ -385,7 +404,7 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       const rec = records.get(id);
       if (e.event === "spend") {
         const pt = e.item === "repair" ? layout.ct : layout.entrance;
-        fx("spend", 0.15, pt, `-€${Number(e.amount ?? 0)}`, 1.5);
+        fx("spend", 0.1, pt, `-€${Number(e.amount ?? 0)}`, 1.6);
         continue;
       }
       if (!plan) continue;
@@ -394,14 +413,24 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
           const bed = String(e.bed);
           release(pPlace.get(id)!);
           pPlace.set(id, { k: "bed", bed });
-          const leg = addLeg(plan, PHASE.act + stagger(id, admitOrder++), PHASE.actEnd, bedPoint(bed));
-          plan.state.push({ at: leg.t0, v: "to_bed" }, { at: leg.t1, v: "in_bed" });
-          plan.bed.push({ at: leg.t0, v: bed });
+          const leg = addLeg(plan, PHASE.act, PHASE.actEnd, bedPoint(bed), {
+            lag: stagger(id, admitOrder++),
+            windup: true,
+            settle: true,
+          });
+          plan.state.push({ at: goAt(leg), v: "to_bed" }, { at: leg.t1, v: "in_bed" });
+          plan.bed.push({ at: goAt(leg), v: bed });
           const nb = nextBeds.get(id);
           const progressed = nb ? (nb.treated_ticks ?? 0) > 0 : false;
           plan.covered.push({ at: leg.t1, v: progressed || Boolean(nb?.waiting_for_ct && nb.covered) });
-          if (nb) plan.progress.push({ at: Math.max(PHASE.treat, leg.t1), v: 0 }, { at: PHASE.treatEnd, v: (nb.treated_ticks ?? 0) / (nb.treatment_ticks || 1) });
-          fx("admitted", leg.t1, bedPoint(bed));
+          if (nb) {
+            const done = (nb.treated_ticks ?? 0) / (nb.treatment_ticks || 1);
+            plan.progress.push(
+              { at: Math.max(PHASE.treat, leg.t1), v: 0 },
+              { at: Math.max(PHASE.treatEnd, leg.t1 + 0.05), v: done },
+            );
+          }
+          fx("admitted", leg.t1, bedPoint(bed), undefined, 1.2);
           if (rec) Object.assign(rec, { admittedTick: t, zone: e.zone as Zone, bed });
           break;
         }
@@ -409,31 +438,34 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
           const place = pPlace.get(id)!;
           release(place);
           pPlace.delete(id);
-          const start = Math.max(PHASE.outcome + stagger(id, outOrder++), PHASE.treatEnd);
-          plan.progress.push({ at: Math.max(PHASE.treat, plan.legs.length ? endLegT1(plan) : 0), v: lastValue(plan.progress) }, { at: start, v: 1 });
-          plan.covered.push({ at: PHASE.actEnd, v: true });
-          const leg = addLeg(plan, start, 0.97, layout.exit);
-          plan.state.push({ at: leg.t0, v: "leaving" });
-          plan.bed.push({ at: leg.t0, v: null });
+          const inBed = plan.legs.length ? endLegT1(plan) : 0;
+          const filled = Math.max(PHASE.outcome, inBed + 0.04);
+          const fillFrom = Math.min(filled - 0.02, Math.max(PHASE.treat, inBed));
+          plan.progress.push({ at: fillFrom, v: lastValue(plan.progress) }, { at: filled, v: 1 });
+          plan.covered.push({ at: fillFrom, v: true });
+          const leg = addLeg(plan, filled, PHASE.moveEnd, layout.exit, { lag: stagger(id, outOrder++), windup: true });
+          plan.state.push({ at: goAt(leg), v: "leaving" });
+          plan.bed.push({ at: goAt(leg), v: null });
           plan.alpha.push(...fadeOut(leg.t0, leg.t1));
-          fx("discharged", leg.t0, endOfBefore(plan, leg));
+          fx("discharged", goAt(leg), endOfBefore(plan, leg), undefined, 1.2);
           if (rec) Object.assign(rec, { outcome: "discharged", outcomeTick: t });
           break;
         }
         case "death": {
-          const at = Math.max(PHASE.outcome + 0.05, plan.legs.length ? endLegT1(plan) + 0.02 : 0);
+          // A short, still hold while the others move, then the death beat.
+          const at = Math.min(Math.max(PHASE.death, plan.legs.length ? endLegT1(plan) + 0.1 : 0), 0.8);
           plan.state.push({ at, v: "dead" });
-          plan.alpha.push({ at: at + 0.1, v: 1 }, { at: 1, v: 0 });
-          fx("death", at, endOf(plan), `${id} died`, 1.5);
+          plan.alpha.push({ at: Math.max(PHASE.deathFade, at + 0.08), v: 1 }, { at: 0.95, v: 0 });
+          fx("death", at, endOf(plan), `${id} died`, 2);
           deferred.push(id);
           if (rec) Object.assign(rec, { outcome: "died", outcomeTick: t, cause: e.cause === undefined ? null : String(e.cause) });
           break;
         }
         case "left": {
-          const leg = addLeg(plan, PHASE.outcome + 0.05 + stagger(id, outOrder++), 0.97, layout.exit);
-          plan.state.push({ at: leg.t0, v: "leaving" });
+          const leg = addLeg(plan, PHASE.outcome, PHASE.moveEnd, layout.exit, { lag: stagger(id, outOrder++), windup: true });
+          plan.state.push({ at: goAt(leg), v: "leaving" });
           plan.alpha.push(...fadeOut(leg.t0, leg.t1));
-          fx("left", leg.t0, leg.from, `${id} left`, 1.2);
+          fx("left", goAt(leg), leg.from, `${id} left`, 1.6);
           deferred.push(id);
           if (rec) Object.assign(rec, { outcome: "left", outcomeTick: t });
           break;
@@ -441,10 +473,10 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
         case "upgrade": {
           const esi = e.esi as Esi;
           const needsCt = Boolean(e.needs_ct);
-          plan.esi.push({ at: PHASE.outcome + 0.05, v: esi });
-          plan.needsCt.push({ at: PHASE.outcome + 0.05, v: needsCt });
+          plan.esi.push({ at: PHASE.outcome, v: esi });
+          plan.needsCt.push({ at: PHASE.outcome, v: needsCt });
           facts.set(id, { esi, needsCt });
-          fx("upgrade", PHASE.outcome + 0.05, endOf(plan), `ESI ${esi}`);
+          fx("upgrade", PHASE.outcome, endOf(plan), `ESI ${esi}`, 1.6);
           if (rec) Object.assign(rec, { esi: Math.min(rec.esi, esi) as Esi, needsCt });
           break;
         }
@@ -471,20 +503,20 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       if (e.event === "event_start" || e.event === "event_end") {
         const kind = String(e.kind);
         const text = e.event === "event_start" ? eventLabel(kind) : `${eventLabel(kind)} over`;
-        fx(e.event, PHASE.next, eventPoint(kind), text, 2);
+        fx(e.event, PHASE.next, eventPoint(kind), text, 2.5);
         continue;
       }
       if (e.event !== "arrival" && e.event !== "diverted") continue;
       const esi = e.esi as Esi;
       const needsCt = Boolean(e.needs_ct);
-      const start = PHASE.next + stagger(id, arriveOrder++);
+      const order = arriveOrder++;
       const plan: PatientPlan = {
         id,
         from: layout.entrance,
         legs: [],
         alpha: [
-          { at: start, v: 0 },
-          { at: start + 0.08, v: 1 },
+          { at: PHASE.next, v: 0 },
+          { at: PHASE.next + 0.06, v: 1 },
         ],
         state: [{ at: 0, v: "arriving" }],
         esi: [{ at: 0, v: esi }],
@@ -498,14 +530,19 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
         facts.set(id, { esi, needsCt });
         const seat: Place = { k: "seat", i: seats.take() };
         pPlace.set(id, seat);
-        const leg = addLeg(plan, start, 0.98, pointOf(seat));
+        // Bus-crash victims rush in close together; flu patients shuffle in and spread out.
+        const lag =
+          e.source === "bus" ? order * 0.025 : e.source === "flu" ? stagger(id, order) * 1.5 : stagger(id, order);
+        const w1 = e.source === "bus" ? PHASE.next + lag + 0.2 : PHASE.moveEnd;
+        const leg = addLeg(plan, PHASE.next, w1, pointOf(seat), { lag, settle: true });
         plan.state.push({ at: leg.t1, v: "waiting" });
-        fx("arrival", start, layout.entrance);
+        fx("arrival", leg.t0, layout.entrance);
       } else {
         // Turned away at the door: a few steps in, then back out.
         const inside = pointAlong(walkPath(layout.entrance, layout.waitingSlot(0)), 2 * 16);
-        const inLeg = addLeg(plan, start, start + 0.15, { x: inside.x, y: inside.y });
-        const outLeg = addLeg(plan, inLeg.t1 + 0.05, 0.97, layout.entrance);
+        const lag = stagger(id, order);
+        const inLeg = addLeg(plan, PHASE.next, PHASE.next + lag + 0.12, { x: inside.x, y: inside.y }, { lag });
+        const outLeg = addLeg(plan, inLeg.t1 + 0.04, PHASE.moveEnd, layout.entrance);
         plan.state.push({ at: outLeg.t0, v: "leaving" });
         plan.alpha.push(...fadeOut(outLeg.t0, outLeg.t1));
         fx("diverted", inLeg.t1, layout.entrance, "diverted");
@@ -532,6 +569,7 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       location: [{ at: 0, v: s.location }],
       countsAs: [{ at: 0, v: s.counts_as }],
       fatigue: [{ at: 0, v: s.fatigue }],
+      spin: null,
     });
     let carryOrder = 0;
     for (const s of cur.staff) {
@@ -551,7 +589,7 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
         release(place);
         place = takeFor(s);
         sPlace.set(s.id, place);
-        addLeg(plan, 0.05 + stagger(s.id, carryOrder++), PHASE.carryEnd, pointOf(place));
+        addLeg(plan, 0.03, PHASE.carryEnd, pointOf(place), { lag: stagger(s.id, carryOrder++) });
       }
     }
     const assigned = new Map<string, Location>();
@@ -570,7 +608,12 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
         release(place);
         const dest = takeFor(target);
         sPlace.set(id, dest);
-        at = addLeg(plan, PHASE.act + stagger(id, assignOrder++), PHASE.actEnd, pointOf(dest)).t0;
+        const leg = addLeg(plan, PHASE.act, PHASE.actEnd, pointOf(dest), {
+          lag: stagger(id, assignOrder++),
+          windup: true,
+          settle: true,
+        });
+        at = goAt(leg);
       }
       plan.status.push({ at, v: target.status });
       plan.location.push({ at, v: to });
@@ -582,11 +625,12 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       const id = String(e.staff);
       const plan = sPlans.get(id);
       if (!plan) continue;
+      plan.spin = [PHASE.spin, PHASE.faint];
       plan.status.push({ at: PHASE.faint, v: "fainted" });
       plan.location.push({ at: PHASE.faint, v: "rest" });
       predicted.set(id, { status: "fainted", location: "rest" });
       fainted.add(id);
-      fx("faint", PHASE.faint, endOf(plan), `${id} fainted`, 1.5);
+      fx("faint", PHASE.faint, endOf(plan), `${id} fainted`, 2);
     }
     // Whatever still differs from the next observation happened at the start of the next tick:
     // agency staff arriving or leaving, staff off sick, people back from sickness or a faint.
@@ -597,19 +641,21 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
       const pred = predicted.get(ns.id) ?? { status: ns.status, location: ns.location };
       const liesWhereFell = fainted.has(ns.id) && ns.status === "fainted";
       if (!liesWhereFell && !matches(place, ns)) {
-        const start = PHASE.next + stagger(ns.id, nextOrder++);
+        const lag = stagger(ns.id, nextOrder++);
         if (!plan) {
           plan = newStaffPlan({ ...ns, status: pred.status, location: pred.location }, layout.entrance);
-          plan.alpha.push({ at: start, v: 0 }, { at: start + 0.08, v: 1 });
+          plan.alpha.push({ at: PHASE.next, v: 0 }, { at: PHASE.next + 0.06, v: 1 });
           sPlans.set(ns.id, plan);
+          fx("arrival", PHASE.next, layout.entrance, undefined, 1.2);
         }
         release(place);
         const dest = takeFor(ns);
         sPlace.set(ns.id, dest);
-        const leg = addLeg(plan, start, dest.k === "gone" ? 0.95 : 0.98, dest.k === "gone" ? layout.exit : pointOf(dest));
-        if (dest.k === "gone") plan.alpha.push(...fadeOut(leg.t0, leg.t1));
-        plan.status.push({ at: leg.t0, v: ns.status });
-        plan.location.push({ at: leg.t0, v: ns.location });
+        const out = dest.k === "gone";
+        const leg = addLeg(plan, PHASE.next, PHASE.moveEnd, out ? layout.exit : pointOf(dest), { lag, settle: !out });
+        if (out) plan.alpha.push(...fadeOut(leg.t0, leg.t1));
+        plan.status.push({ at: goAt(leg), v: ns.status });
+        plan.location.push({ at: goAt(leg), v: ns.location });
       } else if (plan && (pred.status !== ns.status || pred.location !== ns.location)) {
         plan.status.push({ at: PHASE.next, v: ns.status });
         plan.location.push({ at: PHASE.next, v: ns.location });
@@ -640,6 +686,11 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
   }
 
   return { ticks, markers, patients: records };
+}
+
+// When someone starts to go (wind-up included), with or without the crowd stagger.
+function goAt(leg: Leg): number {
+  return leg.t0 - leg.lag - leg.windup;
 }
 
 function lastValue(keys: Key<number>[]): number {
