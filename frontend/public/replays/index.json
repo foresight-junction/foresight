@@ -1,0 +1,3 @@
+[
+  { "file": "reference-seed42.json", "label": "Reference policy (scripted)", "policy": "reference", "seed": 42, "reward": 0.990 }
+]
