@@ -1,0 +1,11 @@
+[project]
+name = "ed72-ablations"
+version = "0.1.0"
+description = "ED-72 lever ablations (issue #36): a stand-in reference with one switch per lever F1-F6"
+requires-python = ">=3.12"
+# Stdlib only. The simulator is imported from ed72/environment/hospital via sys.path (see run.py).
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
