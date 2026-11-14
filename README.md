@@ -143,7 +143,7 @@ W and B are multiplied by O, so rested staff and saved money are worth nothing i
 | Reference | 2026 | 0.989635 |
 | Do-nothing (`-a nop`) | 42 and 7 | 0.000000 |
 
-Seeds 7, 1001 and 2026 ran with `ED72_SEED=<n>`. Seeds 1001 and 2026 are outside the twelve tuning seeds (42, 1–11, [`docs/TUNING.md`](docs/TUNING.md)). Every Harbor reward equals the in-process score on the same seed, and no trial raised an exception ([#110](https://github.com/xand1ex999/guinness/issues/110)). On these four seeds the best scripted shortcut, the reactive proxy, scores 54.4 or less, and divert-all 46.8 or less. No model has been run at 4.0 yet, so the table below, at 3.0, is still the only measured model gap.
+Seeds 7, 1001 and 2026 ran with `ED72_SEED=<n>`. Seeds 1001 and 2026 are outside the twelve tuning seeds (42, 1–11, [`docs/TUNING.md`](docs/TUNING.md)). Every Harbor reward equals the in-process score on the same seed, and no trial raised an exception ([#110](https://github.com/xand1ex999/guinness/issues/110)). On these four seeds the best scripted shortcut, the reactive proxy, scores 54.4 or less, and divert-all 45.8 or less (the 70% diversion share with diversion loss 0.75, #108). No model has been run at 4.0 yet, so the table below, at 3.0, is still the only measured model gap.
 
 | Run (seed 42, arrival mean 3.0, Harbor 0.26.0) | Reward | Evidence |
 |---|---:|---|
