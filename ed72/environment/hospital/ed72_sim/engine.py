@@ -8,7 +8,6 @@ from ed72_sim import constants as c
 from ed72_sim.actions import apply_actions
 from ed72_sim.model import World
 from ed72_sim.observation import build_observation
-from ed72_sim.rules import events_extra
 from ed72_sim.state import FAINT10, GAIN10, REST10, PatientState, State
 
 
@@ -106,12 +105,9 @@ class Simulation:
                     state.ct_return_tick = (
                         end if state.ct_return_tick is None else min(state.ct_return_tick, end)
                     )
-                elif ev.kind in events_extra.SICK_KINDS:
+                elif ev.kind == "staff_sickness":
                     self._make_sick(ev.staff, end)
-                else:
-                    events_extra.on_start(state, ev)
             if end == t and ev.kind != "ct_breakdown":
-                events_extra.on_end(state, ev)
                 self._emit("event_end", kind=ev.kind)
         if state.ct_return_tick == t:
             state.ct_return_tick = None

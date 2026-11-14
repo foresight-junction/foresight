@@ -60,16 +60,10 @@ class State:
         default_factory=lambda: {"discharged": 0, "deaths": 0, "left": 0, "diverted": 0, "faints": 0}
     )
     last_rejected: list[dict] = field(default_factory=list)
-    bed_ids: dict[str, list[str]] = field(default_factory=dict)  # from world.bed_counts
-    closed_beds: set[str] = field(default_factory=set)  # monitor_fault: free but not admittable
 
     def __post_init__(self) -> None:
         self.staff = [StaffState(s.id, s.role) for s in self.world.staff]
-        self.bed_ids = {
-            z: [f"{c.BED_PREFIX[z]}{i + 1}" for i in range(n)]
-            for z, n in zip(c.ZONES, self.world.bed_counts, strict=True)
-        }
-        self.beds = {bed: None for ids in self.bed_ids.values() for bed in ids}
+        self.beds = {bed: None for ids in BED_IDS.values() for bed in ids}
 
     @property
     def ct_working(self) -> bool:
@@ -82,7 +76,7 @@ class State:
         return [p for p in self.patients.values() if p.status == "waiting"]
 
     def in_beds(self, zone: str) -> list[PatientState]:
-        return [self.patients[pid] for bed in self.bed_ids[zone] if (pid := self.beds[bed]) is not None]
+        return [self.patients[pid] for bed in BED_IDS[zone] if (pid := self.beds[bed]) is not None]
 
     def on_shift(self, zone: str) -> list[StaffState]:
         return [s for s in self.staff if s.status == "on_shift" and s.location == zone]

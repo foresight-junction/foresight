@@ -1,4 +1,0 @@
-{
-  "description": "Same 17 beds, one fewer Resus bed and one more Acute bed. Two ESI 1 beds make the bus crash harder; the extra Acute bed takes ESI 2 at +1 tick.",
-  "beds": {"resus": 2, "acute": 9, "fast_track": 6}
-}

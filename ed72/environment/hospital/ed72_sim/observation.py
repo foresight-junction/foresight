@@ -1,7 +1,7 @@
 """The agent's view of the state (CONTRACTS v1 Observation). Never reads world data about the future."""
 
 from ed72_sim import constants as c
-from ed72_sim.state import StaffState, State
+from ed72_sim.state import BED_IDS, StaffState, State
 
 
 def clock(tick: int) -> str:
@@ -33,7 +33,7 @@ def _beds(state: State) -> list[dict]:
     covered = set(state.covered_ids())
     rows = []
     for zone in c.ZONES:
-        for bed in state.bed_ids[zone]:
+        for bed in BED_IDS[zone]:
             pid = state.beds[bed]
             if pid is None:
                 rows.append({"zone": zone, "bed": bed, "patient": None})

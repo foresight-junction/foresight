@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 from ed72_sim import constants as c
-from ed72_sim.state import StaffState, State
+from ed72_sim.state import BED_IDS, StaffState, State
 
 Emit = Callable[..., None]
 ASSIGNABLE = ("on_shift", "resting")
@@ -51,7 +51,7 @@ def _admit(state: State, tick: int, action: dict, emit: Emit) -> str | None:
         return "not_waiting"
     if zone not in c.ZONE_EXTRA_TICKS[patient.esi]:
         return "zone_not_allowed"
-    bed = next((b for b in state.bed_ids[zone] if state.beds[b] is None and b not in state.closed_beds), None)
+    bed = next((b for b in BED_IDS[zone] if state.beds[b] is None), None)
     if bed is None:
         return "no_free_bed"
     state.beds[bed] = patient_id
