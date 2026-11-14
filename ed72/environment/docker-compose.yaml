@@ -6,7 +6,8 @@ services:
 
   hospital:
     build:
-      context: ./hospital
+      context: .
+      dockerfile: hospital/Dockerfile
     expose:
       - "8000"
     environment:
