@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Read-only consistency checks for the GitHub task board (#39, #41). Uses gh, git and python only;
-# never writes to GitHub. Usage: scripts/board-check.sh [plan-ref]   (default plan-ref: origin/main)
+# never writes to GitHub. Usage: scripts/board-check.sh [ref]   (PLAN.md and AGENTS.md are read at ref; default origin/main)
 set -u
 cd "$(git rev-parse --show-toplevel)"
 PLAN_REF="${1:-origin/main}"
@@ -17,7 +17,7 @@ gh pr view 43 --json state --jq .state > "$TMP/pr43" || exit 1
 git ls-remote --heads origin | awk '{sub("refs/heads/","",$2); print $2}' > "$TMP/branches"
 git show "$PLAN_REF:docs/PLAN.md" > "$TMP/plan.md" || { echo "no docs/PLAN.md at $PLAN_REF" >&2; exit 1; }
 cp scripts/bootstrap-board.sh "$TMP/bootstrap.sh"
-cp AGENTS.md "$TMP/agents.md"
+git show "$PLAN_REF:AGENTS.md" > "$TMP/agents.md" || exit 1
 
 # Claim comments are fetched only for doing/review issues, to keep the gh call count low.
 "$PY" - "$PYTMP" <<'EOF' > "$TMP/claimed"
