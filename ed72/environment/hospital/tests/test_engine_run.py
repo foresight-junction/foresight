@@ -23,7 +23,7 @@ def test_do_nothing_run_ends_with_episode_end_and_then_refuses() -> None:
     sim.run_to_end()
     assert sim.finished and sim.tick == c.TICKS - 1
     assert sim.events[-1]["event"] == "episode_end" and sim.events[-1]["t"] == 143
-    assert sum(1 for e in sim.events if e["src"] == "agent") == c.TICKS
+    assert not any(e["src"] == "agent" for e in sim.events)
     assert [e["seq"] for e in sim.events] == list(range(len(sim.events)))
     assert len(lines(sim, "staff_fatigue")) == c.TICKS
     obs = sim.observe()
@@ -152,3 +152,13 @@ def test_same_world_and_actions_give_the_same_log() -> None:
         logs.append(sim.events)
     assert logs[0] == logs[1]
     advance(Simulation(world), 1)  # smoke: a fresh sim from the same world is still usable
+
+
+def test_run_to_end_after_an_agent_stops_writes_no_agent_lines() -> None:
+    sim = Simulation(make_world([patient(1, 0, 3)]))
+    for _ in range(5):
+        sim.step([])
+    sim.run_to_end()
+    agent_ticks = [e["t"] for e in sim.events if e["src"] == "agent"]
+    assert agent_ticks == [0, 1, 2, 3, 4]
+    assert sim.finished and sim.events[-1]["event"] == "episode_end"

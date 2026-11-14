@@ -40,6 +40,16 @@ class Simulation:
                 "result": {"results": results},
             }
         )
+        self._finish_tick()
+        return {"results": results, "observation": self.observe()}
+
+    def run_to_end(self) -> None:
+        """Run the remaining ticks with no actions. Writes no agent lines: the agent made no calls,
+        and the scorer reads `ended`, `tool_calls` and F10 from the agent lines."""
+        while not self.finished:
+            self._finish_tick()
+
+    def _finish_tick(self) -> None:
         self._step6_treat()
         self._step7_hazards()
         self._step8_fatigue()
@@ -49,11 +59,6 @@ class Simulation:
         else:
             self.finished = True
             self._emit("episode_end")
-        return {"results": results, "observation": self.observe()}
-
-    def run_to_end(self) -> None:
-        while not self.finished:
-            self.step([])
 
     # --- log ---------------------------------------------------------------------------------
 
