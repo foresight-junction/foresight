@@ -75,6 +75,7 @@ P0 = needed for the thin slice. P1 = needed to submit. P2 = only if time.
 - **D6 P2** Three seeds as three task folders + check the images build on x86 and ARM.
 - **D7 P2** Stretch (`area:train`): fine-tune a small open model (about 4B) on reference trajectories on Modal, show before and after on one held-out seed.
 - **D8 P1** (#37) Provider configuration and a measured run budget (timeout, call cap).
+- **D9 P1** (#83) Stop-early baseline as a Harbor agent, so `make eval` runs every judge run in EVAL section 3.
 
 ## Standing rules for this challenge (also in AGENTS.md section 10)
 1. Nothing that reveals the answer goes into the agent's container.

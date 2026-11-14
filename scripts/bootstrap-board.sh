@@ -764,6 +764,21 @@ Folder ownership (CONTRACTS "Who owns which folder"): Lane A env (`ed72/environm
 BODY
 mk D8 harness model-budget p1 4 "Model provider configuration and measured run budget (tokens, time, cost)" "$B"
 
+read -r -d '' B <<'BODY' || true
+**Objective:** run the stop-early baseline through Harbor, so `make eval` covers every judge run in EVAL §3 (reference, do-nothing, stop-early). Today `make eval-baselines` completes reference 0.9896 and nop 0 on the real packaging, but skips stop-early because `eval/baselines/ed72_baselines/harbor_agent.py` doesn't exist (yehor-codex-4 on #18, 16:04; #12 chose not to ship it).
+
+**Rules:** rulebook §12 (stop-early = reactive proxy for 12 ticks, then stop); EVAL §3 and §5 (stop-early < reactive proxy < reference); SPEC §9 (the agent only touches `main` and the public tools); CONTRACTS v1 tools.
+
+**Files you own:** `eval/baselines/ed72_baselines/harbor_agent.py` and its test. `eval/run_all.sh` already calls `-a ed72_baselines.harbor_agent:StopEarlyAgent` with `PYTHONPATH=eval/baselines` (#53).
+
+**Depends on:** #58 (packaging, merged), #12 (in-process StopEarly policy, merged via #52).
+
+**Rules for this task:** the agent drives only the public `ward`/MCP tools inside `main`. No seed, sim source or scorer access. Deterministic, with no new randomness. Reuse the existing in-process policy rather than writing a second one.
+
+**Done when:** `make eval-baselines` runs stop-early end to end on the packaged task (no "skipped" line); its reward is above 0 and below the reactive proxy on the shipped seed; the result is posted on #18.
+BODY
+mk D9 harness stop-early-agent p1 5 "Stop-early baseline as a Harbor agent for make eval" "$B"
+
 echo
 echo "board: scripts/wt.sh board"
 
