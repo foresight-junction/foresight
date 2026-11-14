@@ -39,9 +39,9 @@ The "greedy" policy is written in the test file from the public observation only
 | 13 | `step` after tick 143 | `{"error": "episode_over"}`, nothing logged or scored | holds | `test_step_after_tick_143_is_refused_and_changes_nothing` |
 | 14 | `record_call` refusals (call-cap errors, rules spam) | Do not change O, T, W, B or spend | holds | `test_refused_calls_are_logged_but_do_not_change_the_reward` (`ended` becomes `call_cap`, `tool_calls` counts them) |
 | 15 | Injected sim lines in the log fed to `collect.py` (fake `discharged`, negative `spend`, huge budget, huge `on_shift`) | Replay uses only agent step actions and a fresh sim | holds | `test_collect_ignores_injected_sim_lines` (report identical) |
-| 16 | Step line tagged with `error`, extra `observe` / `rules` lines | Skipped | holds | `test_collect_ignores_error_tagged_step_lines_and_other_tools` |
+| 16 | Step line tagged with `error`, extra `observe` / `rules` lines | At the right tick: re-recorded, only `tool_calls` changes. At a stale tick: `collect.py` raises, no report, verifier writes 0 | holds | `test_collect_refused_and_read_calls_change_only_the_call_count`, `test_collect_rejects_agent_lines_at_a_stale_tick` |
 | 17 | Reordered, duplicated or missing step ticks, truncated JSON line | Fail closed: no report written, verifier writes 0 | holds | `test_collect_fails_closed_on_reordered_duplicated_or_missing_ticks`, `..._truncated_json_line` |
-| 18 | Extra `step` line at t=143 after the episode ended | No effect | holds | `test_collect_ignores_extra_steps_after_the_episode_ended` |
+| 18 | Extra `step` line at t=143 after the episode ended | No effect (a finished sim ignores steps); without a `result` field `collect.py` raises | holds | `test_collect_ignores_extra_steps_after_the_episode_ended` |
 | 19 | Live score vs `collect.py` replay of the written log | Identical | holds | `test_collect_replay_matches_the_live_score` |
 | 20 | Same seed, same actions | Same score | holds | `test_same_seed_same_actions_same_score` |
 | 21 | Forged `report.json` into `verify.py`: reward 1.0 with honest components; reward 1.0 / score 100 with inconsistent O,T,W,B; score 100 with O=1, T=0; reward above 1; negative W; reward as string, bool or null; missing key; list instead of object; drift of 0.01 | Write 0, exit 1 | holds | `test_forged_report_writes_zero` (11 cases) |

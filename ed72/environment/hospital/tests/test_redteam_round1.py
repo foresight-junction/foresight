@@ -426,19 +426,34 @@ def test_collect_ignores_injected_sim_lines(collect_mod, tmp_path: Path) -> None
     assert _collect(collect_mod, tmp_path, log) == honest
 
 
-def test_collect_ignores_error_tagged_step_lines_and_other_tools(collect_mod, tmp_path: Path) -> None:
+def test_collect_rejects_agent_lines_at_a_stale_tick(collect_mod, tmp_path: Path) -> None:
+    log = _write_log(tmp_path)
+    step = {"src": "agent", "tool": "step", "t": 7, "args": {"actions": [{"type": "divert"}]}}
+    _append(log, [step | {"result": {"error": "x"}}])
+    # Every agent line is replayed at its tick; a forged line fails closed (no report, verifier writes 0).
+    with pytest.raises(ValueError):
+        _collect(collect_mod, tmp_path, log)
+
+
+def test_collect_refused_and_read_calls_change_only_the_call_count(collect_mod, tmp_path: Path) -> None:
     log = _write_log(tmp_path)
     honest = _collect(collect_mod, tmp_path, log)
-    step = {"src": "agent", "tool": "step", "t": 7, "args": {"actions": [{"type": "divert"}]}}
+    rows = [json.loads(r) for r in log.read_text(encoding="utf-8").splitlines()]
+    now = max(r["t"] for r in rows if r.get("tool") == "step") + 1
+    step = {"src": "agent", "tool": "step", "t": now, "args": {"actions": [{"type": "divert"}]}}
     _append(
         log,
         [
             step | {"result": {"error": "x"}},
-            {"src": "agent", "tool": "observe", "t": 7, "args": {}, "result": {}},
-            {"src": "agent", "tool": "rules", "t": 7, "args": {}, "result": {}},
+            {"src": "agent", "tool": "observe", "t": now, "args": {}, "result": {}},
+            {"src": "agent", "tool": "rules", "t": now, "args": {}, "result": {}},
         ],
     )
-    assert _collect(collect_mod, tmp_path, log) == honest
+    replayed = _collect(collect_mod, tmp_path, log)
+    assert replayed["tool_calls"] == honest["tool_calls"] + 3
+    assert {k: v for k, v in replayed.items() if k != "tool_calls"} == {
+        k: v for k, v in honest.items() if k != "tool_calls"
+    }
 
 
 def test_collect_fails_closed_on_reordered_duplicated_or_missing_ticks(collect_mod, tmp_path: Path) -> None:
@@ -480,9 +495,14 @@ def test_collect_ignores_extra_steps_after_the_episode_ended(collect_mod, tmp_pa
         "tool": "step",
         "t": 143,
         "args": {"actions": [{"type": "agency", "role": "doctor"}]},
+        "result": {"results": [{"index": 0, "ok": True}]},
     }
     _append(log, [extra])
+    # A step on a finished sim changes nothing, so even a forged "successful" one cannot buy anything.
     assert _collect(collect_mod, tmp_path, log) == honest
+    _append(log, [{k: v for k, v in extra.items() if k != "result"}])
+    with pytest.raises(KeyError):
+        _collect(collect_mod, tmp_path, log)
 
 
 def test_collect_with_missing_log_scores_do_nothing(collect_mod, tmp_path: Path) -> None:
