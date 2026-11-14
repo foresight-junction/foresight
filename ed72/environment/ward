@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Command-line client for the hospital MCP server: ward rules | observe | step."""
+
+import argparse
+import asyncio
+import json
+import sys
+
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+
+async def call(url: str, tool: str, args: dict) -> object:
+    async with streamable_http_client(url) as (read, write), ClientSession(read, write) as session:
+        await session.initialize()
+        return await session.call_tool(tool, args)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="ward")
+    parser.add_argument("--url", default="http://hospital:8000/mcp")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("rules")
+    sub.add_parser("observe")
+    step = sub.add_parser("step")
+    step.add_argument("--json", dest="actions", default="[]", help="JSON list of actions")
+    args = parser.parse_args()
+
+    tool_args: dict = {}
+    if args.command == "step":
+        try:
+            actions = json.loads(args.actions)
+        except json.JSONDecodeError as e:
+            print(f"ward: --json is not valid JSON: {e}", file=sys.stderr)
+            return 2
+        if not isinstance(actions, list):
+            print("ward: --json must be a JSON list of actions", file=sys.stderr)
+            return 2
+        tool_args = {"actions": actions}
+
+    try:
+        result = asyncio.run(call(args.url, args.command, tool_args))
+    except Exception as e:  # noqa: BLE001 - any transport failure becomes a short message
+        print(f"ward: cannot reach {args.url}: {e}", file=sys.stderr)
+        return 1
+    if result.is_error:
+        print(f"ward: {result.content[0].text}", file=sys.stderr)
+        return 1
+    data = result.structured_content or json.loads(result.content[0].text)
+    if "error" in data:
+        print(json.dumps(data, indent=2), file=sys.stderr)
+        return 1
+    if args.command == "rules":
+        print(data["text"])
+    else:
+        print(json.dumps(data, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
