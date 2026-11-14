@@ -148,5 +148,5 @@ Required stack (CHALLENGE "Required stack"):
 - [ ] The verifier writes one number in [0, 1] to `/logs/verifier/reward.txt`.
 
 What judges rerun (CHALLENGE "How judges run it"):
-- [ ] On a fresh clone, `make eval` runs the reference, do-nothing and three OpenCode trials. The Harbor stop-early adapter is tracked in #83. The in-process stop-early row is in the [tuning table](TUNING.md).
+- [ ] On a fresh clone, `make eval` runs the reference, do-nothing and three OpenCode trials. Stop-early runs in process only; its row is in the [tuning table](TUNING.md).
 - [ ] The CI baseline checks pass on `main`: do-nothing 0, stop-early below the reactive proxy below the reference, every exploit baseline below the reference (EVAL §5).

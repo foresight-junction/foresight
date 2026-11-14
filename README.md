@@ -50,7 +50,7 @@ make eval-baselines    # reference and do-nothing only, no API key needed
 make eval-summary      # rebuild eval/results/summary.md from the latest run
 ```
 
-`make eval` pins OpenCode 1.19.5. It writes each job under `eval/results/jobs/<run id>/` and the results table to `eval/results/summary.md`. It does not yet run stop-early through Harbor ([#83](https://github.com/xand1ex999/guinness/issues/83)) and prints a SKIP line for it instead. To run the scripted baselines in process, stop-early included:
+`make eval` pins OpenCode 1.19.5. It writes each job under `eval/results/jobs/<run id>/` and the results table to `eval/results/summary.md`. Stop-early is not a Harbor agent, so `make eval` prints a SKIP line for it. Stop-early and the other scripted baselines run in process:
 
 ```bash
 (cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3 4 5)
