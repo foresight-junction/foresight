@@ -25,6 +25,7 @@ Use this prompt, filling in the brackets:
 - **If you are Claude:** call the `codex` MCP tool with the prompt and the diff (or point it at the diff file, with `cwd` set to this worktree and read-only intent). Also run `/code-review` if the plugin is installed.
   If the `codex` MCP tool is not connected, run the Codex CLI non-interactively in a read-only sandbox, with the diff on stdin (it is appended to the prompt):
   `codex exec -s read-only -C "$(pwd)" "<prompt>" < /tmp/review-<hash>.diff`
+- **If you are Gemini:** use either reviewer above: `claude -p "<prompt>" < /tmp/review-<hash>.diff`, or the `codex exec` command.
 - **If you are Codex:** run
   `claude -p "<prompt>" < /tmp/review-<hash>.diff`
   and use `/review` as well.

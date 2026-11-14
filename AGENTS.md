@@ -1,13 +1,14 @@
 # AGENTS.md
 
-Read this whole file before doing anything. It applies to every agent (Claude Code, Codex, their subagents) and every human on the team. About 10 agents work on this repo at once from 4 laptops, so these rules exist to stop agents overwriting each other, breaking `main`, or shipping slop.
+Read this whole file before doing anything. It applies to every agent (Claude Code, Codex, Gemini CLI, their subagents) and every human on the team. About 10 agents work on this repo at once from 4 laptops, so these rules exist to stop agents overwriting each other, breaking `main`, or shipping slop.
 
 ## 1. Project
 
 - **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
-- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys, Sat 14 Nov, in Russian). It defines the department, patients, staff, hazards, events, actions, tick order, observation and score. Where `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/PLAN.md` or an issue body disagree with it, this file wins until those docs are updated to match. Rules marked **[Proposed]** are its recommended defaults; build them unless a human says otherwise.
-- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
+- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys's rulebook, in Russian): department, patients, staff, hazards, events, actions, tick order, observation and score. Rules marked **[Proposed]** are its defaults. Decisions on its open items (section 14) are recorded in `docs/SPEC.md`; the rulebook itself changes only through Denys or a decision on #1.
+- **Realignment in progress: #41 (W0, wave 0, Kostiantyn).** `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/EVAL.md`, `docs/PLAN.md` and many issue bodies still describe the earlier ED-72 game from PR #29 (15-minute ticks, `advance`, hidden triage errors, harm modules). Until #41 lands, where they disagree with the rulebook, the rulebook wins: follow it and comment on the issue. The rulebook does not cover the harness, so the Harbor packaging and isolation in SPEC section 9 and the CONTRACTS services and admin-endpoint rules stay as they are.
+- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment; section 9 harness), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/EVAL.md` (how we are judged and measured), `docs/PLAN.md` (lanes, timeline, tasks), then issues #39 (execution order) and #41 (realignment).
 - **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
   - Reference run: `harbor run -p ed72 -a oracle`
@@ -51,15 +52,16 @@ Team skills live in `.agents/skills/` (Codex reads them there; `.claude/skills` 
 | `ship-pr` | When a slice works and should go into `main` (or into your parent branch) |
 | `contract-change` | Before changing an API route, data shape, env var, or anything in `docs/CONTRACTS.md` |
 
-Tool-specific extras are in `CLAUDE.md` (Claude) and section 9 (Codex).
+Tool-specific extras are in `CLAUDE.md` (Claude), section 9 (Codex) and `GEMINI.md` (Gemini).
 
 ## 4. Task board: GitHub Issues
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`.
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:1` to `wave:7` (execution order, see #39).
 - **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
-- **Create the board:** `scripts/bootstrap-board.sh` (once, by a human).
+- **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
+- **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). Until #41 lands, take only issues that #41 lists as already consistent with the rulebook (for example the harness tasks #21, #22, #11 and #32 A9); the env, reward and reference issues it lists for rescoping wait for their updated bodies.
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
@@ -113,7 +115,7 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
-- Every folder with a `pyproject.toml` is its own uv project. Today that is `backend/` (Kostiantyn's ED engine `backend/app/edsim/` and its MCP server, on `kostiantyn/env-ed-sim`). `docs/SPEC.md` section 9 plans `ed72/environment/hospital/` instead; until the team picks one, tooling supports both. `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
+- Every folder with a `pyproject.toml` is its own uv project. The board's target layout is `ed72/` (`docs/SPEC.md` section 9, built by D2 #22), with the sim, tools and scorer in `ed72/environment/hospital/`. Kostiantyn's ED engine lives in `backend/app/edsim/` with a `frontend/` viewer on `kostiantyn/env-ed-sim`. Tooling supports both: `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
 - Ruff settings for the whole repo are in `ruff.toml` (line length 110). `spikes/` and `harbor/unfindable/` are excluded as historical reference.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
