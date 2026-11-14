@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import collect
-import pytest
 from ed72_sim import constants as c
 from ed72_sim.engine import Simulation
 from ed72_sim.model import World
@@ -79,18 +78,9 @@ def test_call_cap_refuses_actions_and_collect_replay_matches_live(tmp_path: Path
     out = tmp_path / "report.json"
     replayed = collect.collect(seed, log, out)
     assert json.loads(out.read_text(encoding="utf-8")) == replayed
-    # The reward and everything the sim decides replay identically; see the xfail test below
-    # for the two agent-call fields collect.py loses.
-    same = {k: v for k, v in live.items() if k not in ("ended", "tool_calls")}
-    assert {k: v for k, v in replayed.items() if k not in ("ended", "tool_calls")} == same
-    assert replayed["reward"] == live["reward"]
+    assert replayed == live
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="collect.py replays only successful step lines, so a refused call (call_cap) and any "
-    "observe/rules call are missing from the replayed log: ended reads agent_stopped, tool_calls is low",
-)
 def test_collect_replay_keeps_call_cap_and_tool_calls(tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     sim = Simulation(generate_world(5), log)
