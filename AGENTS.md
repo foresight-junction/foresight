@@ -16,7 +16,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
   - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --with pytest pytest -q` inside each Python project you changed, and `pnpm lint && pnpm build && pnpm test` in `frontend/`
-- **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
+- **Integrator:** none. Every lead agent pushes its branch and merges its own PRs into `main` (golden rule 8). Humans can still merge or revert anything.
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
 | Person | Lane | Label | Agents (ids) |
@@ -35,7 +35,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 5. **Commit small and often:** every time something works, and at least every 30 minutes. Every commit goes through the `pre-commit-gate` skill. Push after each commit.
 6. **Get into `main` early:** open a PR (the `ship-pr` skill) as soon as a slice works end to end. Aim for under 300 changed lines per PR and at least one merge every 2 hours per task.
 7. **No secrets in git.** Keys go in `.env` (gitignored). Add the variable name to `.env.example`.
-8. **Agents never merge into `main`, force-push, delete branches, or rewrite history** on shared branches. Humans merge.
+8. **Agents push and merge their own work.** Push your task branch after every commit. Merge your own PR into `main` with `gh pr merge <n> --merge` as soon as: CI is green, `cross-review` is done, the branch is rebased on current `main` with no conflicts, and any PR touching `scoring/`, patients, events or tool behaviour has the baseline table in its description. Merge another task's PR only when its owner asked for it on the issue or PR. If your merge breaks `main` (CI red, a baseline off), fix it or `git revert` it at once. Still never: force-push a shared branch (`--force-with-lease` on your own task branch after a rebase is fine), delete branches, or rewrite `main`'s history.
 9. **Demo first.** Mock or hardcode before building real infrastructure. Happy path before edge cases. Label every mock clearly (section 7).
 10. **Don't guess APIs.** Before using a library function, check that it exists in the installed version (read the package source or docs). Hallucinated APIs are the most common cause of lost time.
 
@@ -141,7 +141,7 @@ A task is done only when:
 - [ ] The demo path for this feature works by hand
 - [ ] `cross-review` is done and real issues are fixed
 - [ ] The context file's **Handoff** section is up to date
-- [ ] The PR is open with `Closes #<issue>`, and the issue is labelled `review`
+- [ ] The PR has `Closes #<issue>` and is merged into `main` by you (golden rule 8), and `main`'s CI is still green
 
 ## 9. If you are Codex
 
