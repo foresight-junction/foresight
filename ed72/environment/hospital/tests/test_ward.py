@@ -81,3 +81,11 @@ def test_step_rejects_bad_json(url):
     assert r.stdout == ""
     r = ward(url, "step", "--json", '{"a": 1}')
     assert r.returncode == 2
+    assert ward(url, "observe", "--json", '{"x": 1}').returncode == 2
+
+
+def test_step_accepts_the_tool_args_object(url):
+    tick = json.loads(ward(url, "observe", "--json", "{}").stdout)["tick"]
+    r = ward(url, "step", "--json", '{"actions": []}')
+    assert r.returncode == 0
+    assert json.loads(r.stdout)["observation"]["tick"] == tick + 1

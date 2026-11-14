@@ -22,21 +22,27 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("rules")
     sub.add_parser("observe")
+    for name in ("rules", "observe"):
+        sub.add_parser(name).add_argument("--json", default="{}", help="ignored; these tools take no arguments")
     step = sub.add_parser("step")
-    step.add_argument("--json", dest="actions", default="[]", help="JSON list of actions")
+    step.add_argument("--json", default="[]", help='JSON list of actions, or {"actions": [...]}')
     args = parser.parse_args()
 
+    try:
+        payload = json.loads(args.json)
+    except json.JSONDecodeError as e:
+        print(f"ward: --json is not valid JSON: {e}", file=sys.stderr)
+        return 2
     tool_args: dict = {}
     if args.command == "step":
-        try:
-            actions = json.loads(args.actions)
-        except json.JSONDecodeError as e:
-            print(f"ward: --json is not valid JSON: {e}", file=sys.stderr)
-            return 2
+        actions = payload.get("actions") if isinstance(payload, dict) else payload
         if not isinstance(actions, list):
-            print("ward: --json must be a JSON list of actions", file=sys.stderr)
+            print('ward: --json must be a list of actions or {"actions": [...]}', file=sys.stderr)
             return 2
         tool_args = {"actions": actions}
+    elif payload != {}:
+        print(f"ward: {args.command} takes no arguments; pass --json '{{}}' or nothing", file=sys.stderr)
+        return 2
 
     try:
         result = asyncio.run(call(args.url, args.command, tool_args))
