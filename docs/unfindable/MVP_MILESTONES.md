@@ -12,7 +12,7 @@ Status as of 2026-11-13. "Done" means executed and verified; numbers are from re
 | C4 | Observation stream (SSE, spectator token, server-side masking) | Done | `backend/app/routers/observe.py`; 250 live events captured over HTTP |
 | C5 | 3D frontend on real events | See frontend section of the final report | `frontend/` |
 | D | Self-review and tests | Done for the backend: 57 tests pass, ruff clean | See below |
-| M6 | Harbor submission task + isolated scalar reward | In progress: task package drafted; Harbor run not yet checked | `harbor/unfindable/`; issue #2 |
+| M6 | Harbor submission task + isolated scalar reward | In progress: task package and submission README are present; Harbor execution and the OpenCode model log are pending | `harbor/unfindable/`; root `README.md`; issue #2 |
 | G1 | Gap check: frontier agent × 3 on the pilot | **Blocked**: needs model credentials (AfterQuery provides credits at the event) | — |
 | M7 | Full 44-request shift | Not started | Needs PC decisions (`SPEC_CHANGE_PROPOSALS.md`) |
 | M9 | Red-team hour | Partly done: automated exploit tests exist | `test_mcp_contract.py`, `test_reward.py` |
