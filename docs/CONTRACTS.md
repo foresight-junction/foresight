@@ -1,8 +1,8 @@
 # Contracts
 
-The source of truth for everything two lanes share. Change it only through the `contract-change` skill (announce on the pinned Contracts issue #1, then a small separate PR). Design reasoning is in `docs/SPEC.md`.
+The source of truth for everything two lanes share. Change it only through the `contract-change` skill (announce on the pinned Contracts issue #1, then a small separate PR). Game rules: `docs/ED_Management_Simulator_RU.md`; English summary and design reasoning: `docs/SPEC.md`.
 
-Status: **v0 for ED-72, replaces the Custodian contracts.** Announced on issue #1. Lane A (env) owns the tool shapes and lane B (reward) owns the scoring shapes.
+Status: **v1, realigned to the RU rulebook (issue #41).** Replaces the v0 tool set from PR #29 (21 tools, harm score), which nothing was built against. Lane A (env) owns the tool, observation and action shapes; lane B (reward) owns the scoring shapes.
 
 ## Who owns which folder
 | Path | Lane | Others may |
@@ -27,44 +27,75 @@ Status: **v0 for ED-72, replaces the Custodian contracts.** Announced on issue #
 - MCP endpoint: `http://hospital:8000/mcp` (streamable-http), declared in `task.toml` under `[[environment.mcp_servers]]`.
 - Fallback: `ward <tool> --json '<args>'` CLI in `main`, a thin client for the same tools. Both paths call the same functions.
 
-## Tools (v0)
-All return compact JSON. 21 tools: 8 read, 13 act. The clock moves only on `advance`.
+## Tools (v1)
+The rulebook's interface is `policy(observation) → list of actions`, once per tick. Three MCP tools carry it:
 
-| Tool | Args | Returns | Sim cost |
+| Tool | Args | Returns | Sim time |
 |---|---|---|---|
-| `board` | none | beds with occupant, waiting list (`patient_id, label, waited_min`), ambulances free | 0 |
-| `patient` | `patient_id` | label, last assessed acuity and when, health band as last observed, assigned staff, orders | 0 |
-| `roster` | none | staff with role, skill, on shift or not, fatigue, current load; on-call pool | 0 |
-| `equipment` | none | monitors, ventilators, CT: status and who is using them | 0 |
-| `budget` | none | remaining, spent so far by category, price list | 0 |
-| `notices` | none | notices issued so far (surge forecasts, maintenance warnings) | 0 |
-| `handbook` | `section?` | handbook text | 0 |
-| `clock` | none | `now_min, hour, minutes_left, calls_left` | 0 |
-| `assess` | `patient_id, nurse_id` | true acuity and health now | 0, but occupies the nurse 10 min |
-| `admit` | `patient_id, bed_id` | `ok` | 0 |
-| `assign` | `staff_id, patient_id` | `ok` | 0 |
-| `order_test` | `patient_id, test: "ct"\|"lab"` | `ok`, result time | 0 |
-| `discharge` | `patient_id` | `ok`, optional `warning` | 0 |
-| `transfer` | `patient_id` | `ok`. Uses an ambulance, 90-minute drive, costs budget | 0 |
-| `set_diversion` | `on: bool` | `ok` | 0 |
-| `call_in` | `staff_id` | `ok`, arrival time. Costs budget | 0 |
-| `extend_shift` | `staff_id, hours` | `ok`. Overtime, costs budget | 0 |
-| `send_on_break` | `staff_id, minutes` | `ok` | 0, but the person is away for `minutes` |
-| `repair` | `equipment_id, tier: "standard"\|"emergency"` | `ok`, ready time. Costs budget | 0 |
-| `advance` | `minutes` (15 to 120) | digest: arrivals, completions, events, `stopped_early_reason` | up to `minutes` |
-| `end_shift` | none | `ok`. Ends the episode; the remaining time is fast-forwarded with no new actions | 0 |
+| `rules` | none | `{"text": "<HANDBOOK.md>"}`: the agent-visible rules, including hazard rates and the score formula | 0 |
+| `observe` | none | the current `Observation` (below) | 0 |
+| `step` | `actions: Action[]` (may be empty, at most 50) | `{"results": ActionResult[], "observation": Observation}`; the observation is for the next tick, or the final state after tick 143 | 1 tick |
 
-- Read tools cost no sim time. Every call, read or act, counts toward the 600-call cap, counted by the hospital.
-- `advance` returns early when a label 1 or 2 patient arrives or an event fires, and says why in `stopped_early_reason`.
-- No tool ever returns the true acuity of an unassessed patient.
+- `step` applies the actions in order (tick step 5), then resolves tick steps 6–8 and steps 1–3 of the next tick (SPEC §4).
+- Every call (`rules`, `observe`, `step`) counts toward the **tool-call cap: 500** `TUNE`, counted by the hospital. A full episode needs 144 `step` calls. When the cap is reached, further calls return `{"error": "call_cap_reached"}` and the remaining ticks run with no actions.
+- After tick 143, `observe` returns the final state with `"finished": true`, and `step` returns `{"error": "episode_over"}`.
 - Every call appends one line to the event log.
 
-## Errors
-Failed calls return `{"error": "<code>"}`. They change nothing, but they still count toward the call cap.
+### Action
+```json
+{"type": "admit",  "patient": "P042", "zone": "resus"}
+{"type": "assign", "staff": "D3", "to": "rest"}
+{"type": "agency", "role": "nurse"}
+{"type": "repair"}
+{"type": "divert"}
+```
+- `zone`: `"resus"`, `"acute"` or `"fast_track"`. `to`: a zone or `"rest"`. `role`: `"doctor"` or `"nurse"`.
+- Patient ids are `P001`, `P002`, … in arrival order. Staff ids: doctors `D1`–`D6`, nurses `N1`–`N9`, agency doctors `AD1`, `AD2`, …, agency nurses `AN1`, `AN2`, … in order of ordering.
 
-`error` enum: `unknown_id`, `bad_args`, `bed_occupied`, `staff_unavailable`, `skill_mismatch`, `equipment_unavailable`, `budget_exhausted`, `no_ambulance`, `call_cap_reached`, `episode_over`.
+### ActionResult
+```json
+{"index": 0, "ok": true}
+{"index": 1, "ok": false, "reason": "zone_not_allowed"}
+```
+Rejected actions change nothing and carry no extra penalty; the other actions in the same list still apply (rulebook §8). `reason` enum:
 
-`discharge_criteria_not_met_warning` is not an error. The discharge goes through and the result is `{"ok": true, "warning": "discharge_criteria_not_met_warning"}`. The handbook lists the criteria.
+| Reason | When |
+|---|---|
+| `bad_action` | unknown `type`, missing or malformed field |
+| `unknown_patient` | no such patient id |
+| `not_waiting` | the patient is not in the waiting area (already admitted, discharged, dead, left or diverted) |
+| `zone_not_allowed` | the patient's ESI may not be treated in that zone (SPEC §3) |
+| `no_free_bed` | no free bed in that zone |
+| `unknown_staff` | no such staff id |
+| `staff_unavailable` | fainted, sick, or agency staff not yet arrived or already gone |
+| `over_hard_limit` | `agency` or `repair` would take total spend above €24 000 |
+| `ct_not_broken` | `repair` while the CT is working |
+| `diversion_active` | `divert` while a diversion is still running |
+
+The same results also appear as `last_rejected` in the next observation.
+
+### Observation
+```json
+{
+  "tick": 37, "clock": "Day 1 02:30", "ticks_left": 107, "finished": false,
+  "budget": {"spent": 1250, "budget": 12000, "hard_limit": 24000},
+  "waiting": [{"id": "P051", "esi": 2, "arrived_tick": 36, "waited_ticks": 1, "needs_ct": true}],
+  "beds": [{"zone": "resus", "bed": "R1", "patient": "P049", "esi": 1,
+            "treated_ticks": 2, "treatment_ticks": 6, "covered": true, "waiting_for_ct": false},
+           {"zone": "acute", "bed": "A4", "patient": null}],
+  "staff": [{"id": "N4", "role": "nurse", "agency": false, "location": "acute",
+             "fatigue": 63.2, "counts_as": 0.6, "status": "on_shift", "ticks_until_change": null}],
+  "ct": {"working": false, "down_ticks_left": 9},
+  "warnings": [{"event": "bus_crash", "start_tick": 101}],
+  "diversion": {"active": false, "ticks_left": 0},
+  "totals": {"discharged": 41, "deaths": 2, "left": 0, "diverted": 0, "faints": 1},
+  "last_rejected": [{"index": 1, "action": {"type": "admit", "patient": "P050", "zone": "fast_track"}, "reason": "zone_not_allowed"}]
+}
+```
+- Bed ids: `R1`–`R3`, `A1`–`A8`, `F1`–`F6`. Empty beds have `"patient": null` and no other patient fields.
+- Staff `location`: `"resus"`, `"acute"`, `"fast_track"` or `"rest"`. `status`: `"on_shift"`, `"resting"`, `"fainted"`, `"sick"`, `"agency_ordered"` or `"agency_left"`. `ticks_until_change`: ticks until a fainted, sick or ordered person returns or arrives, or until an agency contract ends; otherwise `null`. `counts_as`: `1` or `0.6`.
+- `warnings` lists announced events only (flu wave and bus crash). Unannounced events are never shown before they start.
+- No field ever contains a future arrival, an unannounced event, a dice roll, the seed or any score value.
 
 ## Admin endpoints (not tools, not in the MCP list)
 | Method | Path | Does |
@@ -73,45 +104,56 @@ Failed calls return `{"error": "<code>"}`. They change nothing, but they still c
 
 There is no finalise HTTP endpoint. There is no reset, no undo, no seed endpoint and no ground-truth endpoint.
 
-Finalising happens in `ed72/environment/hospital/collect.py`, inside the `hospital` container. Harbor runs it through the `[[verifier.collect]]` hook. It ends the episode if it is still open, fast-forwards the remaining time, runs the 12-hour handover tail, replays the anchors and the floor, scores, and writes `/evidence/report.json`. `task.toml` declares that file as a sidecar artifact. The verifier runs with `environment_mode = "separate"`, because in Kostiantyn's spike a root agent forged the reward in shared mode.
+Finalising happens in `ed72/environment/hospital/collect.py`, inside the `hospital` container. Harbor runs it through the `[[verifier.collect]]` hook after the agent stops. It runs any remaining ticks with no actions, scores the episode, and writes `/evidence/report.json`. `task.toml` declares that file as a sidecar artifact. The verifier runs with `environment_mode = "separate"`, because in Kostiantyn's spike a root agent forged the reward in shared mode.
 
 `tests/test.sh` reads only `/evidence/report.json`. It writes `/logs/verifier/reward.txt` (the number only, 0 on any error) and `/logs/verifier/score_full.json`.
 
 ## Event log (hospital side only, append-only JSONL)
-Agent action. `t` is sim minutes.
+Agent calls. `t` is the tick.
 ```json
-{"seq": 41, "t": 185, "src": "agent", "tool": "admit", "args": {"patient_id": "P-0031", "bed_id": "R2"}, "result": {"ok": true}}
+{"seq": 41, "t": 37, "src": "agent", "tool": "step", "args": {"actions": [{"type": "admit", "patient": "P051", "zone": "resus"}]}, "result": {"results": [{"index": 0, "ok": true}]}}
 ```
 Lines the sim writes itself carry `"src": "sim"` and an `"event"` field:
 ```json
-{"seq": 42, "t": 190, "src": "sim", "event": "arrival", "patient_id": "P-0032", "label": 3}
-{"seq": 57, "t": 245, "src": "sim", "event": "deterioration", "patient_id": "P-0027", "health": 41}
-{"seq": 88, "t": 410, "src": "sim", "event": "death", "patient_id": "P-0019"}
-{"seq": 93, "t": 460, "src": "sim", "event": "staff_sick", "staff_id": "N-07", "hours": 24}
-{"seq": 101, "t": 515, "src": "sim", "event": "equipment_down", "equipment_id": "CT-1"}
+{"seq": 42, "t": 37, "src": "sim", "event": "arrival", "patient": "P052", "esi": 3, "needs_ct": false}
+{"seq": 43, "t": 37, "src": "sim", "event": "diverted", "patient": "P053", "esi": 2}
+{"seq": 44, "t": 37, "src": "sim", "event": "admitted", "patient": "P051", "zone": "resus", "bed": "R2"}
+{"seq": 45, "t": 37, "src": "sim", "event": "covered", "patient": "P051"}
+{"seq": 46, "t": 37, "src": "sim", "event": "discharged", "patient": "P040"}
+{"seq": 47, "t": 37, "src": "sim", "event": "death", "patient": "P038", "cause": "waiting"}
+{"seq": 48, "t": 37, "src": "sim", "event": "upgrade", "patient": "P033", "esi": 2}
+{"seq": 49, "t": 37, "src": "sim", "event": "left", "patient": "P021"}
+{"seq": 50, "t": 37, "src": "sim", "event": "faint", "staff": "N2"}
+{"seq": 51, "t": 37, "src": "sim", "event": "staff_fatigue", "on_shift_above_60": 3, "on_shift": 9}
+{"seq": 52, "t": 37, "src": "sim", "event": "spend", "item": "agency_nurse", "amount": 350}
+{"seq": 53, "t": 38, "src": "sim", "event": "event_start", "kind": "ct_breakdown", "ends_tick": 54}
 ```
-The scorer is a pure function `score(events, world) -> ScoreObject`. It reads nothing else. There is no LLM judge.
+- `covered` is written for the first covered tick of each patient (needed for T and the end-of-episode rule). `cause` enum for deaths: `waiting`, `uncovered_bed`, `fatigue`.
+- `staff_fatigue` is written once per tick (needed for W). The scorer is a pure function `score(events, world) -> ScoreObject` and reads nothing else. There is no LLM judge.
 
 ## Score object (written to `/evidence/report.json`, copied by `tests/test.sh`)
 ```json
 {
-  "reward": 0.64,
-  "H": 520.0, "H_anchor": 1210.0, "H_floor": 140.0,
-  "anchors": {"do_nothing": 1840.0, "fcfs_label": 1210.0, "discharge_all": 1650.0, "transfer_all": 1500.0,
-              "divert_all": 1720.0, "call_in_all": 1330.0, "random": 1580.0},
-  "modules": {"M1": 300.0, "M2": 120.0, "M3": 70.0, "M4": 30.0},
-  "patients": [{"id": "P-0019", "outcome": "died", "harm": 100.0, "failure_codes": ["F1", "F2"]}],
-  "failures": {"F1": 9, "F2": 6, "F3": 1, "F4": 0, "F5": 3, "F6": 1, "F7": 2, "F8": 2, "F9": 1, "F10": 0},
-  "tool_calls": 412,
-  "ended": "end_shift"
+  "reward": 0.712,
+  "score": 71.2,
+  "O": 0.82, "T": 0.64, "W": 0.71, "B": 1.0,
+  "spend": 4300,
+  "totals": {"arrived": 231, "discharged": 198, "in_bed_end": 6, "diverted": 0,
+             "died": 9, "left": 3, "never_admitted": 15, "faints": 2},
+  "patients": [{"id": "P019", "esi": 1, "outcome": "died", "arrived_tick": 12,
+                "admitted_tick": 14, "first_covered_tick": null, "on_time": false, "failure_codes": ["F1"]}],
+  "failures": {"F1": 3, "F2": 1, "F3": 2, "F4": 0, "F5": 0, "F6": 0, "F7": 4, "F8": 2, "F9": 1, "F10": 0},
+  "ticks_with_actions": 140,
+  "tool_calls": 291,
+  "ended": "tick_143"
 }
 ```
-- `reward = clip((H_anchor - H) / (H_anchor - H_floor), 0, 1)`. In the example: (1210 - 520) / (1210 - 140) = 0.64.
-- `H_anchor` is the lowest value in `anchors`. `H` is the sum of the four `modules`.
-- `outcome` enum: `discharged`, `admitted_ok`, `transferred`, `diverted`, `left_unseen`, `harmed`, `died`, `in_department`.
-- `ended` enum: `end_shift`, `hour_72`, `call_cap`, `timeout` (the 1800 s agent timeout).
-- `patients` is abbreviated here. The real file has one entry per patient who arrived.
-- `modules` and `failures` are for analysis. They do not affect the reward.
+- `score = 60·O + 20·T + O·(10·W + 10·B)` and `reward = score / 100` (SPEC §6).
+- `esi` is the highest ESI reached (an upgraded ESI 3 shows 2).
+- `outcome` enum: `discharged`, `in_bed_end`, `diverted`, `died`, `left`, `never_admitted`. `in_bed_end` with `first_covered_tick: null` is scored as loss 1 (SPEC §6).
+- `ended` enum: `tick_143` (agent played to the end), `agent_stopped` (the agent stopped calling `step` and the remaining ticks ran without actions), `call_cap`, `timeout` (the agent timeout).
+- `patients` is abbreviated here. The real file has one entry per patient who arrived, including diverted ones.
+- `failures` and `ticks_with_actions` are for analysis. They do not affect the reward.
 - `/logs/verifier/reward.txt`: the `reward` number only.
 - `/logs/verifier/score_full.json`: the full object. Do not also write `reward.json`: AfterQuery reads `reward.txt`, and two reward files is one more thing that can disagree.
 
@@ -119,5 +161,5 @@ The scorer is a pure function `score(events, world) -> ScoreObject`. It reads no
 | Name | Used by | Description |
 |---|---|---|
 | `ED72_SEED` | hospital only | world and patient seed. Set in `docker-compose.yaml`, never in `main` |
-| `ED72_CONFIG` | hospital only | path to the difficulty config |
+| `ED72_CONFIG` | hospital only | path to the difficulty config (SPEC §7) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` | host, passed to the agent by Harbor | model keys. Never in the repo |
