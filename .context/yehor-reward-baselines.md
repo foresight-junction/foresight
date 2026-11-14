@@ -25,7 +25,7 @@ Scripted baselines (rulebook §12) and exploit probes (§13) that play over the 
 - [x] Client/Policy protocol + `run_episode` (`client.py`)
 - [x] Built-ins: reactive_proxy, stop_early, do_nothing (`policies.py`)
 - [x] Exploits: divert_all, rest_in_quiet_periods, admit_light_only, admit_without_coverage, fill_beds_at_last_tick, spend_to_limit, random (`exploits.py`)
-- [x] Unit tests against MOCK fake client (26 pass)
+- [x] Unit tests against MOCK fake client (27 pass)
 - [x] Ordering test (skips until ed72_sim engine/world/scorer are importable; reference checks skip until #16)
 - [x] Score table measured on an overlay of #46 + #48 + #47 (not committed)
 - [ ] Rerun the table once #4/#10/#16 merge; flip PR from draft
@@ -34,7 +34,8 @@ Scripted baselines (rulebook §12) and exploit probes (§13) that play over the 
 - Sat 17:00: the reactive proxy returns staff from rest to their post at fatigue <= 30 (the rulebook fixes only the 85). Rest happens at observed fatigue >= 85, so with gains of 1.6 to 2.2 per tick nobody reaches 90: the proxy never faints in the real sim. W still drops to about 0.7 from time spent above 60.
 - Exploit probes are `SeverityPolicy` plus one shortcut. SeverityPolicy is a simple honest player (severity-first, resus kept for ESI 1-2, demand-based least-tired staffing, repair within budget). It scores 97 to 99 on seeds 1-3, which suggests the default knobs are too easy (flag for #8).
 - Divert-all measures 44.7 / 48.1 / 46.7, so the cap is 50 ("about 47").
-- The hospital pyproject has `testpaths = ["tests"]`, so `pytest -q` there will not collect `ed72_sim/scoring/tests/`. Asked #4 to add it.
+- The hospital pyproject has `testpaths = ["tests"]`, so `pytest -q` there will not collect `ed72_sim/scoring/tests/`. So `eval/baselines/pyproject.toml` also lists that folder in its testpaths, and CI runs the ordering test from the baselines project (the test puts the hospital dir on sys.path). Asked #4 to add it to the hospital testpaths too.
+- Sat 17:15: Codex CLI cross-review found admit_light_only reserving beds for severe cases it then dropped; fixed (filter waiting first). admit_light_only now 10.6 / 13.0 / 12.4.
 
 ## Handoff
 - Done: everything above. Unit tests: `cd eval/baselines && uv run --with pytest pytest -q`.

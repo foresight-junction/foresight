@@ -7,4 +7,5 @@ dependencies = []
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+# The ordering test lives with the scorer (issue #12); it runs here too and skips until the sim merges.
+testpaths = ["tests", "../../ed72/environment/hospital/ed72_sim/scoring/tests"]

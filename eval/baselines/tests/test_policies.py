@@ -116,6 +116,11 @@ def test_admit_light_only_admits_only_esi_4_and_5() -> None:
     assert admits(client) and all(esi[a["patient"]] >= 4 for _, a in admits(client))
 
 
+def test_admit_light_only_is_not_blocked_by_severe_cases() -> None:
+    obs = FakeClient(arrivals={0: [3] * 14 + [4]}).observe()
+    assert AdmitLightOnly().act(obs)[0] == {"type": "admit", "patient": "P015", "zone": "fast_track"}
+
+
 def test_admit_without_coverage_never_puts_anyone_on_shift() -> None:
     client = play(AdmitWithoutCoverage())
     assert admits(client)
