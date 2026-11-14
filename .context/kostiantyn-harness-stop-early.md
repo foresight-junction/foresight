@@ -28,7 +28,9 @@ Uses v1 rules/observe/step, 500-call cap and existing provider environment varia
 - [x] Adapter, fail-fast preflight and documented #105 plan/write integration.
 - [x] Real Harbor stop-early smoke: 0.058304, 14 calls, agent_stopped, zero exceptions.
 - [x] Baseline tests 122 passed; evaluator/runner tests 44 passed (32 runner scenarios).
-- [ ] Independent reviews, gated commit/push, PR handoff to Yehor.
+- [x] Independent reviews, gated commit/push, green CI and draft PR #122 for Yehor.
+- [x] Isolated full runner smoke with #120 HEAD66ede0d: oracle0.940221, nop0, stop_early0.058304; 3/3 matched, no missing/failed/timed-out/unplanned attempts.
+- [ ] #120 fixes provenance freezing, release grouping and cross-root completeness before final readiness.
 
 ## Decisions and notes
 - Yehor alone merges/orchestrates (latest #39/#83 instruction supersedes old role text). No paid batch or self-merge.
@@ -40,6 +42,7 @@ Uses v1 rules/observe/step, 500-call cap and existing provider environment varia
 - Independent Codex review fixed nullable streams and MCP capabilities; final review found no further issues.
 - Claude cross-review: retain ward's stderr on nonzero exit and stdout-only adapter failures (fixed). Its repeat-count finding is declined: #105 explicitly documents repeat=1 on a job manifest for Harbor -k3; plan entries carry all repeats.
 - noslop: removed error paths that discarded ward diagnostics; no public rule or contract changed.
+- Independent integration review requested changes on #120: freeze hashes at plan time, keep full release identity in comparisons and scope completeness per root. Yehor independently confirmed the cross-root bug. Evaluator files remain untouched.
 
 ## Handoff
-Adapter/preflight/runner integration implemented and reviewed. Next: gated commit, sync current main, test against merged #120 and hand PR to Yehor. Test: `uv run --with pytest pytest -q` in eval and eval/baselines; `bash -n eval/run_all.sh`. Smoke logs: eval/results/jobs/stop-early-83-smoke-v2 (gitignored). No paid batch or merge performed. Worktree is occupied.
+Implementation/reviews/tests complete in draft PR #122 (base main; depends on #120). Next action belongs to #105 owner: fix #120's review findings while keeping plan/write CLI stable; then Yehor reviews/merges dependencies and #122. Recheck affected integration after API fixes. Test: pytest in eval and eval/baselines; bash -n eval/run_all.sh. Full smoke used an isolated source copy of #122 plus #120 files, not an integration branch: C:/Temp/ed72-83-integration-c3f3e8f8c549493b99cdbab81a6d15df/eval/results/jobs/20261114-212623; summary at its eval/results/summary.md. No paid model run or merge. Lead worktree is clean after push and reserved for #83 follow-up; helper worktrees contain uncommitted review/test handoffs already copied into the lead.
