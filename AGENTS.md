@@ -4,21 +4,24 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 
 ## 1. Project
 
-- **Name / one-liner:** TODO (fill in at kickoff)
-- **Junction challenge:** TODO
-- **Stack:** React + TypeScript (Vite) in `frontend/`, FastAPI (Python 3.12, uv) in `backend/`. TODO: confirm at kickoff.
+- **Name / one-liner:** **Custodian.** An RL environment where an agent works one shift as the data custodian of a registry holding records about vulnerable people, and must decide who gets which fields.
+- **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
+- **Read these before any task:** `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
+- **Stack:** a Harbor task in `custodian/`. Python 3.12 with uv. A `registry` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
-  - Frontend: `cd frontend && pnpm dev` (http://localhost:5173)
-  - Backend: `cd backend && uv run uvicorn app.main:app --reload --port 8000`
-- **Integrator** (the human who merges PRs into `main`): TODO
-- **Team:**
+  - Reference run: `harbor run -p custodian -a oracle`
+  - Do-nothing baseline: `harbor run -p custodian -a nop`
+  - Agent run: `harbor run -p custodian -a opencode -m <provider/model>`
+  - Everything judges will rerun: `make eval`
+- **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
+- **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
-| Person | Areas | Agents (ids) |
-|---|---|---|
-| yehor | TODO | yehor-claude-1, yehor-codex-1 |
-| TODO | TODO | TODO |
-| TODO | TODO | TODO |
-| TODO | TODO | TODO |
+| Person | Lane | Label | Agents (ids) |
+|---|---|---|---|
+| TODO | A. World and tools | `area:env` | TODO |
+| TODO | B. Reward and integrity | `area:reward` | TODO |
+| TODO | C. Reference and experiments | `area:ref` | TODO |
+| TODO | D. Harness, repro and story | `area:harness`, `area:train` | TODO |
 
 ## 2. Golden rules
 
@@ -52,7 +55,9 @@ Tool-specific extras are in `CLAUDE.md` (Claude) and section 9 (Codex).
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:fe`, `area:api`, `area:data`, `area:ai`, `area:infra`, `area:docs`), plus `contract`.
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 16:00, `p1` needed to submit, `p2` only if time), plus `contract`.
+- **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
+- **Create the board:** `scripts/bootstrap-board.sh` (once, by a human).
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
@@ -72,15 +77,15 @@ Always create worktrees with the script, so the branch, context file and issue l
 
 ```bash
 scripts/wt.sh init                                   # once per laptop, after cloning
-scripts/wt.sh new <owner> <area> <task> -i <issue>   # e.g. scripts/wt.sh new yehor api auth -i 12
+scripts/wt.sh new <owner> <area> <task> -i <issue>   # e.g. scripts/wt.sh new yehor env world -i 3
 scripts/wt.sh new <owner> <area> <task> <agent>      # helper branch off an existing task, e.g. for Codex
 scripts/wt.sh list
 scripts/wt.sh board
 scripts/wt.sh done <slug>                            # removes the folder, keeps the branch
 ```
 
-**Branch names:** `<owner>/<area>-<task>`, lowercase, hyphens only, e.g. `yehor/api-auth`.
-Helper branches add `--<agent>`: `yehor/api-auth--codex`. They are PR'd into their parent branch, never into `main`.
+**Branch names:** `<owner>/<area>-<task>`, lowercase, hyphens only, e.g. `yehor/env-world`.
+Helper branches add `--<agent>`: `yehor/env-world--codex`. They are PR'd into their parent branch, never into `main`.
 
 **Agent ids:** `<owner>-<tool>-<n>`, e.g. `yehor-claude-1`. Subagents add a letter: `yehor-claude-1a`.
 
@@ -104,16 +109,12 @@ The file name is unique per branch, so these files never conflict on merge.
 - **Mocks:** any fake data or stubbed call gets a `MOCK:` comment and lives behind one flag (`USE_MOCKS=1` in `.env`), so the demo can switch to real data in one place.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
-**Backend (Python)**
+**Python (everything in this repo)**
 - `uvx ruff format . && uvx ruff check --fix .`
-- Type hints on every function. `snake_case`.
-- Routes in `backend/app/routers/<area>.py`. Pydantic models in `backend/app/schemas.py`.
-- All LLM calls go through `backend/app/llm.py`, so models, keys and prompts live in one place.
-
-**Frontend (TypeScript)**
-- Components in `frontend/src/components/` as `PascalCase.tsx`. Hooks in `frontend/src/hooks/useThing.ts`.
-- All backend calls go through `frontend/src/api.ts`. Shared types live in `frontend/src/types.ts`, mirroring `docs/CONTRACTS.md`.
-- `pnpm lint && pnpm prettier --write .`
+- Type hints on every function. `snake_case`. Standard library first: the registry image should stay small and build fast.
+- Simulator and scorer are pure and deterministic: all randomness comes from one seeded `random.Random` passed in, never the global `random`, never wall-clock time, never the network.
+- Core logic (world, sim, scorer) gets pytest tests in the same PR. Use the `test-driven-development` skill for the scorer.
+- Shell scripts Harbor runs (`tests/test.sh`, `solution/solve.sh`) use absolute paths and `set -u`.
 
 **Commits** (Conventional Commits):
 
@@ -124,7 +125,7 @@ Refs #<issue>
 Agent: <agent id>
 ```
 
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(api): add POST /events endpoint`
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add verify_requester tool`
 
 ## 8. Definition of done
 
@@ -140,3 +141,19 @@ A task is done only when:
 - Skills are in `.agents/skills/`. Invoke one by name (e.g. `$pre-commit-gate`) or let it trigger from its description.
 - Use `/review` on your diff before shipping, in addition to `cross-review`.
 - If Claude called you through MCP, do only the task you were given, in the folder you were given (`cwd`). Don't claim other issues, open PRs to `main`, or edit outside that folder. Finish with a short summary: files changed, what you ran, and anything left undone.
+
+
+## 10. Rules for this challenge (they override habits from web projects)
+
+Judges rerun our code and spend 15 minutes trying to cheat the reward. These rules protect the score.
+
+1. **Nothing that reveals the answer goes into the agent's container.** The `main` image holds the handbook and the `desk` CLI only. Seeds, ground truth, the event log, sim source and the scorer live in the `registry` image.
+2. **The reward is computed from the registry's event log only.** Never from files the agent can write. No LLM judge anywhere in the reward.
+3. **No hidden rules.** A rule the scorer applies must be written in `HANDBOOK.md` in the same PR. If the agent cannot find out, it is unfair, and unfair difficulty scores zero on 30 points.
+4. **The reference policy uses only the public tools.** It never reads the seed or ground truth. If it cannot decide a ticket, fix the environment.
+5. **These must hold after every merge:** reference >= 0.9, do-nothing = 0, deny-all / approve-all / escalate-all / random <= 0.05, same seed and actions give the same score. Any PR touching `scoring/`, tickets or tool behaviour pastes the baseline table in its description.
+6. **`tests/test.sh` always writes a number** to `/logs/verifier/reward.txt`, 0 on any error.
+7. **Synthetic data only.** Invented names and records. Never copy real personal data into the repo, a prompt or a test.
+8. **Rules freeze Sat 21:00.** After that: bug fixes and knob tuning only. No code changes after Sun 09:00.
+9. **Don't force the gap.** If the agent does well, raise difficulty through the knobs in `docs/SPEC.md` section 7. No trick wording, no impossible deadlines, no broken tools.
+10. **Model keys** come from the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`). Agent runs cost real money: lane C runs the full matrix, others run one seed.
