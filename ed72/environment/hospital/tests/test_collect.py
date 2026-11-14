@@ -37,7 +37,7 @@ def collect_module(monkeypatch: pytest.MonkeyPatch):
     # Fakes for world.py (#3), engine.py (#3) and scoring/score.py (#4/#10), not yet on this branch.
     FakeSimulation.instances = []
     fakes = {
-        "ed72_sim.world": {"generate_world": lambda seed: {"seed": seed}},
+        "ed72_sim.world": {"generate_world": lambda seed, config=None: {"seed": seed, "config": config}},
         "ed72_sim.engine": {"Simulation": FakeSimulation},
         "ed72_sim.scoring": {},
         "ed72_sim.scoring.score": {"score": lambda events: {"reward": 0.5, "n_events": len(events)}},
@@ -69,7 +69,7 @@ def test_replays_steps_in_order_and_writes_report(collect_module, tmp_path: Path
     report = collect_module.collect(7, log, out)
 
     sim = FakeSimulation.instances[0]
-    assert sim.world == {"seed": 7}
+    assert sim.world == {"seed": 7, "config": None}
     assert sim.steps == [first, second]
     assert sim.ran_to_end
     assert report == {"reward": 0.5, "n_events": 1}

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 
+from ed72_sim.config import Config, load_config
 from ed72_sim.constants import EVENT_LOG_PATH
 from ed72_sim.engine import Simulation
 from ed72_sim.scoring.score import score
@@ -33,8 +34,8 @@ def read_step_lines(log_path: Path) -> list[dict]:
     ]
 
 
-def collect(seed: int, log_path: Path, out_path: Path) -> dict:
-    sim = Simulation(generate_world(seed))
+def collect(seed: int, log_path: Path, out_path: Path, config: Config | None = None) -> dict:
+    sim = Simulation(generate_world(seed, config))
     for line in read_step_lines(log_path):
         if line["t"] != sim.tick:
             raise ValueError(f"log step at tick {line['t']} but replay is at tick {sim.tick}")
@@ -50,7 +51,8 @@ def collect(seed: int, log_path: Path, out_path: Path) -> dict:
 
 
 def main() -> None:
-    report = collect(int(os.environ["ED72_SEED"]), Path(EVENT_LOG_PATH), Path(REPORT_PATH))
+    config = load_config(os.environ.get("ED72_CONFIG"))
+    report = collect(int(os.environ["ED72_SEED"]), Path(EVENT_LOG_PATH), Path(REPORT_PATH), config)
     print(json.dumps({"reward": report["reward"]}))
 
 
