@@ -23,13 +23,13 @@ export const MARK_COLOR = {
 const LANE: Record<string, number> = { staff_sickness: 0, ct_breakdown: 0, flu_wave: 1, bus_crash: 1, diversion: 2 };
 const MARK_ROWS = ["deaths", "faints", "rejected", "spend"] as const;
 
-const H = 76;
+const H = 82;
 const BAND_Y = 2;
 const BAND_H = 6;
 const SPARK_TOP = 26;
 const SPARK_BOTTOM = 50;
 const MARK_Y = 52;
-const MARK_H = 5;
+const MARK_H = 6;
 
 export interface Scrubber {
   el: HTMLElement;
@@ -111,8 +111,14 @@ export function createScrubber(replay: Replay, onSeek: (tick: number) => void): 
     g.fillStyle = "#1a1a26";
     MARK_ROWS.forEach((_, r) => g.fillRect(0, MARK_Y + r * (MARK_H + 1), width, MARK_H));
     data.marks.forEach((m, i) => {
-      const x0 = Math.floor(xOf(i));
-      const w = Math.max(2, Math.floor(xOf(i + 1)) - x0);
+      const cx = xOf(i + 0.5);
+      const w = Math.max(3, Math.floor(xOf(i + 1) - xOf(i)));
+      const x0 = Math.round(cx - w / 2);
+      if (m.deaths) {
+        // Deaths matter most: a faint red rule through the queue so they read at a glance.
+        g.fillStyle = "rgba(229,72,77,0.45)";
+        g.fillRect(Math.round(cx), SPARK_TOP - 4, 1, MARK_Y - SPARK_TOP + 4);
+      }
       MARK_ROWS.forEach((k, r) => {
         if (!m[k]) return;
         g.fillStyle = MARK_COLOR[k];

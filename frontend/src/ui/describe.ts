@@ -203,7 +203,14 @@ export function describeActions(t: ReplayTick): TickActions {
     const ok = r ? r.ok : true;
     if (!ok) {
       rejected++;
-      lines.push({ ...describeAction(a, t.obs, t.events), ok, tone: "bad", reason: reasonText(r?.reason, a, t.obs) });
+      // The detail line describes the effect, which a rejected action never had.
+      lines.push({
+        ...describeAction(a, t.obs, t.events),
+        ok,
+        tone: "bad",
+        reason: reasonText(r?.reason, a, t.obs),
+        detail: undefined,
+      });
       return;
     }
     if (a.type === "assign") {

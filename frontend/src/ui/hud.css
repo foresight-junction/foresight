@@ -49,6 +49,7 @@
 
 .head-badge {
   margin-left: auto;
+  white-space: nowrap;
   text-transform: none;
   letter-spacing: 0;
   color: var(--good);

@@ -337,7 +337,7 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
     decisions.head.textContent = "AI decisions this tick";
     if (acts.total) {
       decisions.head.append(
-        el("span", `head-badge${acts.rejected ? " bad" : ""}`, `${acts.total} action${acts.total === 1 ? "" : "s"}${acts.rejected ? ` · ${acts.rejected} rejected` : ""}`),
+        el("span", `head-badge${acts.rejected ? " bad" : ""}`, `${acts.total} action${acts.total === 1 ? "" : "s"}${acts.rejected ? ` · ${acts.rejected} ✗` : ""}`),
       );
     }
     const dl = el("ul", "lines");
