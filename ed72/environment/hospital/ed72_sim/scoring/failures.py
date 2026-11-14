@@ -24,7 +24,7 @@ def failure_analysis(events: list[dict]) -> tuple[dict[str, int], dict[str, list
     last_step = None
     for e in events:
         if e["src"] == "agent":
-            if e.get("tool") == "step":
+            if e.get("tool") == "step" and "error" not in e.get("result", {}):
                 last_step = e["t"]
             continue
         kind, pid = e["event"], e.get("patient")

@@ -245,3 +245,14 @@ def test_only_log_derivable_failure_codes_and_object_shape() -> None:
 def test_patients_sorted_by_id() -> None:
     log = Log().arrive("P2", 3).arrive("P1", 3).sim(0, "diverted", patient="P0", esi=5)
     assert [p["id"] for p in score(log.end())["patients"]] == ["P0", "P1", "P2"]
+
+
+def test_refused_calls_count_as_calls_but_not_as_played_ticks() -> None:
+    log = Log().agent(0, [{"type": "divert"}])
+    log.lines.append(
+        {"seq": len(log.lines), "t": 1, "src": "agent", "tool": "step",
+         "args": {"actions": [{"type": "divert"}]}, "result": {"error": "call_cap_reached"}}
+    )  # fmt: skip
+    r = score(log.end())
+    assert (r["tool_calls"], r["ticks_with_actions"], r["ended"]) == (2, 1, "call_cap")
+    assert r["failures"]["F10"] == 143

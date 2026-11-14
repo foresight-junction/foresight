@@ -43,7 +43,8 @@ def score(events: list[dict]) -> dict:
         {k: p[k] for k in _PATIENT_KEYS} | {"failure_codes": codes.get(p["id"], [])} for p in patients
     ]
     agent = [e for e in events if e["src"] == "agent"]
-    steps = [e for e in agent if e.get("tool") == "step"]
+    steps = [e for e in agent if e.get("tool") == "step" and "error" not in e.get("result", {})]
+    capped = any(e.get("result", {}).get("error") == "call_cap_reached" for e in agent)
     totals = {"arrived": len(patients)} | {k: sum(p["outcome"] == k for p in patients) for k in _TOTAL_KEYS}
     return {
         "reward": round(total / 100, 6),
@@ -58,7 +59,7 @@ def score(events: list[dict]) -> dict:
         "failures": counts,
         "ticks_with_actions": sum(1 for e in steps if e["args"].get("actions")),
         "tool_calls": len(agent),
-        "ended": "tick_143" if any(e["t"] == c.TICKS - 1 for e in steps) else "agent_stopped",
+        "ended": _ended(steps, capped),
     }
 
 
@@ -96,6 +97,12 @@ def _patients(sim: list[dict]) -> list[dict]:
         covered = p["first_covered_tick"]
         p["on_time"] = covered is not None and covered - p["arrived_tick"] <= c.TARGET_TICKS[p["esi"]]
     return sorted(by_id.values(), key=lambda p: p["id"])
+
+
+def _ended(steps: list[dict], capped: bool) -> str:
+    if any(e["t"] == c.TICKS - 1 for e in steps):
+        return "tick_143"
+    return "call_cap" if capped else "agent_stopped"
 
 
 def _loss(p: dict) -> float:
