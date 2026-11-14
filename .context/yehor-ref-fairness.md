@@ -26,3 +26,13 @@ Issue #20. Source snapshot `474829a`. The entries below state what can be checke
 The occupied-bed view exposes a CT blockage once a patient reaches the scan point while the scanner is down. Earlier observations carry CT requirements for waiting patients. The handbook specifies coverage priority by severity and admission time, and the engine breaks any remaining tie by bed order. The occupied-bed view omits admission time. Check whether either detail mattered in each actual trajectory before concluding that the action was avoidable. References are `observation.py`, `state.py` and `tests/test_engine_tick.py` under `ed72/environment/hospital/` on the frozen revision.
 
 `scoring/failures.py` emits F1, F2, F6, F7, F8 and F10 as diagnostics. F3, F4, F5 and F9 need trajectory review. Add the evidence for observed cases to `docs/FINDINGS.md` with the #19 owner. Record the exact tick, evidence available at that tick, feasible alternative and observed outcome.
+
+## Seed 42 calibration on 7173934
+
+OpenCode 1.19.5 with Gemini 3.8 Flash completed all 144 ticks at reward 0.811712. Its generated policy made 148 public tool calls. The score report records eight F7 uncovered-bed deaths.
+
+At tick 123 the agent attempted to assign AD1 to Resus and several other unavailable agency staff. The tool rejected those assignments. The generated availability filter checked `ordered` and `departed` while the observation exposes `agency_ordered` and `agency_left`. Handbook §3 says agency staff who have yet to arrive or have left cannot be assigned. The current status and countdown are visible in `staff[].status` and `staff[].ticks_until_change`. Filtering by the actual statuses and recalculating coverage before sending admissions were available alternatives.
+
+P436, an ESI 1 patient, was admitted at tick 123, never received a covered tick, and is flagged F7. The policy's rejection log establishes the bad assignment in that tick. The available artifacts do not isolate whether a corrected assignment would have prevented P436's death. The model trajectory contains the generated policy and a truncated execution log. Use a full decision trace to establish causality for the other F7 cases.
+
+[Calibration artifacts](https://github.com/xand1ex999/guinness/blob/yehor/harness-submission-evidence/eval/results/2026-11-14-gemini-seed42/README.md).
