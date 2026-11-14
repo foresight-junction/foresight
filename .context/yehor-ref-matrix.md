@@ -51,9 +51,10 @@ Run one command per model and seed. `-k 3` schedules three attempts. `-n 1` runs
 
 ### Record the results
 
-- Keep each seed under its own output root. Generate the local summary with `uv run --no-project --python 3.12 python eval/summarise.py "$JOBS" --out "$JOBS/summary.md"`. Assign the seed from the task and output directory in the combined table, since the score object has no seed field.
-- Record the full revision, Harbor and OpenCode versions, seed, model ID and job path. Verify the planned number of completed trials, model activity, verifier rewards and score evidence. List setup or auth failures separately and keep their logs. Mark cells with missing trials as incomplete.
-- Report per-model, per-seed reward mean and range, O/T/W/B, deaths, faints and failure counts. Compare each model's range and mean against the oracle from the same seed. Preserve the trajectory, score report and reward paths. Review the intended artifacts for secrets before sharing them.
+- Keep each seed under its own output root. Generate a diagnostic summary with `uv run --no-project --python 3.12 python eval/summarise.py "$JOBS" --out "$JOBS/summary.md"`. The summariser counts missing rewards as zero. Assign the seed from the task and output directory in the combined results, since the score object has no seed field.
+- Record the full revision, Harbor and OpenCode versions, seed, model ID and job path. For the official model mean and range, include only completed trials with evidence of model activity, a valid verifier score and no infrastructure failure. A model that ends play early with a valid score still counts. Keep the failure logs, list setup, authentication and verifier failures separately, and mark any cell with fewer than three valid trials as incomplete. Report the valid count alongside the planned count.
+- Report per-model, per-seed reward mean and range, O/T/W/B, deaths, faints and failure counts from valid trials. Compare each model's range and mean with the oracle from the same seed. Preserve the OpenCode trajectory, score report and reward paths. Review the intended artifacts for secrets before sharing them.
+- The task exports the hospital score report. Its raw `events.jsonl` stays inside the hospital container. Use the captured OpenCode trajectory and score report for #19, or coordinate separate collection from the trusted hospital side if the analysis needs the raw event log.
 - Stop-early stays in process for this submission. See the baseline evidence in `docs/TUNING.md` and the deferred Harbor adapter in #83.
 
 ## Handoff
