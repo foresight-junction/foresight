@@ -543,6 +543,9 @@ def test_episode_mutation_makes_the_suite_fail(
 # --- (f) the agent image holds no sim code, seed, config or scorer (skip until #58) --------------
 
 MAIN_COPY_ALLOWED = re.compile(r"(workspace/[\w./-]+|ward)")
+# A build stage the main image may copy from: a public Node.js image, for the OpenCode runtime (#89).
+TOOLCHAIN_IMAGE = re.compile(r"node:[\w.-]+")
+TOOLCHAIN_COPY_ALLOWED = re.compile(r"/usr/local/(bin/node|lib/node_modules)")
 HIDDEN_MARKERS = (
     "ED72_SEED",
     "ED72_CONFIG",
@@ -580,26 +583,65 @@ def _service_block(compose: str, name: str) -> str:
     return "\n".join(block)
 
 
-def test_f_main_image_has_no_sim_seed_config_or_scorer() -> None:
-    dockerfile = ENVIRONMENT / "Dockerfile"
-    compose = ENVIRONMENT / "docker-compose.yaml"
-    if not dockerfile.exists() or not compose.exists():
-        pytest.skip("needs the Harbor layout ed72/environment/Dockerfile and docker-compose.yaml (#58)")
-    for op, args in _instructions(dockerfile.read_text(encoding="utf-8")):
+def _check_main_dockerfile(text: str) -> None:
+    """Main image: copies only workspace/ and ward from the context, or the Node.js runtime from a
+    public node: stage. Any other stage could carry the sim, seed or scorer into the agent's container."""
+    toolchain_stages = set()
+    for op, args in _instructions(text):
+        if op == "FROM" and len(args) >= 3 and args[1].upper() == "AS" and TOOLCHAIN_IMAGE.fullmatch(args[0]):
+            toolchain_stages.add(args[2])
         if op in ("COPY", "ADD"):
             sources = [a for a in args if not a.startswith("--")][:-1]
-            assert not any(a.startswith("--from") for a in args), (
-                f"main image copies from another stage: {args}"
-            )
+            stage = next((a.split("=", 1)[1] for a in args if a.startswith("--from=")), None)
+            if stage is not None or any(a.startswith("--from") for a in args):
+                assert op == "COPY" and stage in toolchain_stages, (
+                    f"main image copies from a non-toolchain stage: {args}"
+                )
+                for src in sources:
+                    assert TOOLCHAIN_COPY_ALLOWED.fullmatch(src), (
+                        f"main image copies {src!r} from stage {stage}; only the Node.js runtime"
+                    )
+                continue
             for src in sources:
                 assert MAIN_COPY_ALLOWED.fullmatch(src), (
                     f"main image copies {src!r}; only workspace/ and ward"
                 )
         if op in ("ENV", "ARG", "RUN"):
-            text = " ".join(args)
-            assert not any(m in text for m in HIDDEN_MARKERS), (
-                f"main image {op} mentions hidden state: {text}"
+            joined = " ".join(args)
+            assert not any(m in joined for m in HIDDEN_MARKERS), (
+                f"main image {op} mentions hidden state: {joined}"
             )
+
+
+@pytest.mark.parametrize(
+    "dockerfile",
+    [
+        "FROM python:3.12-slim AS hospital\nFROM python:3.12-slim\nCOPY --from=hospital /app/ed72_sim /app\n",
+        "FROM node:22-slim AS node\nFROM python:3.12-slim\nCOPY --from=node /app/ed72_sim /app\n",
+        "FROM python:3.12-slim\nCOPY --from=ghcr.io/x/hospital:1 /usr/local/bin/node /usr/local/bin/node\n",
+        "FROM python:3.12-slim\nCOPY hospital/ed72_sim /app\n",
+    ],
+)
+def test_f_main_dockerfile_check_rejects_hidden_copies(dockerfile: str) -> None:
+    with pytest.raises(AssertionError):
+        _check_main_dockerfile(dockerfile)
+
+
+def test_f_main_dockerfile_check_accepts_node_toolchain() -> None:
+    _check_main_dockerfile(
+        "FROM node:22-slim AS node\nFROM python:3.12-slim\n"
+        "COPY --from=node /usr/local/bin/node /usr/local/bin/node\n"
+        "COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules\n"
+        "COPY workspace/HANDBOOK.md /app/HANDBOOK.md\nCOPY --chmod=755 ward /usr/local/bin/ward\n"
+    )
+
+
+def test_f_main_image_has_no_sim_seed_config_or_scorer() -> None:
+    dockerfile = ENVIRONMENT / "Dockerfile"
+    compose = ENVIRONMENT / "docker-compose.yaml"
+    if not dockerfile.exists() or not compose.exists():
+        pytest.skip("needs the Harbor layout ed72/environment/Dockerfile and docker-compose.yaml (#58)")
+    _check_main_dockerfile(dockerfile.read_text(encoding="utf-8"))
     main = _service_block(compose.read_text(encoding="utf-8"), "main")
     assert not any(m in main for m in (*HIDDEN_MARKERS, "hospital/", "/evidence")), main
     for path in [ENVIRONMENT / "ward", *sorted((ENVIRONMENT / "workspace").rglob("*"))]:
