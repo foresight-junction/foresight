@@ -235,7 +235,95 @@ def _gaps(rows: list[Row]) -> list[str]:
     return lines
 
 
-def render(trials: list[Trial], sources: list[str], pending: int) -> str:
+@dataclass
+class Completeness:
+    planned: int
+    matched: int
+    missing: list[dict]
+    failed: list[Trial]
+    timed_out: list[Trial]
+    unplanned: list[Trial]
+
+    @property
+    def incomplete(self) -> bool:
+        return bool(self.missing or self.failed)
+
+
+def _plan_entries(plan: dict | list) -> list[dict]:
+    return plan if isinstance(plan, list) else list(plan.get("entries") or [])
+
+
+def _entry_key(e: dict) -> tuple[str | None, str, str, str]:
+    policy = POLICY_LABELS.get(e["policy"], e["policy"])
+    seed = e.get("seed")
+    return e.get("job"), policy, e.get("model") or "-", UNKNOWN if seed is None else str(seed)
+
+
+def completeness(plan: dict | list, trials: list[Trial]) -> Completeness:
+    """Match planned attempts to finished trials by (job, policy, model, seed); repeats are counted.
+
+    An entry without a job matches that policy/model/seed in any job. Every planned attempt without
+    a finished trial is `missing`, a matched trial with an error is `failed`, a matched trial that
+    ended on `timeout` is `timed_out` (still scored, so not a failure), and a trial no entry claims
+    is `unplanned`. Nothing is dropped.
+    """
+    entries = _plan_entries(plan)
+    free = sorted(trials, key=lambda t: (t.job, t.name))
+    matched: list[Trial] = []
+    missing: list[dict] = []
+    # Entries naming a job claim first, so a job-less entry cannot steal their trials.
+    for e in sorted(entries, key=lambda e: (e.get("job") is None, e.get("repeat") or 0)):
+        job, policy, model, seed = _entry_key(e)
+        hit = next(
+            (
+                t
+                for t in free
+                if (job is None or t.job == job) and (t.policy, t.model, t.seed) == (policy, model, seed)
+            ),
+            None,
+        )
+        if hit is None:
+            missing.append(e)
+        else:
+            free.remove(hit)
+            matched.append(hit)
+    return Completeness(
+        planned=len(entries),
+        matched=len(matched),
+        missing=missing,
+        failed=[t for t in matched if t.error is not None],
+        timed_out=[t for t in matched if t.report and t.report.get("ended") == "timeout"],
+        unplanned=free,
+    )
+
+
+def _completeness_lines(c: Completeness) -> list[str]:
+    def entry(e: dict) -> str:
+        return f"{e.get('job') or '*'}: {e['policy']} `{e.get('model') or '-'}` seed {e.get('seed')} repeat {e.get('repeat')}"
+
+    def trial(t: Trial) -> str:
+        return f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed} ({t.error or 'ended timeout'})"
+
+    out = [
+        "",
+        "## Completeness",
+        "",
+        f"Planned {c.planned}, matched {c.matched}, missing {len(c.missing)}, "
+        f"failed {len(c.failed)}, timed out {len(c.timed_out)}, unplanned {len(c.unplanned)}. "
+        + ("INCOMPLETE." if c.incomplete else "All planned attempts finished."),
+    ]
+    for title, items, fmt in (
+        ("Missing (planned, no finished trial)", c.missing, entry),
+        ("Failed (exception or no reward)", c.failed, trial),
+        ("Timed out (ended=timeout, scored)", c.timed_out, trial),
+        ("Unplanned (not in plan.json)", c.unplanned, trial),
+    ):
+        if items:
+            out += ["", f"{title}:", *[f"- {fmt(i)}" for i in items]]
+    return out
+
+
+def render(trials: list[Trial], sources: list[str], pending: int, comp: Completeness | None = None) -> str:
     rows = build_rows(trials)
     out = [
         "# ED-72 eval summary",
@@ -268,6 +356,8 @@ def render(trials: list[Trial], sources: list[str], pending: int) -> str:
     gaps = _gaps(rows)
     if gaps:
         out += ["", "## Gap (reference minus agent mean)", "", *gaps]
+    if comp is not None:
+        out += _completeness_lines(comp)
     out += [
         "",
         "## Trials",
@@ -289,6 +379,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("jobs", nargs="*", type=Path, help=f"Harbor jobs dirs (default {DEFAULT_JOBS})")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="exit 0 even when a planned attempt is missing or failed (still listed in the summary)",
+    )
     args = parser.parse_args(argv)
     roots: list[Path] = args.jobs or [DEFAULT_JOBS]
     missing = [r for r in roots if not r.is_dir()]
@@ -297,20 +392,31 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     loaded = [load_trial(d) for d in find_trial_dirs(roots)]
     trials = [t for t in loaded if t is not None]
-    if not trials:
+    plan = next((p for p in (manifest.load_plan(r) for r in roots) if p is not None), None)
+    if not trials and plan is None:
         print(f"summarise: no finished Harbor trials under {', '.join(map(str, roots))}", file=sys.stderr)
         return 1
     sources = [
         str(r.resolve().relative_to(REPO_ROOT)) if r.resolve().is_relative_to(REPO_ROOT) else str(r)
         for r in roots
     ]
-    text = render(trials, sources, pending=len(loaded) - len(trials))
+    comp = completeness(plan, trials) if plan is not None else None
+    text = render(trials, sources, pending=len(loaded) - len(trials), comp=comp)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(text)
     print(text, end="")
     print(f"summarise: wrote {args.out}", file=sys.stderr)
+    if comp is None:
+        print("summarise: no plan.json, so missing attempts cannot be detected", file=sys.stderr)
+    elif comp.incomplete and not args.allow_incomplete:
+        print(
+            f"summarise: INCOMPLETE: {len(comp.missing)} planned attempts missing, "
+            f"{len(comp.failed)} failed (use --allow-incomplete to accept)",
+            file=sys.stderr,
+        )
+        return 4
     errors = [f"{t.job}/{t.name}: {t.error}" for t in trials if t.error is not None]
-    if errors:
+    if errors and not args.allow_incomplete:
         print(f"summarise: failed trials: {', '.join(errors)}", file=sys.stderr)
         return 3
     return 0

@@ -82,6 +82,7 @@ def _trial(
 def _hermetic_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Fixture trials record the relative task path "ed72"; keep it from resolving to the real task dir.
     monkeypatch.setattr(summarise, "REPO_ROOT", tmp_path / "no-repo")
+    monkeypatch.delenv("ED72_SEED", raising=False)
 
 
 def _manifest(job_dir: Path, seed: int | None = 42, config: str = "c" * 64, instr: str = "i" * 64) -> None:
