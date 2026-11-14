@@ -33,10 +33,12 @@
 - A trial with no reward counts as 0, as Harbor's own `Mean` metric does (`harbor/metrics/base.py`).
 - Each run writes to `eval/results/jobs/<timestamp>/`, so reruns never resume an old job. That folder is Harbor output and must not be committed: `eval/results/jobs/` needs a `.gitignore` line (asked on #23).
 - Stop-early hook: run_all.sh runs `-a eval.baselines.harbor_agent:StopEarlyAgent` with `PYTHONPATH=<repo>` when `eval/baselines/harbor_agent.py` exists, otherwise prints SKIP. Proposed on #12.
+- Sat 17:05 (Codex CLI review): Harbor can exit 0 with errored trials, so summarise.py exits 3 when any finished trial has no reward (test.sh always writes one). Errors column = any Harbor exception or no reward.
+- `.env` fills only unset vars and Harbor's `--env-file` is not passed: Harbor loads it with `override=True` (harbor/cli/jobs.py), so an empty `KEY=` from `.env.example` would blank a shell key.
 - CI runs pytest only inside folders with a `pyproject.toml`; `eval/tests` runs in CI once `eval/pyproject.toml` exists (asked on #23).
 
 ## Handoff
-- Done: summarise.py (5 tests), run_all.sh (preflight: Docker running, uv, `ed72/task.toml`, `ED72_MODEL` plus its provider key for `all`), Makefile targets `eval`, `eval-baselines`, `eval-summary` (`JOBS=<dir>`, default latest run).
+- Done: summarise.py (7 tests), run_all.sh (preflight: Docker running, uv, `ed72/task.toml`, `ED72_MODEL` plus its provider key for `all`), Makefile targets `eval`, `eval-baselines`, `eval-summary` (`JOBS=<dir>`, default latest run).
 - Verified: `make -n eval`, `bash -n eval/run_all.sh`, ruff, pytest. `make eval-baselines` ran end to end against the spike v1 fixture copied to `ed72/` in a temp dir (oracle 1.0, nop 0.0, stop-early skipped, summary written). The agent target was not run (costs money); its missing-model and missing-key failures were checked.
 - Next: once #22 merges, rebase and run `make eval-baselines` for real; once #12 lands, check the stop-early import path.
 - Test: `uv run --no-project --python 3.12 --with pytest pytest -q eval/tests`, then `make eval-baselines`.

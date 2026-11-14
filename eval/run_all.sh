@@ -34,11 +34,15 @@ case "$MODE" in
   *) die "unknown mode '$MODE' (use: all | baselines)" ;;
 esac
 
+# Fill only unset variables from .env: an empty KEY= copied from .env.example must not blank a key
+# exported in the shell. Harbor's own --env-file would override, so it is not used.
 if [ -f "$ENV_FILE" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  . "$ENV_FILE"
-  set +a
+  while IFS='=' read -r key value || [ -n "$key" ]; do
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    value="${value%\"}"
+    value="${value#\"}"
+    [ -n "${!key:-}" ] || export "$key=$value"
+  done <"$ENV_FILE"
 fi
 
 command -v docker >/dev/null 2>&1 || die "docker not found. Install Docker Desktop and start it."
@@ -63,6 +67,7 @@ mkdir -p "$JOBS_DIR"
 FAILED=()
 
 # A failed job is recorded and the rest still run, so the summary shows whatever finished.
+# Harbor can exit 0 with errored trials; summarise.py exits non-zero if any trial has no reward.
 run_job() {
   local job="$1"
   shift
@@ -83,11 +88,9 @@ else
 fi
 
 if [ "$MODE" = all ]; then
-  ENV_ARGS=()
-  [ -f "$ENV_FILE" ] && ENV_ARGS=(--env-file "$ENV_FILE")
   run_job agent -a opencode -m "$ED72_MODEL" --api-key-name "$KEY_NAME" \
     --ak "version=$OPENCODE_VERSION" --agent-setup-timeout-multiplier 3 \
-    -k "$AGENT_RUNS" -n "$AGENT_RUNS" ${ENV_ARGS[@]+"${ENV_ARGS[@]}"}
+    -k "$AGENT_RUNS" -n "$AGENT_RUNS"
 fi
 
 if ! uv run --no-project --python 3.12 python "$REPO_ROOT/eval/summarise.py" "$JOBS_DIR" --out "$SUMMARY"; then

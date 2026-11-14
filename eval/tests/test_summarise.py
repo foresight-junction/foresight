@@ -158,3 +158,24 @@ def test_main_fails_loudly_without_trials(tmp_path: Path) -> None:
     empty.mkdir()
     assert summarise.main([str(empty), "--out", str(tmp_path / "s.md")]) == 1
     assert summarise.main([str(tmp_path / "missing"), "--out", str(tmp_path / "s.md")]) == 2
+
+
+def test_rewarded_exception_counts_as_error(tmp_path: Path) -> None:
+    root = tmp_path / "jobs"
+    _trial(
+        root,
+        "ed72-agent",
+        "ed72__a",
+        "opencode",
+        reward=0.3,
+        report=_report(0.3),
+        exception="AgentTimeoutError",
+    )
+    row = _rows(root)["opencode"]
+    assert (row.runs, row.errors, row.mean) == (1, 1, pytest.approx(0.3))
+
+
+def test_main_fails_when_a_trial_has_no_reward(jobs: Path, tmp_path: Path) -> None:
+    out = tmp_path / "summary.md"
+    assert summarise.main([str(jobs), "--out", str(out)]) == 3
+    assert out.is_file()

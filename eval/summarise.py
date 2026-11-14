@@ -169,7 +169,7 @@ def build_rows(trials: list[Trial]) -> list[Row]:
                 model=model,
                 seed=seed,
                 runs=len(group),
-                errors=sum(1 for t in group if t.reward is None),
+                errors=sum(1 for t in group if t.error is not None),
                 mean=mean(rewards),
                 low=min(rewards),
                 high=max(rewards),
@@ -202,6 +202,7 @@ def render(trials: list[Trial], sources: list[str], pending: int) -> str:
         "",
         f"{len(trials)} finished trials" + (f", {pending} still running (left out)" if pending else "") + ".",
         "Reward = score / 100 (SPEC section 6). A trial with no reward counts as 0.",
+        "Errors = trials where Harbor recorded an exception or no reward.",
         "O, T, W, B, deaths and faints are means over runs with a report.json.",
         "",
         "| Policy | Model | Seed | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |",
@@ -256,6 +257,11 @@ def main(argv: list[str] | None = None) -> int:
     args.out.write_text(text)
     print(text, end="")
     print(f"summarise: wrote {args.out}", file=sys.stderr)
+    # tests/test.sh always writes a reward, so a missing one is a harness or verifier failure.
+    unrewarded = [f"{t.job}/{t.name}" for t in trials if t.reward is None]
+    if unrewarded:
+        print(f"summarise: trials with no reward: {', '.join(unrewarded)}", file=sys.stderr)
+        return 3
     return 0
 
 
