@@ -111,6 +111,9 @@ BAD = [
     {"budget": -5, "hard_limit": 10},
     {"budget": 5000, "hard_limit": 4000},
     {"hard_limit": c.BUDGET - 1},
+    {"hard_limit": c.BUDGET},
+    {"arrival_amplitude": 1.01},
+    {"arrival_amplitude": -0.1},
     [],
 ]
 
