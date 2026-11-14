@@ -24,7 +24,8 @@ Give Windows users the shortest complete Ubuntu/WSL path to one Gemini run or th
 - [x] Correct stale README claims that the runner skips stop-early.
 - [x] Bash syntax, relative links, make dry runs and installed Harbor flags checked.
 - [x] noslop: clean. Codex /review found no defects; Claude cross-review: LGTM.
-- [ ] Ubuntu adhoc retry is running; final reward is pending.
+- [x] Ubuntu adhoc retry completed: reward 0.372550, zero exceptions, ended tick_143, 153 tool calls, Harbor cost $0.60507915.
+- [x] Full keyless Ubuntu runner passed on seed 42: reference 0.940221, do-nothing 0.000000, stop-early 0.058304. All three trials have zero errors.
 
 ## Decisions and notes
 - Separate docs-only helper for #25; parent task ownership and final campaign remain with Yehor. No merge authorized.
@@ -32,6 +33,6 @@ Give Windows users the shortest complete Ubuntu/WSL path to one Gemini run or th
 - No new dependencies in the repository. Ubuntu needs make for the existing Makefile.
 
 ## Handoff
-- Done: README quickstart and baseline description updated, reviewed by Claude and Codex. Source cloned locally into Ubuntu and the adhoc Gemini command starts with both containers healthy. Key whitespace is stripped after a pasted carriage return caused a pre-model config error; failed logs were redacted.
-- Next: hand the docs-only PR to Yehor; monitor the separate Ubuntu trial to completion. No merge authorized.
-- Test: three extracted README Bash blocks and eval/run_all.sh pass bash -n; all relative README links resolve; make -n eval eval-baselines succeeds. Full paid matrix was not launched.
+- Done: README quickstart and baseline description updated, reviewed by Claude and Codex. PR #125 is ready for Yehor; initial CI passed. The adhoc Gemini trial and all three keyless baselines completed in Ubuntu. Key whitespace is stripped after a pasted carriage return caused a pre-model config error; failed logs were redacted.
+- Next: Yehor may integrate the docs-only PR. No merge authorized. Worktree is free after this validation update is pushed.
+- Test: three extracted README Bash blocks and eval/run_all.sh pass bash -n; all relative README links resolve; make eval-baselines passed in Ubuntu. Gemini job ubuntu-gemini-seed42-20261114-225045 is copied to Desktop/ed72-runs with a valid reward and report. The final paid matrix was not launched.
