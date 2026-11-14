@@ -1,0 +1,4818 @@
+{
+  "reward": 0.811712,
+  "score": 81.1712,
+  "O": 0.833112,
+  "T": 0.726111,
+  "W": 1.0,
+  "B": 1.0,
+  "spend": 8800,
+  "totals": {
+    "arrived": 477,
+    "discharged": 426,
+    "in_bed_end": 16,
+    "diverted": 0,
+    "died": 13,
+    "left": 9,
+    "never_admitted": 13,
+    "faints": 0
+  },
+  "patients": [
+    {
+      "id": "P001",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P002",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P003",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P004",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P005",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P006",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P007",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P008",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P009",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 0,
+      "admitted_tick": 0,
+      "first_covered_tick": 0,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P010",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 1,
+      "admitted_tick": 1,
+      "first_covered_tick": 1,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P011",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 1,
+      "admitted_tick": 1,
+      "first_covered_tick": 1,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P012",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 1,
+      "admitted_tick": 1,
+      "first_covered_tick": 1,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P013",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 1,
+      "admitted_tick": 1,
+      "first_covered_tick": 1,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P014",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 2,
+      "first_covered_tick": 2,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P015",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 2,
+      "first_covered_tick": 2,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P016",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 2,
+      "first_covered_tick": 2,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P017",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 3,
+      "first_covered_tick": 3,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P018",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 2,
+      "first_covered_tick": 2,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P019",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 2,
+      "admitted_tick": 2,
+      "first_covered_tick": 2,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P020",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 3,
+      "admitted_tick": 3,
+      "first_covered_tick": 3,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P021",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 3,
+      "admitted_tick": 3,
+      "first_covered_tick": 3,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P022",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 4,
+      "admitted_tick": 4,
+      "first_covered_tick": 4,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P023",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 4,
+      "admitted_tick": 4,
+      "first_covered_tick": 4,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P024",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 4,
+      "admitted_tick": 4,
+      "first_covered_tick": 4,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P025",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 4,
+      "admitted_tick": 4,
+      "first_covered_tick": 4,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P026",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 5,
+      "admitted_tick": 5,
+      "first_covered_tick": 5,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P027",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 5,
+      "admitted_tick": 5,
+      "first_covered_tick": 5,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P028",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 5,
+      "admitted_tick": 5,
+      "first_covered_tick": 5,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P029",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 5,
+      "admitted_tick": 5,
+      "first_covered_tick": 5,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P030",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 5,
+      "admitted_tick": 5,
+      "first_covered_tick": 5,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P031",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 6,
+      "admitted_tick": 6,
+      "first_covered_tick": 6,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P032",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 6,
+      "admitted_tick": 6,
+      "first_covered_tick": 6,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P033",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P034",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P035",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P036",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P037",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P038",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P039",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P040",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 8,
+      "admitted_tick": 8,
+      "first_covered_tick": 8,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P041",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 9,
+      "admitted_tick": 9,
+      "first_covered_tick": 10,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P042",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 9,
+      "admitted_tick": 9,
+      "first_covered_tick": 9,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P043",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 9,
+      "admitted_tick": 9,
+      "first_covered_tick": 9,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P044",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 10,
+      "admitted_tick": 10,
+      "first_covered_tick": 10,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P045",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 10,
+      "admitted_tick": 10,
+      "first_covered_tick": 10,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P046",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 10,
+      "admitted_tick": 10,
+      "first_covered_tick": 10,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P047",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 10,
+      "admitted_tick": 10,
+      "first_covered_tick": 10,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P048",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 10,
+      "admitted_tick": 10,
+      "first_covered_tick": 12,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P049",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 11,
+      "admitted_tick": 11,
+      "first_covered_tick": 11,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P050",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 11,
+      "admitted_tick": 11,
+      "first_covered_tick": 11,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P051",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 11,
+      "admitted_tick": 11,
+      "first_covered_tick": 11,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P052",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 11,
+      "admitted_tick": 11,
+      "first_covered_tick": 11,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P053",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 11,
+      "admitted_tick": 11,
+      "first_covered_tick": 11,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P054",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 12,
+      "admitted_tick": 12,
+      "first_covered_tick": 12,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P055",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 12,
+      "admitted_tick": 12,
+      "first_covered_tick": 12,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P056",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 12,
+      "admitted_tick": 12,
+      "first_covered_tick": 12,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P057",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 13,
+      "first_covered_tick": 13,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P058",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 19,
+      "first_covered_tick": 19,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P059",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 13,
+      "first_covered_tick": 13,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P060",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 13,
+      "first_covered_tick": 13,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P061",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 15,
+      "first_covered_tick": 15,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P062",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 13,
+      "first_covered_tick": 13,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P063",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 13,
+      "admitted_tick": 13,
+      "first_covered_tick": 13,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P064",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 14,
+      "first_covered_tick": 14,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P065",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P066",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 14,
+      "first_covered_tick": 14,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P067",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 14,
+      "first_covered_tick": 14,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P068",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 14,
+      "first_covered_tick": 14,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P069",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P070",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 14,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P071",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 14,
+      "admitted_tick": 14,
+      "first_covered_tick": 14,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P072",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 15,
+      "first_covered_tick": 15,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P073",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 15,
+      "first_covered_tick": 15,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P074",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P075",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P076",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 18,
+      "first_covered_tick": 18,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P077",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 15,
+      "admitted_tick": 24,
+      "first_covered_tick": 24,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P078",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 16,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P079",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 16,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P080",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 16,
+      "admitted_tick": 24,
+      "first_covered_tick": 24,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P081",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 16,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P082",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 16,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P083",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 18,
+      "first_covered_tick": 18,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P084",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P085",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 17,
+      "first_covered_tick": 17,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P086",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 19,
+      "first_covered_tick": 19,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P087",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P088",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P089",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 17,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P090",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 18,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P091",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 18,
+      "admitted_tick": 18,
+      "first_covered_tick": 18,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P092",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 18,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P093",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 18,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P094",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 19,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P095",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P096",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P097",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P098",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P099",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 20,
+      "first_covered_tick": 20,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P100",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 20,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P101",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 21,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P102",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 21,
+      "admitted_tick": 21,
+      "first_covered_tick": 21,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P103",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 21,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P104",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 21,
+      "admitted_tick": 22,
+      "first_covered_tick": 22,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P105",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 21,
+      "admitted_tick": 22,
+      "first_covered_tick": 22,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P106",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 22,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P107",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 22,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P108",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 22,
+      "admitted_tick": 22,
+      "first_covered_tick": 22,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P109",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 23,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P110",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 23,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P111",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 23,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P112",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 23,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P113",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 23,
+      "admitted_tick": 23,
+      "first_covered_tick": 23,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P114",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 24,
+      "admitted_tick": 24,
+      "first_covered_tick": 24,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P115",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 24,
+      "admitted_tick": 24,
+      "first_covered_tick": 24,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P116",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 24,
+      "admitted_tick": 24,
+      "first_covered_tick": 24,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P117",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 25,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P118",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 25,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P119",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 25,
+      "admitted_tick": 25,
+      "first_covered_tick": 25,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P120",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 26,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P121",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 26,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P122",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 26,
+      "admitted_tick": 26,
+      "first_covered_tick": 26,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P123",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 27,
+      "admitted_tick": 27,
+      "first_covered_tick": 27,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P124",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 27,
+      "admitted_tick": 27,
+      "first_covered_tick": 27,
+      "on_time": true,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P125",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 27,
+      "admitted_tick": 27,
+      "first_covered_tick": 27,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P126",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 28,
+      "admitted_tick": 28,
+      "first_covered_tick": 28,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P127",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 28,
+      "admitted_tick": 28,
+      "first_covered_tick": 28,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P128",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 28,
+      "admitted_tick": 28,
+      "first_covered_tick": 28,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P129",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 28,
+      "admitted_tick": 28,
+      "first_covered_tick": 28,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P130",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 29,
+      "admitted_tick": 29,
+      "first_covered_tick": 29,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P131",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 29,
+      "admitted_tick": 29,
+      "first_covered_tick": 29,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P132",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 29,
+      "admitted_tick": 29,
+      "first_covered_tick": 29,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P133",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 30,
+      "admitted_tick": 30,
+      "first_covered_tick": 30,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P134",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 30,
+      "admitted_tick": 30,
+      "first_covered_tick": 30,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P135",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 30,
+      "admitted_tick": 30,
+      "first_covered_tick": 30,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P136",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 32,
+      "admitted_tick": 32,
+      "first_covered_tick": 32,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P137",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 32,
+      "admitted_tick": 32,
+      "first_covered_tick": 35,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P138",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 34,
+      "admitted_tick": 34,
+      "first_covered_tick": 34,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P139",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 35,
+      "admitted_tick": 35,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P140",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 36,
+      "admitted_tick": 36,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P141",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 36,
+      "admitted_tick": 36,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P142",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 36,
+      "admitted_tick": 36,
+      "first_covered_tick": 43,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P143",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 37,
+      "admitted_tick": 37,
+      "first_covered_tick": 37,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P144",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 37,
+      "admitted_tick": 37,
+      "first_covered_tick": 37,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P145",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 38,
+      "admitted_tick": 38,
+      "first_covered_tick": 38,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P146",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 39,
+      "admitted_tick": 39,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P147",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 39,
+      "admitted_tick": 39,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P148",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 39,
+      "admitted_tick": 39,
+      "first_covered_tick": 39,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P149",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 40,
+      "admitted_tick": 40,
+      "first_covered_tick": 40,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P150",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 40,
+      "admitted_tick": 40,
+      "first_covered_tick": 40,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P151",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 40,
+      "admitted_tick": 40,
+      "first_covered_tick": 40,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P152",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 41,
+      "admitted_tick": 41,
+      "first_covered_tick": 41,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P153",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 41,
+      "admitted_tick": 41,
+      "first_covered_tick": 41,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P154",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 41,
+      "admitted_tick": 41,
+      "first_covered_tick": 41,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P155",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 42,
+      "admitted_tick": 42,
+      "first_covered_tick": 42,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P156",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 43,
+      "admitted_tick": 43,
+      "first_covered_tick": 47,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P157",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 43,
+      "admitted_tick": 43,
+      "first_covered_tick": 47,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P158",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 43,
+      "admitted_tick": 43,
+      "first_covered_tick": 43,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P159",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 43,
+      "admitted_tick": 43,
+      "first_covered_tick": 43,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P160",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 44,
+      "admitted_tick": 44,
+      "first_covered_tick": 44,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P161",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 44,
+      "admitted_tick": 44,
+      "first_covered_tick": 44,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P162",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 46,
+      "admitted_tick": 46,
+      "first_covered_tick": 46,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P163",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 46,
+      "admitted_tick": 46,
+      "first_covered_tick": 46,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P164",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 46,
+      "admitted_tick": 46,
+      "first_covered_tick": 46,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P165",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 46,
+      "admitted_tick": 46,
+      "first_covered_tick": 52,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P166",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 47,
+      "admitted_tick": 47,
+      "first_covered_tick": 52,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P167",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 48,
+      "admitted_tick": 48,
+      "first_covered_tick": 48,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P168",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 48,
+      "admitted_tick": 48,
+      "first_covered_tick": 48,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P169",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 48,
+      "admitted_tick": 48,
+      "first_covered_tick": 48,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P170",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 48,
+      "admitted_tick": 48,
+      "first_covered_tick": 48,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P171",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 49,
+      "admitted_tick": 49,
+      "first_covered_tick": 49,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P172",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 49,
+      "admitted_tick": 49,
+      "first_covered_tick": 49,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P173",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 49,
+      "admitted_tick": 49,
+      "first_covered_tick": 49,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P174",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 50,
+      "first_covered_tick": 50,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P175",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 62,
+      "first_covered_tick": 62,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P176",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 50,
+      "first_covered_tick": 50,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P177",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 50,
+      "first_covered_tick": 50,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P178",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 50,
+      "first_covered_tick": 50,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P179",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 50,
+      "admitted_tick": 50,
+      "first_covered_tick": 50,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P180",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 51,
+      "admitted_tick": 51,
+      "first_covered_tick": 51,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P181",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 51,
+      "admitted_tick": 52,
+      "first_covered_tick": 52,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P182",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 51,
+      "admitted_tick": 52,
+      "first_covered_tick": 52,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P183",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 52,
+      "admitted_tick": 62,
+      "first_covered_tick": 62,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P184",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 52,
+      "admitted_tick": 53,
+      "first_covered_tick": 53,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P185",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 52,
+      "admitted_tick": 52,
+      "first_covered_tick": 56,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P186",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 52,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P187",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 53,
+      "admitted_tick": 53,
+      "first_covered_tick": 53,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P188",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 53,
+      "admitted_tick": 62,
+      "first_covered_tick": 62,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P189",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 53,
+      "admitted_tick": 53,
+      "first_covered_tick": 53,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P190",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 53,
+      "admitted_tick": 54,
+      "first_covered_tick": 54,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P191",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 53,
+      "admitted_tick": 55,
+      "first_covered_tick": 55,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P192",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 54,
+      "admitted_tick": 54,
+      "first_covered_tick": 54,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P193",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 54,
+      "admitted_tick": 63,
+      "first_covered_tick": 63,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P194",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 54,
+      "admitted_tick": 56,
+      "first_covered_tick": 56,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P195",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 54,
+      "admitted_tick": 54,
+      "first_covered_tick": 54,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P196",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 55,
+      "admitted_tick": 56,
+      "first_covered_tick": 56,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P197",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 55,
+      "admitted_tick": 56,
+      "first_covered_tick": 56,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P198",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 55,
+      "admitted_tick": 56,
+      "first_covered_tick": 56,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P199",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 56,
+      "admitted_tick": 56,
+      "first_covered_tick": 62,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P200",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 56,
+      "admitted_tick": 63,
+      "first_covered_tick": 63,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P201",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 56,
+      "admitted_tick": 57,
+      "first_covered_tick": 57,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P202",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 56,
+      "admitted_tick": 56,
+      "first_covered_tick": 68,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P203",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 56,
+      "admitted_tick": 57,
+      "first_covered_tick": 57,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P204",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 56,
+      "admitted_tick": 65,
+      "first_covered_tick": 65,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P205",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 58,
+      "first_covered_tick": 58,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P206",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 65,
+      "first_covered_tick": 65,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P207",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P208",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 58,
+      "first_covered_tick": 58,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P209",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 69,
+      "first_covered_tick": 69,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P210",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 57,
+      "admitted_tick": 59,
+      "first_covered_tick": 59,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P211",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P212",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 59,
+      "first_covered_tick": 59,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P213",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 59,
+      "first_covered_tick": 59,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P214",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P215",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P216",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 58,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P217",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 59,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P218",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 59,
+      "admitted_tick": 60,
+      "first_covered_tick": 60,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P219",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 68,
+      "first_covered_tick": 68,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P220",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 60,
+      "first_covered_tick": 60,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P221",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 60,
+      "first_covered_tick": 60,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P222",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 68,
+      "first_covered_tick": 68,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P223",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 60,
+      "admitted_tick": 62,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P224",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 72,
+      "first_covered_tick": 72,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P225",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 60,
+      "admitted_tick": 68,
+      "first_covered_tick": 68,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P226",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 61,
+      "first_covered_tick": 61,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P227",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 61,
+      "first_covered_tick": 61,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P228",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 61,
+      "first_covered_tick": 61,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P229",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 61,
+      "first_covered_tick": 61,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P230",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 61,
+      "first_covered_tick": 61,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P231",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 72,
+      "first_covered_tick": 72,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P232",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 68,
+      "first_covered_tick": 68,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P233",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 61,
+      "admitted_tick": 69,
+      "first_covered_tick": 69,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P234",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 62,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P235",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 62,
+      "admitted_tick": 72,
+      "first_covered_tick": 72,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P236",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 62,
+      "admitted_tick": 62,
+      "first_covered_tick": 62,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P237",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 63,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P238",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 63,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P239",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P240",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P241",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 69,
+      "first_covered_tick": 69,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P242",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 69,
+      "first_covered_tick": 69,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P243",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P244",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P245",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 64,
+      "first_covered_tick": 64,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P246",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 64,
+      "admitted_tick": 65,
+      "first_covered_tick": 65,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P247",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 65,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P248",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 65,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P249",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 65,
+      "admitted_tick": 65,
+      "first_covered_tick": 65,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P250",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 65,
+      "admitted_tick": 73,
+      "first_covered_tick": 111,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P251",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 66,
+      "admitted_tick": 74,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P252",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 66,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P253",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 66,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P254",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 66,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P255",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 67,
+      "admitted_tick": 68,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P256",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 67,
+      "admitted_tick": 74,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P257",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 67,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P258",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 67,
+      "admitted_tick": 67,
+      "first_covered_tick": 67,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P259",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 68,
+      "admitted_tick": 68,
+      "first_covered_tick": 68,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P260",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 68,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P261",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 68,
+      "admitted_tick": 71,
+      "first_covered_tick": 71,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P262",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 69,
+      "admitted_tick": 71,
+      "first_covered_tick": 71,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P263",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 69,
+      "admitted_tick": 74,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P264",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 70,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P265",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 70,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P266",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 70,
+      "admitted_tick": 70,
+      "first_covered_tick": 70,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P267",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 70,
+      "admitted_tick": 75,
+      "first_covered_tick": 75,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P268",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 71,
+      "admitted_tick": 71,
+      "first_covered_tick": 71,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P269",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 71,
+      "admitted_tick": 71,
+      "first_covered_tick": 71,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P270",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 71,
+      "admitted_tick": 71,
+      "first_covered_tick": 71,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P271",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 72,
+      "admitted_tick": 72,
+      "first_covered_tick": 72,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P272",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P273",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P274",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 75,
+      "first_covered_tick": 75,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P275",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 75,
+      "first_covered_tick": 75,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P276",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 73,
+      "first_covered_tick": 73,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P277",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 75,
+      "first_covered_tick": 75,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P278",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 73,
+      "admitted_tick": 73,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P279",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 74,
+      "admitted_tick": 74,
+      "first_covered_tick": 76,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P280",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 74,
+      "admitted_tick": 74,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P281",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 74,
+      "admitted_tick": 74,
+      "first_covered_tick": 74,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P282",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 75,
+      "admitted_tick": 75,
+      "first_covered_tick": 75,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P283",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 76,
+      "admitted_tick": 76,
+      "first_covered_tick": 76,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P284",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 76,
+      "admitted_tick": 76,
+      "first_covered_tick": 100,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P285",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 76,
+      "admitted_tick": 76,
+      "first_covered_tick": 76,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P286",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 76,
+      "admitted_tick": 76,
+      "first_covered_tick": 76,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P287",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 78,
+      "admitted_tick": 78,
+      "first_covered_tick": 78,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P288",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 78,
+      "admitted_tick": 78,
+      "first_covered_tick": 100,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P289",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 79,
+      "admitted_tick": 79,
+      "first_covered_tick": 79,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P290",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 79,
+      "admitted_tick": 79,
+      "first_covered_tick": 79,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P291",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 80,
+      "admitted_tick": 80,
+      "first_covered_tick": 80,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P292",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 81,
+      "admitted_tick": 81,
+      "first_covered_tick": 86,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P293",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 81,
+      "admitted_tick": 81,
+      "first_covered_tick": 81,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P294",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 81,
+      "admitted_tick": 81,
+      "first_covered_tick": 81,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P295",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 83,
+      "admitted_tick": 83,
+      "first_covered_tick": 83,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P296",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 83,
+      "admitted_tick": 83,
+      "first_covered_tick": 83,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P297",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 83,
+      "admitted_tick": 83,
+      "first_covered_tick": 83,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P298",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 84,
+      "admitted_tick": 84,
+      "first_covered_tick": 84,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P299",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 84,
+      "admitted_tick": 85,
+      "first_covered_tick": 85,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P300",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 84,
+      "admitted_tick": 84,
+      "first_covered_tick": 84,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P301",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 85,
+      "admitted_tick": 86,
+      "first_covered_tick": 86,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P302",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 85,
+      "admitted_tick": 85,
+      "first_covered_tick": 85,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P303",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 86,
+      "admitted_tick": 86,
+      "first_covered_tick": 90,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P304",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 87,
+      "admitted_tick": 87,
+      "first_covered_tick": 87,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P305",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 88,
+      "admitted_tick": 88,
+      "first_covered_tick": 88,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P306",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 89,
+      "admitted_tick": 89,
+      "first_covered_tick": 89,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P307",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 90,
+      "admitted_tick": 90,
+      "first_covered_tick": 95,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P308",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 90,
+      "admitted_tick": 90,
+      "first_covered_tick": 90,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P309",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 90,
+      "admitted_tick": 90,
+      "first_covered_tick": 90,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P310",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 90,
+      "admitted_tick": 90,
+      "first_covered_tick": 90,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P311",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 91,
+      "admitted_tick": 91,
+      "first_covered_tick": 91,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P312",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 91,
+      "admitted_tick": 91,
+      "first_covered_tick": 91,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P313",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 92,
+      "admitted_tick": 92,
+      "first_covered_tick": 92,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P314",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 92,
+      "admitted_tick": 92,
+      "first_covered_tick": 92,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P315",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 92,
+      "admitted_tick": 92,
+      "first_covered_tick": 92,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P316",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 93,
+      "admitted_tick": 93,
+      "first_covered_tick": 96,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P317",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 93,
+      "admitted_tick": 93,
+      "first_covered_tick": 93,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P318",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 94,
+      "admitted_tick": 94,
+      "first_covered_tick": 94,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P319",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 94,
+      "admitted_tick": 94,
+      "first_covered_tick": 94,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P320",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 94,
+      "admitted_tick": 94,
+      "first_covered_tick": 94,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P321",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 94,
+      "admitted_tick": 95,
+      "first_covered_tick": 95,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P322",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 94,
+      "admitted_tick": 95,
+      "first_covered_tick": 95,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P323",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 95,
+      "admitted_tick": 95,
+      "first_covered_tick": 99,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P324",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 96,
+      "admitted_tick": 96,
+      "first_covered_tick": 96,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P325",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 96,
+      "admitted_tick": 96,
+      "first_covered_tick": 96,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P326",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 97,
+      "admitted_tick": 97,
+      "first_covered_tick": 97,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P327",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 97,
+      "admitted_tick": 97,
+      "first_covered_tick": 97,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P328",
+      "esi": 5,
+      "outcome": "discharged",
+      "arrived_tick": 97,
+      "admitted_tick": 97,
+      "first_covered_tick": 97,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P329",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 98,
+      "admitted_tick": 98,
+      "first_covered_tick": 98,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P330",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 98,
+      "admitted_tick": 98,
+      "first_covered_tick": 98,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P331",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 99,
+      "admitted_tick": 99,
+      "first_covered_tick": 99,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P332",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 99,
+      "admitted_tick": 99,
+      "first_covered_tick": 104,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P333",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 99,
+      "admitted_tick": 99,
+      "first_covered_tick": 99,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P334",
+      "esi": 5,
+      "outcome": "in_bed_end",
+      "arrived_tick": 99,
+      "admitted_tick": 111,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P335",
+      "esi": 1,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 100,
+      "first_covered_tick": 110,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P336",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 100,
+      "first_covered_tick": 100,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P337",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 101,
+      "first_covered_tick": 101,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P338",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 103,
+      "first_covered_tick": 103,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P339",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 100,
+      "first_covered_tick": 100,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P340",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 100,
+      "admitted_tick": 112,
+      "first_covered_tick": 112,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P341",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 101,
+      "admitted_tick": 113,
+      "first_covered_tick": 113,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P342",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 101,
+      "admitted_tick": 113,
+      "first_covered_tick": 114,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P343",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 101,
+      "admitted_tick": 101,
+      "first_covered_tick": 101,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P344",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 102,
+      "admitted_tick": 102,
+      "first_covered_tick": 102,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P345",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 102,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P346",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 102,
+      "admitted_tick": 103,
+      "first_covered_tick": 103,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P347",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 102,
+      "admitted_tick": 114,
+      "first_covered_tick": 114,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P348",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 102,
+      "admitted_tick": 114,
+      "first_covered_tick": 119,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P349",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 103,
+      "admitted_tick": 103,
+      "first_covered_tick": 103,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P350",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 103,
+      "admitted_tick": 103,
+      "first_covered_tick": 103,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P351",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 103,
+      "admitted_tick": 103,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P352",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 103,
+      "admitted_tick": 116,
+      "first_covered_tick": 116,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P353",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 103,
+      "admitted_tick": 116,
+      "first_covered_tick": 119,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P354",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 116,
+      "first_covered_tick": 120,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P355",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 118,
+      "first_covered_tick": 118,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P356",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 104,
+      "first_covered_tick": 104,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P357",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 105,
+      "first_covered_tick": 105,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P358",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 104,
+      "first_covered_tick": 104,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P359",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 105,
+      "first_covered_tick": 105,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P360",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 104,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P361",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 104,
+      "admitted_tick": 104,
+      "first_covered_tick": 104,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P362",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 104,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P363",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 119,
+      "first_covered_tick": 119,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P364",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 106,
+      "first_covered_tick": 106,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P365",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 119,
+      "first_covered_tick": 119,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P366",
+      "esi": 5,
+      "outcome": "in_bed_end",
+      "arrived_tick": 105,
+      "admitted_tick": 123,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P367",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 120,
+      "first_covered_tick": 123,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P368",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 107,
+      "first_covered_tick": 107,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P369",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 105,
+      "first_covered_tick": 105,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P370",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 105,
+      "admitted_tick": 110,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P371",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 107,
+      "first_covered_tick": 107,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P372",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 108,
+      "first_covered_tick": 108,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P373",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 105,
+      "admitted_tick": 105,
+      "first_covered_tick": 105,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P374",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 106,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P375",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 106,
+      "admitted_tick": 109,
+      "first_covered_tick": 109,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P376",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 121,
+      "first_covered_tick": 121,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P377",
+      "esi": 5,
+      "outcome": "in_bed_end",
+      "arrived_tick": 107,
+      "admitted_tick": 127,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P378",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 121,
+      "first_covered_tick": 121,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P379",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 109,
+      "first_covered_tick": 109,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P380",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 110,
+      "first_covered_tick": 110,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P381",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 107,
+      "first_covered_tick": 107,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P382",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 121,
+      "first_covered_tick": 125,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P383",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 111,
+      "first_covered_tick": 111,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P384",
+      "esi": 5,
+      "outcome": "in_bed_end",
+      "arrived_tick": 107,
+      "admitted_tick": 129,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P385",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 107,
+      "admitted_tick": 111,
+      "first_covered_tick": 111,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P386",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 108,
+      "admitted_tick": 111,
+      "first_covered_tick": 111,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P387",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 108,
+      "admitted_tick": 109,
+      "first_covered_tick": 109,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P388",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 108,
+      "admitted_tick": 122,
+      "first_covered_tick": 127,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P389",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 109,
+      "admitted_tick": 111,
+      "first_covered_tick": 111,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P390",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 109,
+      "admitted_tick": 122,
+      "first_covered_tick": 128,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P391",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 109,
+      "admitted_tick": 112,
+      "first_covered_tick": 112,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P392",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 110,
+      "admitted_tick": 113,
+      "first_covered_tick": 113,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P393",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 111,
+      "admitted_tick": 113,
+      "first_covered_tick": 113,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P394",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 111,
+      "admitted_tick": 113,
+      "first_covered_tick": 113,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P395",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 111,
+      "admitted_tick": 114,
+      "first_covered_tick": 114,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P396",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 112,
+      "admitted_tick": 114,
+      "first_covered_tick": 114,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P397",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 112,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P398",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 113,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P399",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 113,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P400",
+      "esi": 4,
+      "outcome": "in_bed_end",
+      "arrived_tick": 113,
+      "admitted_tick": 125,
+      "first_covered_tick": 129,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P401",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 113,
+      "admitted_tick": 115,
+      "first_covered_tick": 115,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P402",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 114,
+      "admitted_tick": 126,
+      "first_covered_tick": 126,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P403",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 115,
+      "admitted_tick": 115,
+      "first_covered_tick": 115,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P404",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 115,
+      "admitted_tick": 127,
+      "first_covered_tick": 127,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P405",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 115,
+      "admitted_tick": 115,
+      "first_covered_tick": 115,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P406",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 115,
+      "admitted_tick": 116,
+      "first_covered_tick": 116,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P407",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 115,
+      "admitted_tick": 127,
+      "first_covered_tick": 127,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P408",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 116,
+      "admitted_tick": 116,
+      "first_covered_tick": 116,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P409",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 116,
+      "admitted_tick": 128,
+      "first_covered_tick": 128,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P410",
+      "esi": 4,
+      "outcome": "in_bed_end",
+      "arrived_tick": 116,
+      "admitted_tick": 128,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P411",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 117,
+      "admitted_tick": 129,
+      "first_covered_tick": 129,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P412",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 117,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P413",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 117,
+      "admitted_tick": 117,
+      "first_covered_tick": 117,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P414",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 117,
+      "admitted_tick": 129,
+      "first_covered_tick": 129,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P415",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 117,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P416",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 117,
+      "admitted_tick": 117,
+      "first_covered_tick": 117,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P417",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 118,
+      "admitted_tick": 129,
+      "first_covered_tick": 129,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P418",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 118,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P419",
+      "esi": 2,
+      "outcome": "in_bed_end",
+      "arrived_tick": 118,
+      "admitted_tick": 118,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P420",
+      "esi": 4,
+      "outcome": "in_bed_end",
+      "arrived_tick": 118,
+      "admitted_tick": 130,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P421",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 118,
+      "admitted_tick": 118,
+      "first_covered_tick": 118,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P422",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 119,
+      "admitted_tick": 131,
+      "first_covered_tick": 131,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P423",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 119,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P424",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 120,
+      "admitted_tick": 120,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P425",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 120,
+      "admitted_tick": 120,
+      "first_covered_tick": 120,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P426",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 120,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P427",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 121,
+      "admitted_tick": 121,
+      "first_covered_tick": 121,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P428",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 121,
+      "admitted_tick": 121,
+      "first_covered_tick": 121,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P429",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 121,
+      "admitted_tick": 132,
+      "first_covered_tick": 132,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P430",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 121,
+      "admitted_tick": 121,
+      "first_covered_tick": 121,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P431",
+      "esi": 2,
+      "outcome": "discharged",
+      "arrived_tick": 121,
+      "admitted_tick": 121,
+      "first_covered_tick": 122,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P432",
+      "esi": 5,
+      "outcome": "left",
+      "arrived_tick": 121,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P433",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 122,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P434",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 122,
+      "admitted_tick": 122,
+      "first_covered_tick": 122,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P435",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 123,
+      "admitted_tick": 123,
+      "first_covered_tick": 123,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P436",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 123,
+      "admitted_tick": 123,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": [
+        "F7"
+      ]
+    },
+    {
+      "id": "P437",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 123,
+      "admitted_tick": 123,
+      "first_covered_tick": 123,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P438",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 123,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P439",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 124,
+      "admitted_tick": 124,
+      "first_covered_tick": 124,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P440",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 124,
+      "admitted_tick": 125,
+      "first_covered_tick": 125,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P441",
+      "esi": 1,
+      "outcome": "died",
+      "arrived_tick": 124,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P442",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 124,
+      "admitted_tick": 133,
+      "first_covered_tick": 133,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P443",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 125,
+      "admitted_tick": 125,
+      "first_covered_tick": 125,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P444",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 125,
+      "admitted_tick": 133,
+      "first_covered_tick": 133,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P445",
+      "esi": 2,
+      "outcome": "in_bed_end",
+      "arrived_tick": 126,
+      "admitted_tick": 127,
+      "first_covered_tick": 127,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P446",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 128,
+      "admitted_tick": 134,
+      "first_covered_tick": 134,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P447",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 128,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P448",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 128,
+      "admitted_tick": 128,
+      "first_covered_tick": 128,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P449",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 129,
+      "admitted_tick": 129,
+      "first_covered_tick": 129,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P450",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 129,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P451",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 129,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P452",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 130,
+      "admitted_tick": 130,
+      "first_covered_tick": 130,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P453",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 130,
+      "admitted_tick": 131,
+      "first_covered_tick": 131,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P454",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 130,
+      "admitted_tick": 131,
+      "first_covered_tick": 131,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P455",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 131,
+      "admitted_tick": 135,
+      "first_covered_tick": 135,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P456",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 132,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P457",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 132,
+      "admitted_tick": 135,
+      "first_covered_tick": 135,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P458",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 133,
+      "admitted_tick": 135,
+      "first_covered_tick": 140,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P459",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 134,
+      "admitted_tick": 134,
+      "first_covered_tick": 134,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P460",
+      "esi": 4,
+      "outcome": "discharged",
+      "arrived_tick": 135,
+      "admitted_tick": 135,
+      "first_covered_tick": 140,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P461",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 136,
+      "admitted_tick": 136,
+      "first_covered_tick": 136,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P462",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 137,
+      "admitted_tick": 137,
+      "first_covered_tick": 137,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P463",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 137,
+      "admitted_tick": 137,
+      "first_covered_tick": 137,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P464",
+      "esi": 4,
+      "outcome": "never_admitted",
+      "arrived_tick": 137,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P465",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 137,
+      "admitted_tick": 138,
+      "first_covered_tick": 138,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P466",
+      "esi": 3,
+      "outcome": "discharged",
+      "arrived_tick": 138,
+      "admitted_tick": 140,
+      "first_covered_tick": 140,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P467",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 140,
+      "admitted_tick": 141,
+      "first_covered_tick": 141,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P468",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 140,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P469",
+      "esi": 2,
+      "outcome": "in_bed_end",
+      "arrived_tick": 140,
+      "admitted_tick": 140,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P470",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 141,
+      "admitted_tick": 141,
+      "first_covered_tick": 141,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P471",
+      "esi": 4,
+      "outcome": "never_admitted",
+      "arrived_tick": 141,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P472",
+      "esi": 5,
+      "outcome": "never_admitted",
+      "arrived_tick": 141,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P473",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 141,
+      "admitted_tick": 142,
+      "first_covered_tick": 142,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P474",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 141,
+      "admitted_tick": 142,
+      "first_covered_tick": 142,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P475",
+      "esi": 4,
+      "outcome": "never_admitted",
+      "arrived_tick": 142,
+      "admitted_tick": null,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    },
+    {
+      "id": "P476",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 142,
+      "admitted_tick": 142,
+      "first_covered_tick": 142,
+      "on_time": true,
+      "failure_codes": []
+    },
+    {
+      "id": "P477",
+      "esi": 3,
+      "outcome": "in_bed_end",
+      "arrived_tick": 142,
+      "admitted_tick": 142,
+      "first_covered_tick": null,
+      "on_time": false,
+      "failure_codes": []
+    }
+  ],
+  "failures": {
+    "F1": 0,
+    "F2": 0,
+    "F6": 0,
+    "F7": 8,
+    "F8": 0,
+    "F10": 0
+  },
+  "ticks_with_actions": 142,
+  "tool_calls": 148,
+  "ended": "tick_143"
+}

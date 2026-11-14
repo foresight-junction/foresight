@@ -7,25 +7,10 @@
 - **Created:** Sat 19:33
 
 ## Goal
-One or two lines: what this branch delivers and how we'll know it works.
+Publish a shareable scored calibration trial and wire it into the README and demo. Refs #17 and #25.
 
-## Files and folders I own
-- 
-
-## Don't touch
-- 
-
-## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
-
-## Status
-- [ ] 
-
-## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 
+## Files
+`README.md`, `docs/DEMO.md`, and the selected artifacts under `eval/results/2026-11-14-gemini-seed42/`.
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- 
+Verified reward 0.811712, tick 143 and zero exceptions. The verifier and sidecar score reports are equal as JSON. The published trajectory omits reasoning fields. Human-authored sections, final findings, matrix, recording and submission remain open.

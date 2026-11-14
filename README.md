@@ -126,7 +126,9 @@ The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tic
 |---|---|---:|---:|
 | Reference (oracle) | `harbor run -p ed72 -a oracle` | 42 | 0.989617 |
 | Do-nothing (nop) | `harbor run -p ed72 -a nop` | 42 | 0.000000 |
-| OpenCode model | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | Pending [#17](https://github.com/xand1ex999/guinness/issues/17) |
+| OpenCode, Gemini 3.8 Flash | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | 0.811712 |
+
+The Gemini calibration completed tick 143 with zero Harbor exceptions. [Trajectory, score report and reward](eval/results/2026-11-14-gemini-seed42/README.md).
 
 The reference scored exactly 0.989617 on seed 42 both in process and through Harbor. Across seeds 1–5, the reference averaged 98.4 points out of 100 (range 96.78–99.69). Stop-early scored below the reactive proxy on all five seeds, and the proxy averaged 61.8. Do-nothing scored zero on every seed, divert-all peaked at 47.93 points, and the highest-scoring shortcut peaked at 72.72. Every tested shortcut scored below the reference on every seed. [Per-seed tuning table](docs/TUNING.md).
 
