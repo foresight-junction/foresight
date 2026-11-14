@@ -31,6 +31,15 @@ MANIFEST_NAME = "manifest.json"
 PLAN_NAME = "plan.json"
 SCHEMA = 2
 DEFAULT_CONFIG = Path("environment/hospital/config/default.json")
+FROZEN_FIELDS = (
+    "source_commit",
+    "source_dirty",
+    "task_sha256",
+    "config_sha256",
+    "instruction_sha256",
+    "reference_sha256",
+)
+EXIT_CODE_FILE = "harbor-exit-code.txt"
 DEFAULT_SEED = 42  # the bare `ed72` task, see environment/docker-compose.yaml
 
 _SEED_ENV = re.compile(r"""ED72_SEED["']?\s*[:=]\s*["']?(\d+)""")
@@ -136,6 +145,29 @@ def source_facts(task_dir: Path) -> dict:
     return {"source_commit": commit, "source_dirty": None if status is None else bool(status)}
 
 
+def identity_facts(task_dir: Path) -> dict:
+    """The facts that must not change between plan and run: source commit/dirty and the four hashes."""
+    facts = {**task_facts(task_dir), **source_facts(task_dir)}
+    return {"task_path": facts["task_path"], **{k: facts[k] for k in FROZEN_FIELDS}}
+
+
+def find_plan(job_dir: Path) -> tuple[Path, dict] | None:
+    """Nearest plan.json at or above the job dir's parent (the jobs root)."""
+    for parent in job_dir.resolve().parents:
+        plan = load_plan(parent)
+        if plan is not None:
+            return parent, plan
+    return None
+
+
+def planned_identity(plan: dict, job: str) -> dict | None:
+    """Frozen identity for a job: its own entry's task if it names one, else the plan's."""
+    for e in plan.get("entries") or []:
+        if e.get("job") == job and e.get("identity"):
+            return e["identity"]
+    return plan.get("identity")
+
+
 def runtime_facts(harbor_version: str | None) -> dict:
     """Tool versions; None when a tool is unavailable, never a guess."""
     return {
@@ -198,15 +230,44 @@ def write_manifest(
     ak: list[str] | None = None,
     ae: list[str] | None = None,
     budget: dict | None = None,
+    exit_code: int | None = None,
 ) -> Path:
-    """Write `<job_dir>/manifest.json` (schema 2). `seed` is an explicit runner override."""
+    """Write `<job_dir>/manifest.json` (schema 2). `seed` is an explicit runner override.
+
+    With a plan.json above the job dir that froze an identity, that identity is recorded as the
+    attempt's identity and never replaced; what the task dir looks like now goes under `observed`,
+    and any differing field sets `identity_drift` and lists it in `drifted_fields`.
+    """
     facts = task_facts(task_dir)
     if seed is not None:
         facts["seed"], facts["seed_source"] = seed, "host_env"
+    current = {**facts, **source_facts(task_dir)}
+    identity = {k: current[k] for k in FROZEN_FIELDS}
+    extra: dict = {"identity_drift": False}
+    found = find_plan(job_dir)
+    frozen = planned_identity(found[1], job_dir.name) if found else None
+    if frozen:
+        identity = {k: frozen.get(k) for k in FROZEN_FIELDS}
+        drifted = [k for k in FROZEN_FIELDS if identity[k] != current[k]]
+        extra = {
+            "identity_source": "plan",
+            "observed": {k: current[k] for k in FROZEN_FIELDS},
+            "identity_drift": bool(drifted),
+            "drifted_fields": drifted,
+        }
+    if exit_code is None:
+        code_file = job_dir / EXIT_CODE_FILE
+        if code_file.is_file():
+            try:
+                exit_code = int(code_file.read_text().strip())
+            except ValueError:
+                exit_code = None
     manifest = {
         "schema": SCHEMA,
         **facts,
-        **source_facts(task_dir),
+        **identity,
+        **extra,
+        "harbor_exit_code": exit_code,
         "model": model,
         "agent": agent,
         "agent_option_names": _option_names(ak),
@@ -225,8 +286,14 @@ def write_manifest(
     return out
 
 
-def write_plan(job_root: Path, entries: list[dict], *, force: bool = False) -> Path:
-    """Write `<job_root>/plan.json` before any trial runs. Entry keys: job, policy, model, seed, repeat."""
+def write_plan(
+    job_root: Path, entries: list[dict], *, force: bool = False, task_dir: Path | None = None
+) -> Path:
+    """Write `<job_root>/plan.json` before any trial runs. Entry keys: job, policy, model, seed, repeat.
+
+    `task_dir` freezes the source/task/config/instruction/reference identity into the plan; an entry
+    with its own `task` key freezes that task's identity on the entry instead.
+    """
     out = job_root / PLAN_NAME
     if out.exists() and not force:
         raise FileExistsError(f"{out} exists; a plan is written once, before the first trial")
@@ -234,17 +301,20 @@ def write_plan(job_root: Path, entries: list[dict], *, force: bool = False) -> P
     for e in entries:
         if not e.get("policy"):
             raise ValueError(f"plan entry needs a policy: {e}")
-        clean.append(
-            {
-                "job": e.get("job"),
-                "policy": e["policy"],
-                "model": e.get("model") or "-",
-                "seed": None if e.get("seed") is None else str(e["seed"]),
-                "repeat": int(e.get("repeat") or 1),
-            }
-        )
+        item = {
+            "job": e.get("job"),
+            "policy": e["policy"],
+            "model": e.get("model") or "-",
+            "seed": None if e.get("seed") is None else str(e["seed"]),
+            "repeat": int(e.get("repeat") or 1),
+        }
+        if e.get("task"):
+            item["identity"] = identity_facts(Path(e["task"]))
+        clean.append(item)
     job_root.mkdir(parents=True, exist_ok=True)
     plan = {"schema": SCHEMA, "created_at": datetime.now(UTC).isoformat(timespec="seconds"), "entries": clean}
+    if task_dir is not None:
+        plan["identity"] = identity_facts(task_dir)
     out.write_text(json.dumps(plan, indent=2) + "\n")
     return out
 
@@ -272,7 +342,9 @@ def _build_parser() -> argparse.ArgumentParser:
     plan.add_argument(
         "--entry", action="append", required=True, help="job=..,policy=..,model=..,seed=..,repeats=N"
     )
-    plan.add_argument("--task", type=Path, help="task dir, to default each entry's seed")
+    plan.add_argument(
+        "--task", type=Path, help="task dir: defaults each entry's seed and freezes its identity in plan.json"
+    )
     plan.add_argument("--force", action="store_true")
     write = sub.add_parser("write", help="write manifest.json after a harbor run")
     write.add_argument("job_dir", type=Path)
@@ -286,6 +358,9 @@ def _build_parser() -> argparse.ArgumentParser:
     write.add_argument("--ak", action="append", help="agent kwarg NAME[=value]; only the name is stored")
     write.add_argument("--ae", action="append", help="agent env NAME[=value]; only the name is stored")
     write.add_argument("--budget", action="append", help="NAME=value, e.g. max_cost_usd=5")
+    write.add_argument(
+        "--exit-code", type=int, help=f"harbor's exit status; default reads <job dir>/{EXIT_CODE_FILE}"
+    )
     return parser
 
 
@@ -302,7 +377,7 @@ def main(argv: list[str] | None = None) -> int:
         default_seed = task_facts(args.task)["seed"] if args.task else None
         entries = [e for text in args.entry for e in _parse_entry(text, default_seed)]
         try:
-            out = write_plan(args.job_root, entries, force=args.force)
+            out = write_plan(args.job_root, entries, force=args.force, task_dir=args.task)
         except (FileExistsError, ValueError) as exc:
             print(f"manifest: {exc}", file=sys.stderr)
             return 2
@@ -321,7 +396,11 @@ def main(argv: list[str] | None = None) -> int:
         ak=args.ak,
         ae=args.ae,
         budget=budget,
+        exit_code=args.exit_code,
     )
+    drift = _read_json(out).get("drifted_fields")
+    if drift:
+        print(f"manifest: IDENTITY DRIFT since plan: {', '.join(drift)}", file=sys.stderr)
     print(f"manifest: wrote {out}", file=sys.stderr)
     return 0
 

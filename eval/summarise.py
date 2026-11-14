@@ -15,7 +15,7 @@ Usage: python eval/summarise.py [JOBS_DIR ...] [--out PATH]
 import argparse
 import json
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean
 
@@ -43,6 +43,10 @@ class Trial:
     reward: float | None
     error: str | None
     report: dict | None
+    task: str = UNKNOWN
+    reference: str = UNKNOWN
+    source: str = UNKNOWN
+    drift: tuple[str, ...] = ()
 
 
 def _read_json(path: Path) -> dict | None:
@@ -115,10 +119,17 @@ def _identity(trial_dir: Path, report: dict | None) -> dict[str, str]:
     def short(digest: str | None) -> str:
         return digest[:8] if digest else UNKNOWN
 
+    commit = facts.get("source_commit")
+    source = UNKNOWN if not commit else commit[:8] + ("+dirty" if facts.get("source_dirty") else "")
+    drift = facts.get("drifted_fields") or (["identity"] if facts.get("identity_drift") else [])
     return {
         "seed": UNKNOWN if seed is None else str(seed),
         "config": short(facts.get("config_sha256")),
         "instruction": short(facts.get("instruction_sha256")),
+        "task": short(facts.get("task_sha256")),
+        "reference": short(facts.get("reference_sha256")),
+        "source": source,
+        "drift": tuple(drift),
     }
 
 
@@ -142,6 +153,10 @@ def load_trial(trial_dir: Path) -> Trial | None:
         seed=ident["seed"],
         config=ident["config"],
         instruction=ident["instruction"],
+        task=ident["task"],
+        reference=ident["reference"],
+        source=ident["source"],
+        drift=ident["drift"],
         reward=reward,
         error=error,
         report=report,
@@ -171,6 +186,9 @@ class Row:
     seed: str
     config: str
     instruction: str
+    task: str
+    reference: str
+    source: str
     runs: int
     errors: int
     mean: float
@@ -182,13 +200,22 @@ class Row:
 def build_rows(trials: list[Trial]) -> list[Row]:
     groups: dict[tuple[str, ...], list[Trial]] = {}
     for t in trials:
-        key: tuple[str, ...] = (t.policy, t.model, t.seed, t.config, t.instruction)
+        key: tuple[str, ...] = (
+            t.policy,
+            t.model,
+            t.seed,
+            t.config,
+            t.instruction,
+            t.task,
+            t.reference,
+            t.source,
+        )
         if UNKNOWN in key[2:]:
             # Unknown provenance could hide a different seed, config or prompt, so each such trial stays alone.
             key += (t.job, t.name)
         groups.setdefault(key, []).append(t)
     rows = []
-    for (policy, model, seed, config, instruction, *_), group in groups.items():
+    for (policy, model, seed, config, instruction, task, reference, source, *_), group in groups.items():
         # A trial with no reward counts as 0, as Harbor's own mean metric does.
         rewards = [t.reward if t.reward is not None else 0.0 for t in group]
         reports = [t.report for t in group if t.report is not None]
@@ -202,6 +229,9 @@ def build_rows(trials: list[Trial]) -> list[Row]:
                 seed=seed,
                 config=config,
                 instruction=instruction,
+                task=task,
+                reference=reference,
+                source=source,
                 runs=len(group),
                 errors=sum(1 for t in group if t.error is not None),
                 mean=mean(rewards),
@@ -210,13 +240,25 @@ def build_rows(trials: list[Trial]) -> list[Row]:
                 extras=extras,
             )
         )
-    rows.sort(key=lambda r: (-r.mean, r.policy, r.model, r.seed, r.config, r.instruction))
+    rows.sort(
+        key=lambda r: (
+            -r.mean,
+            r.policy,
+            r.model,
+            r.seed,
+            r.config,
+            r.instruction,
+            r.task,
+            r.reference,
+            r.source,
+        )
+    )
     return rows
 
 
-def _identity_key(r: Row) -> tuple[str, str, str] | None:
-    """Rows are comparable only when seed, config and instruction are all known."""
-    key = (r.seed, r.config, r.instruction)
+def _identity_key(r: Row) -> tuple[str, ...] | None:
+    """Rows are comparable only when seed, config, instruction, task, reference and source are known."""
+    key = (r.seed, r.config, r.instruction, r.task, r.reference, r.source)
     return None if UNKNOWN in key else key
 
 
@@ -229,7 +271,8 @@ def _gaps(rows: list[Row]) -> list[str]:
         if r.model == "-" or r.policy == reference or key is None or key not in refs:
             continue
         lines.append(
-            f"- {r.policy} `{r.model}` seed {r.seed} config {r.config} instruction {r.instruction}: "
+            f"- {r.policy} `{r.model}` seed {r.seed} config {r.config} instruction {r.instruction} "
+            f"task {r.task} reference {r.reference} source {r.source}: "
             f"{refs[key] - r.mean:+.3f}"
         )
     return lines
@@ -243,10 +286,24 @@ class Completeness:
     failed: list[Trial]
     timed_out: list[Trial]
     unplanned: list[Trial]
+    drifted: list[Trial] = field(default_factory=list)
+    crashed: list[dict] = field(default_factory=list)
 
     @property
     def incomplete(self) -> bool:
-        return bool(self.missing or self.failed)
+        return bool(self.missing or self.failed or self.drifted or self.crashed)
+
+    def __add__(self, other: "Completeness") -> "Completeness":
+        return Completeness(
+            self.planned + other.planned,
+            self.matched + other.matched,
+            self.missing + other.missing,
+            self.failed + other.failed,
+            self.timed_out + other.timed_out,
+            self.unplanned + other.unplanned,
+            self.drifted + other.drifted,
+            self.crashed + other.crashed,
+        )
 
 
 def _plan_entries(plan: dict | list) -> list[dict]:
@@ -259,15 +316,21 @@ def _entry_key(e: dict) -> tuple[str | None, str, str, str]:
     return e.get("job"), policy, e.get("model") or "-", UNKNOWN if seed is None else str(seed)
 
 
-def completeness(plan: dict | list, trials: list[Trial]) -> Completeness:
+def completeness(
+    plan: dict | list, trials: list[Trial], job_exit: dict[str, int | None] | None = None
+) -> Completeness:
     """Match planned attempts to finished trials by (job, policy, model, seed); repeats are counted.
 
     An entry without a job matches that policy/model/seed in any job. Every planned attempt without
     a finished trial is `missing`, a matched trial with an error is `failed`, a matched trial that
     ended on `timeout` is also listed as `timed_out` (it stays `failed` too if Harbor recorded an
     exception, because #93 made any agent exception fail the evaluation), and a trial no entry claims
-    is `unplanned`. Nothing is dropped.
+    is `unplanned`. Nothing is dropped. This matches ONE root's plan against that root's trials; use
+    `completeness_by_root` for several roots. A matched trial whose manifest flags identity drift is
+    `drifted` and counts as failed. A planned entry with no finished trial whose job recorded a non-zero
+    `harbor_exit_code` is `crashed` (also missing) and counts as failed.
     """
+    job_exit = job_exit or {}
     entries = _plan_entries(plan)
     free = sorted(trials, key=lambda t: (t.job, t.name))
     matched: list[Trial] = []
@@ -293,9 +356,29 @@ def completeness(plan: dict | list, trials: list[Trial]) -> Completeness:
         matched=len(matched),
         missing=missing,
         failed=[t for t in matched if t.error is not None],
+        drifted=[t for t in matched if t.drift],
+        crashed=[e for e in missing if job_exit.get(e.get("job") or "")],
         timed_out=[t for t in matched if t.report and t.report.get("ended") == "timeout"],
         unplanned=free,
     )
+
+
+def completeness_by_root(
+    roots: list[tuple[dict | list | None, list[Trial], dict[str, int | None]]],
+) -> Completeness | None:
+    """Per-root completeness, summed. A root without a plan contributes all its trials as unplanned.
+
+    None when no root has a plan.
+    """
+    if all(plan is None for plan, _, _ in roots):
+        return None
+    total = Completeness(0, 0, [], [], [], [])
+    for plan, trials, job_exit in roots:
+        if plan is None:
+            total += Completeness(0, 0, [], [], [], list(trials))
+        else:
+            total += completeness(plan, trials, job_exit)
+    return total
 
 
 def _completeness_lines(c: Completeness) -> list[str]:
@@ -305,18 +388,24 @@ def _completeness_lines(c: Completeness) -> list[str]:
     def trial(t: Trial) -> str:
         return f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed} ({t.error or 'ended timeout'})"
 
+    def drift(t: Trial) -> str:
+        return f"{t.job}/{t.name}: {', '.join(t.drift)}"
+
     out = [
         "",
         "## Completeness",
         "",
         f"Planned {c.planned}, matched {c.matched}, missing {len(c.missing)}, "
-        f"failed {len(c.failed)}, timed out {len(c.timed_out)}, unplanned {len(c.unplanned)}. "
+        f"failed {len(c.failed)}, timed out {len(c.timed_out)}, identity drift {len(c.drifted)}, "
+        f"crashed {len(c.crashed)}, unplanned {len(c.unplanned)}. "
         + ("INCOMPLETE." if c.incomplete else "All planned attempts finished."),
     ]
     for title, items, fmt in (
         ("Missing (planned, no finished trial)", c.missing, entry),
         ("Failed (exception or no reward)", c.failed, trial),
         ("Timed out (ended=timeout; also failed if Harbor recorded an exception)", c.timed_out, trial),
+        ("Identity drift (task or source changed since plan; counts as failed)", c.drifted, drift),
+        ("Crashed (missing, and harbor exited non-zero; counts as failed)", c.crashed, entry),
         ("Unplanned (not in plan.json)", c.unplanned, trial),
     ):
         if items:
@@ -334,12 +423,13 @@ def render(trials: list[Trial], sources: list[str], pending: int, comp: Complete
         f"{len(trials)} finished trials" + (f", {pending} still running (left out)" if pending else "") + ".",
         "Reward = score / 100 (SPEC section 6). A trial with no reward counts as 0.",
         "Errors = trials where Harbor recorded an exception or no reward.",
-        "Seed, Config (SHA-256 prefix of the hospital config) and Instruction (SHA-256 prefix of instruction.md)",
-        "come from the job's manifest.json or the task dir; `unknown` rows are never pooled or compared.",
+        "Seed, Config (SHA-256 prefix of the hospital config), Instruction (of instruction.md), Task (of the task dir),",
+        "Reference (of solution/) and Source (git commit, +dirty) come from the job's manifest.json or the task dir;",
+        "rows differing in any of them are separate, and `unknown` rows are never pooled or compared.",
         "O, T, W, B, deaths and faints are means over runs with a report.json.",
         "",
-        "| Policy | Model | Seed | Config | Instruction | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |",
-        "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Policy | Model | Seed | Config | Instruction | Task | Reference | Source | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |",
+        "|---|---|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for r in rows:
         cells = [
@@ -348,6 +438,9 @@ def render(trials: list[Trial], sources: list[str], pending: int, comp: Complete
             r.seed,
             r.config,
             r.instruction,
+            r.task,
+            r.reference,
+            r.source,
             str(r.runs),
             str(r.errors),
         ]
@@ -391,18 +484,32 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         print(f"summarise: not a directory: {', '.join(map(str, missing))}", file=sys.stderr)
         return 2
-    loaded = [load_trial(d) for d in find_trial_dirs(roots)]
+    loaded: list[Trial | None] = []
+    per_root = []
+    seen: set[Path] = set()
+    for r in roots:
+        dirs = [d for d in find_trial_dirs([r]) if d not in seen]
+        seen.update(dirs)
+        root_trials = [load_trial(d) for d in dirs]
+        loaded += root_trials
+        plan = manifest.load_plan(r)
+        job_exit = {
+            e["job"]: (manifest._read_json(r / e["job"] / manifest.MANIFEST_NAME) or {}).get(
+                "harbor_exit_code"
+            )
+            for e in _plan_entries(plan or {})
+            if e.get("job")
+        }
+        per_root.append((plan, [t for t in root_trials if t is not None], job_exit))
     trials = [t for t in loaded if t is not None]
-    plans = [p for p in (manifest.load_plan(r) for r in roots) if p is not None]
-    plan = [e for p in plans for e in _plan_entries(p)] if plans else None
-    if not trials and plan is None:
+    comp = completeness_by_root(per_root)
+    if not trials and comp is None:
         print(f"summarise: no finished Harbor trials under {', '.join(map(str, roots))}", file=sys.stderr)
         return 1
     sources = [
         str(r.resolve().relative_to(REPO_ROOT)) if r.resolve().is_relative_to(REPO_ROOT) else str(r)
         for r in roots
     ]
-    comp = completeness(plan, trials) if plan is not None else None
     text = render(trials, sources, pending=len(loaded) - len(trials), comp=comp)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(text)
@@ -413,7 +520,8 @@ def main(argv: list[str] | None = None) -> int:
     elif comp.incomplete and not args.allow_incomplete:
         print(
             f"summarise: INCOMPLETE: {len(comp.missing)} planned attempts missing, "
-            f"{len(comp.failed)} failed (use --allow-incomplete to accept)",
+            f"{len(comp.failed)} failed, {len(comp.drifted)} identity drift, "
+            f"{len(comp.crashed)} crashed (use --allow-incomplete to accept)",
             file=sys.stderr,
         )
         return 4

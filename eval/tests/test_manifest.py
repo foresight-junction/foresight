@@ -223,3 +223,53 @@ def test_plans_from_several_roots_are_merged(tmp_path: Path) -> None:
     out = tmp_path / "s.md"
     assert summarise.main([str(a), str(b), "--out", str(out)]) == 4
     assert "Planned 2" in out.read_text()
+
+
+def test_plan_freezes_identity_and_write_flags_drift(tmp_path: Path) -> None:
+    task = _task(tmp_path, 'ED72_SEED: "42"')
+    root = tmp_path / "jobs"
+    manifest.write_plan(
+        root, [{"job": "agent", "policy": "opencode", "model": "g/m", "seed": 42}], task_dir=task
+    )
+    frozen = manifest.load_plan(root)["identity"]
+    assert frozen["reference_sha256"] and frozen["instruction_sha256"]
+
+    manifest.write_manifest(root / "same", task)
+    same = json.loads((root / "same" / "manifest.json").read_text())
+    assert same["identity_source"] == "plan" and same["identity_drift"] is False
+
+    (task / "solution" / "policy.py").write_text("print(2)")  # the reference changes mid-campaign
+    manifest.write_manifest(root / "agent", task)
+    data = json.loads((root / "agent" / "manifest.json").read_text())
+    assert data["identity_drift"] is True and data["drifted_fields"] == ["task_sha256", "reference_sha256"]
+    assert data["reference_sha256"] == frozen["reference_sha256"] != data["observed"]["reference_sha256"]
+
+    helpers._trial(
+        root, "agent", "ed72__agent", "opencode", reward=0.5, model=("g", "m"), report=helpers._report(0.5)
+    )
+    comp = summarise.completeness_by_root(
+        [
+            (
+                manifest.load_plan(root),
+                [t for t in map(summarise.load_trial, summarise.find_trial_dirs([root])) if t],
+                {},
+            )
+        ]
+    )
+    assert [t.name for t in comp.drifted] == ["ed72__agent"] and comp.incomplete
+
+
+def test_exit_code_flag_and_file_and_crash_counts_as_failed(tmp_path: Path) -> None:
+    task = _task(tmp_path, 'ED72_SEED: "42"')
+    root = tmp_path / "jobs"
+    manifest.write_plan(
+        root, [{"job": "agent", "policy": "opencode", "model": "g/m", "seed": 42}], task_dir=task
+    )
+    (root / "agent").mkdir(parents=True)
+    (root / "agent" / manifest.EXIT_CODE_FILE).write_text("137\n")
+    manifest.write_manifest(root / "agent", task)
+    assert json.loads((root / "agent" / "manifest.json").read_text())["harbor_exit_code"] == 137
+    manifest.write_manifest(root / "other", task, exit_code=0)
+    assert json.loads((root / "other" / "manifest.json").read_text())["harbor_exit_code"] == 0
+    assert summarise.main([str(root), "--out", str(tmp_path / "s.md")]) == 4
+    assert "crashed 1" in (tmp_path / "s.md").read_text()
