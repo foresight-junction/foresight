@@ -70,7 +70,7 @@ mkdir -p "$JOBS_DIR"
 FAILED=()
 
 # A failed job is recorded and the rest still run, so the summary shows whatever finished.
-# Harbor can exit 0 with errored trials; summarise.py exits non-zero if any trial has no reward.
+# Harbor can exit 0 with errored trials; summarise.py exits non-zero when it finds a failed trial.
 run_job() {
   local job="$1"
   shift

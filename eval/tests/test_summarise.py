@@ -173,6 +173,7 @@ def test_rewarded_exception_counts_as_error(tmp_path: Path) -> None:
     )
     row = _rows(root)["opencode"]
     assert (row.runs, row.errors, row.mean) == (1, 1, pytest.approx(0.3))
+    assert summarise.main([str(root), "--out", str(tmp_path / "summary.md")]) == 3
 
 
 def test_main_fails_when_a_trial_has_no_reward(jobs: Path, tmp_path: Path) -> None:

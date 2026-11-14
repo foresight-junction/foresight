@@ -107,7 +107,7 @@ The score is a pure function of the hospital's append-only event log (`/var/lib/
 
 ## Reward integrity
 
-- **The answer is not in the agent's container.** The `main` image holds `HANDBOOK.md` and the `ward` CLI only (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
+- **The answer is not in the agent's container.** The `main` image packages `HANDBOOK.md`, the `ward` CLI and the OpenCode runtime (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
 - **The verifier cannot read agent-written files.** `ed72/task.toml` sets `environment_mode = "separate"` and a `[[verifier.collect]]` hook that runs `collect.py` inside `hospital`. `tests/test.sh` reads only `/evidence/report.json` from there. Shared mode is not used because a spike showed a root agent could forge the reward in it.
 - **No admin back door.** The only HTTP endpoint besides MCP is `GET /health`. There is no finalise, reset, undo, seed or ground-truth endpoint.
 - **Tool outputs are tested for leaks** (#31, `ed72/environment/hospital/tests/test_firewall.py`). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer.
@@ -121,13 +121,13 @@ The shortcuts we expect judges to try first, and the rule that stops each, are l
 
 ## Results
 
-The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tick. The calibration runs used Harbor 0.26.0 on commit `ca9031c`. [Run details and job paths](https://github.com/xand1ex999/guinness/issues/17).
+The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tick. The oracle and nop calibration runs used Harbor 0.26.0 on commit `ca9031c`. [Run details and job paths](https://github.com/xand1ex999/guinness/issues/17).
 
 | Policy | Harbor command | Seed | Reward |
 |---|---|---:|---:|
 | Reference (oracle) | `harbor run -p ed72 -a oracle` | 42 | 0.989617 |
 | Do-nothing (nop) | `harbor run -p ed72 -a nop` | 42 | 0.000000 |
-| OpenCode, Gemini 3.8 Flash | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | 0.811712 |
+| OpenCode, Gemini 3.8 Flash | [Gemini command](#how-to-run-it) | 42 | 0.811712 |
 
 The Gemini calibration completed tick 143 with zero Harbor exceptions. [Trajectory, score report and reward](eval/results/2026-11-14-gemini-seed42/README.md).
 

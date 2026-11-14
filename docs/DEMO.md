@@ -54,7 +54,7 @@ print(json.dumps(sim.observe(), indent=1))
 ")
 ```
 
-Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fatigue 0) and the empty `warnings`.
+Point at `waiting`, `beds` (each bed’s `patient` field is `null`), `staff` (everyone in `rest` at fatigue 0) and the empty `warnings`.
 
 ## 3. A `harbor run` (1:50, 1:10)
 
@@ -65,7 +65,7 @@ uvx --python 3.12 --from harbor==0.26.0 harbor run -p ed72 -a opencode -m "$ED72
   --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
 ```
 
-Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". Once a complete OpenCode run is available, use its measured runtime.
+The agent container has the handbook, the `ward` CLI and the OpenCode runtime. The simulator, seed and scorer run in the `hospital` sidecar. Switch to the saved trial after launching the live run. The saved calibration took 12m 37s.
 
 ## 4. One agent episode (3:00, 2:00)
 
