@@ -39,8 +39,8 @@
 - `eval/pyproject.toml` (stdlib uv project) sets `testpaths = ["tests"]`, so CI's per-project pytest in `eval/` collects only `eval/tests`, and `eval/baselines/` runs its own tests.
 
 ## Handoff
-- Done: summarise.py (7 tests), run_all.sh (preflight: Docker running, uv, `ed72/task.toml`, `ED72_MODEL` plus its provider key for `all`), Makefile targets `eval`, `eval-baselines`, `eval-summary` (`JOBS=<dir>`, default latest run).
-- Verified: `make -n eval`, `bash -n eval/run_all.sh`, ruff, pytest. `make eval-baselines` ran end to end against the spike v1 fixture copied to `ed72/` in a temp dir (oracle 1.0, nop 0.0, stop-early skipped, summary written). The agent target was not run (costs money); its missing-model and missing-key failures were checked.
-- Main merged in Sat 17:20 (merge, not rebase). #58 (ed72 task packaging) is still open, so the real run is not done.
-- Next: once #58 merges, rebase and run `make eval-baselines` for real; once #12 lands, check the stop-early import path.
-- Test: `uv run --no-project --python 3.12 --with pytest pytest -q eval/tests`, then `make eval-baselines`.
+- State: PR #53 is ready for review, issue #23 is labelled `review`, and Kostiantyn (@xand1ex999) merges. CI is green (hospital 73 tests, eval 7, each run once). On a local merge with #52, `eval/baselines` collects its 27 tests once.
+- Done: summarise.py (7 tests), run_all.sh (checks first for a running Docker, uv, `ed72/task.toml`, and for `all` `ED72_MODEL` plus its provider key), Makefile `eval` / `eval-baselines` / `eval-summary` (`JOBS=<dir>`, default latest run), `eval/pyproject.toml`, `.gitignore` and `.env.example` entries.
+- Verified: `make eval-baselines` end to end on the spike v1 fixture as `ed72/` in a temp copy (oracle 1.0, nop 0.0). The agent target was never run (it costs money).
+- Next: once #58 merges, merge main in, run `make eval-baselines`, and paste `eval/results/summary.md` into PR #53. When #52 adds `eval/baselines/ed72_baselines/harbor_agent.py:StopEarlyAgent`, check that stop-early runs. Add the CONTRACTS env rows for `ED72_MODEL` / `HARBOR` (announced on #1) through the owner or a contract PR.
+- Test: `cd eval && uv run --with pytest pytest -q`, then `make eval-baselines`.
