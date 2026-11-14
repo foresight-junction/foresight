@@ -24,7 +24,7 @@ class FakeSimulation:
         self.ran_to_end = False
         FakeSimulation.instances.append(self)
 
-    def step(self, actions: list[dict]) -> None:
+    def replay_step(self, actions: list[dict]) -> None:
         self.steps.append(actions)
         self.tick += 1
 
