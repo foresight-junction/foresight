@@ -84,7 +84,7 @@ The rulebook's policy interface is `policy(observation) → list of JSON actions
 - **`observe`**: the current observation (step 4 of the tick). Read-only.
 - **`step(actions)`**: applies the action list in order (step 5), resolves the rest of the tick and the start of the next one, and returns a result per action plus the next observation. `step([])` passes a tick with no actions.
 
-Actions (rulebook §8): `admit` a waiting patient to a zone with a free allowed bed; `assign` a staff member to a zone or to `rest`; `agency` (doctor €900, nurse €350); `repair` (€2 000, only while the CT is down; it returns 3 ticks after the order, or at its original time if sooner); `divert` (free; 75% of arrivals, including bus-crash patients, are turned away for 4 ticks; not while a diversion is active). `agency` and `repair` are refused if total spending would exceed €24 000. Admission is only from the waiting area; there are no transfers between zones. Staff can be reassigned every tick for free. Invalid actions are rejected with a reason, have no effect and no extra penalty, and the valid actions in the same list still apply.
+Actions (rulebook §8): `admit` a waiting patient to a zone with a free allowed bed; `assign` a staff member to a zone or to `rest`; `agency` (doctor €900, nurse €350); `repair` (€2 000, only while the CT is down; it returns 3 ticks after the order, or at its original time if sooner); `divert` (free; 70% of arrivals, including bus-crash patients, are turned away for 4 ticks; not while a diversion is active). `agency` and `repair` are refused if total spending would exceed €24 000. Admission is only from the waiting area; there are no transfers between zones. Staff can be reassigned every tick for free. Invalid actions are rejected with a reason, have no effect and no extra penalty, and the valid actions in the same list still apply.
 
 The observation shows the whole current state and nothing of the future (rulebook §10): time, budget, every waiting patient, every bed, every staff member, the CT, warnings, diversion, running totals and the rejected actions of the last step.
 
@@ -102,7 +102,7 @@ O, T, W and B are each in [0, 1], computed once at the end over every patient wh
 | Discharged after treatment | 0 |
 | Still in a bed at the end, with at least one covered tick | 0.3 |
 | Still in a bed at the end, never covered | 1 |
-| Diverted on arrival | 0.7 |
+| Diverted on arrival | 0.75 |
 | Died, left, or never admitted | 1 |
 
 - **T, timeliness (20 points):** the weighted share of patients whose first **covered** bed tick came within their target (0/1/4/8/12 ticks after arrival for ESI 1–5). Diverted and never-admitted patients count as late.
@@ -116,7 +116,7 @@ The score is a pure function of the hospital's append-only event log (CONTRACTS 
 ## 7. Difficulty knobs (one config file, hospital side, via `ED72_CONFIG`)
 Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.
 
-Current defaults (`docs/TUNING.md`): mean 4.0 arrivals per tick (#98), and a diversion turns away 75% of arrivals (was 70%). The diversion share only matters to a policy that diverts. It keeps permanent diversion under about 47 points at the higher load, as rulebook §13 requires.
+Current defaults (`docs/TUNING.md`): mean 4.0 arrivals per tick (#98). A diversion turns away 70% of arrivals (rulebook §8) and each diverted patient loses 0.75 of its weight (was 0.7). Raising the diversion loss is the fix rulebook §13 names for a divert-all that scores too high; it keeps permanent diversion under about 47 points at the higher load. Decided by Kostiantyn, recorded on #1.
 
 ## 8. Fairness rules (30 points depend on these)
 - Every rule the scorer uses and every rate table is written in the agent-visible `HANDBOOK.md` (served by `rules`). A scorer rule or rate without a handbook line is a bug.
@@ -161,7 +161,7 @@ The `[[verifier.collect]]` hook runs `collect.py` inside `hospital` after the ag
 |---|---|
 | Put a patient in a bed with no staff | Timeliness counts only from the first covered tick; uncovered ESI 1–2 beds carry a 10% / 3% death risk per tick |
 | Fill every bed in the last tick | The 0.3 end loss applies only to patients with at least one covered tick; otherwise the loss is 1. Admitting to a covered bed at tick 143 does earn 0.3, as honest play would; the gain is capped by free covered beds (at most 17), and patients held back to fill late keep facing the waiting hazards and count late in T. CI checks that the `fill-beds-at-the-last-tick` baseline scores below the reference (#12) |
-| Divert all the time | Each diverted patient loses 0.7 of its weight and is late; permanent diversion caps around 47 points, so the reference must clearly beat 47 |
+| Divert all the time | Each diverted patient loses 0.75 of its weight and is late; permanent diversion caps around 47 points, so the reference must clearly beat 47 |
 | Spend up to €24 000 | B falls to 0 (up to 10 points); spending that saves more patients than it costs is good play, not an exploit |
 | Everyone rests in quiet periods | W is worth at most 10 × O; uncovered beds stall and ESI 1 patients face 10–15% death risk per tick |
 | Admit only light patients | ESI 1–2 carry about 51% of the outcome weight; leaving them caps O at about 0.49 |

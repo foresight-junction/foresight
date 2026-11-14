@@ -122,7 +122,7 @@ def test_diverted_patient_loses_0_7_and_is_late() -> None:
     report = score(run(world, {0: [{"type": "divert"}]}, c.TICKS).events)
     p = row(report, "P001")
     assert p["outcome"] == "diverted" and p["on_time"] is False
-    assert loss(report, "P001") == c.LOSS_DIVERTED == 0.7
+    assert loss(report, "P001") == c.LOSS_DIVERTED == 0.75
     assert report["T"] == 0.0 and report["totals"]["diverted"] == 1
 
 

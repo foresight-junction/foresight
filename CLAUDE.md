@@ -13,6 +13,10 @@ You are the only lead agent in your worktree. For each task:
 3. Build in small slices. After each working slice: `noslop` → `pre-commit-gate` → commit → push.
 4. When a slice works end to end: `cross-review` → `ship-pr`, which ends with you merging your PR once CI is green (AGENTS.md golden rule 8).
 
+## Orchestrator role (optional)
+
+Any lead may become an orchestrator (AGENTS.md section 1): create an integration branch from `main` (e.g. `<owner>/final`), start up to 5 helper agents with a clear brief each (goal, files they own, how to test, "PR into `<owner>/final`", "commit and push at least every 30 minutes", "message the orchestrator or the other agents when your work touches theirs"), merge each helper PR into the integration branch when it is ready, run all tests on it, and then merge one PR from it into `main`. Only one Harbor or Docker run at a time per laptop: the orchestrator schedules them.
+
 ## Subagents
 
 - Use subagents in parallel for **independent** pieces: e.g. one writes the endpoint while another writes its tests, or several read different parts of the codebase or docs at once.

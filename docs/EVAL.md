@@ -70,7 +70,7 @@ Exploit baselines (rulebook section 13). Each tries one shortcut and must lose t
 
 | Policy | How it plays | Why it fails |
 |---|---|---|
-| Divert-all | Diverts all the time | Each diverted patient loses 0.7 of its weight and is late. O is capped near 0.51 and T near 0.3, so about 47 points at best |
+| Divert-all | Diverts all the time | Each diverted patient loses 0.75 of its weight and is late. O is capped near 0.5 and T near 0.3, so about 47 points at best |
 | Rest-everyone-in-quiet-periods | Sends all staff to rest when the department is quiet | W is worth at most 10 x O. Uncovered beds stall and ESI 1 patients face 10 to 15% death risk per tick |
 | Admit-light-only | Admits only ESI 4 and 5 | ESI 1 and 2 carry about 51% of the outcome weight, so O is capped near 0.49 |
 | Admit-without-coverage | Fills beds with no staff assigned | Timeliness counts only from the first covered tick. Uncovered ESI 1 and 2 beds carry a death risk every tick |
