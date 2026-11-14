@@ -151,7 +151,8 @@ for a in sorted(owns):
         if a < b:
             for pa in owns[a]:
                 for pb in owns[b]:
-                    if pa == pb or pa.startswith(pb + "/") or pb.startswith(pa + "/"):
+                    sequential = a in deps.get(b, []) or b in deps.get(a, [])  # one runs after the other
+                    if not sequential and (pa == pb or pa.startswith(pb + "/") or pb.startswith(pa + "/")):
                         overlaps += 1
                         report(False, f"#{a} `{pa}` overlaps #{b} `{pb}`")
 report(overlaps == 0, f"{overlaps} ownership overlap(s)")
