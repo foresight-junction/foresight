@@ -16,6 +16,9 @@ from starlette.responses import JSONResponse
 
 CALL_CAP = 500
 MAX_ACTIONS = 50
+# The CONTRACTS action fields; a refused step logs nothing else, each string cut to MAX_LOGGED_CHARS.
+LOGGED_ACTION_FIELDS = ("type", "patient", "zone", "staff", "to", "role")
+MAX_LOGGED_CHARS = 32
 HANDBOOK_PATH = Path(__file__).with_name("HANDBOOK.md")
 
 
@@ -27,6 +30,24 @@ class Sim(Protocol):
     def step(self, actions: list[dict]) -> dict: ...
 
     def record_call(self, tool: str, args: dict, result: dict) -> None: ...
+
+
+def _loggable_actions(actions: Any) -> list:
+    """At most MAX_ACTIONS actions cut down to the contract fields, strings truncated."""
+    if not isinstance(actions, list):
+        return []
+    out: list = []
+    for action in actions[:MAX_ACTIONS]:
+        if not isinstance(action, dict):
+            out.append("<non-dict>")
+            continue
+        kept = {}
+        for key in LOGGED_ACTION_FIELDS:
+            if key in action:
+                value = action[key]
+                kept[key] = value[:MAX_LOGGED_CHARS] if isinstance(value, str) else "<non-str>"
+        out.append(kept)
+    return out
 
 
 class ToolHost:
@@ -51,9 +72,13 @@ class ToolHost:
                 result = self._step(args["actions"])
                 if "error" not in result:
                     return result
-            if tool == "step":
-                # A refused step must not bypass the 50-action cap and bloat the log (red team E1, #14).
-                args = {"actions": args["actions"][:MAX_ACTIONS]}
+            if self.calls > CALL_CAP:
+                # Past the cap only the line count matters (scoring reads tool_calls and the error), so
+                # every such call costs the same few bytes however large its payload (#14 round 2).
+                args = {}
+            elif tool == "step":
+                # A refused step must not bypass the 50-action cap or smuggle bytes into the log (E1, #14).
+                args = {"actions": _loggable_actions(args["actions"])}
             # The observation follows from the log, so only errors are worth storing.
             self.sim.record_call(tool, args, result if "error" in result else {"ok": True})
             return result
