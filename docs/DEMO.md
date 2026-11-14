@@ -21,7 +21,7 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 ## Before the demo
 
 - [ ] `make eval` has finished on the final code and `eval/results/summary.md` is current.
-- [ ] One agent trial is picked for segment 4: the same trial the README links as its run log. Write its path here: `TODO(results)`.
+- [ ] One agent trial is picked for segment 4: the same trial the README links as its run log. Use the [seed-42 Gemini calibration](../eval/results/2026-11-14-gemini-seed42/README.md).
 - [ ] Open the chosen trial’s `agent/trajectory.json`, `verifier/reward.txt` and `verifier/score_full.json`. These files cover the walkthrough. The frozen task collects the report while the raw simulator log stays in the hospital container.
 - [ ] Terminal open in the repo root, font at least 18 pt, with these files ready in editor tabs: `docs/SPEC.md` §3, the trial's `verifier/score_full.json`, `eval/results/summary.md`.
 - [ ] `.env` is closed and never shown. Don't run `env` or `cat .env` on screen.
@@ -69,7 +69,7 @@ Say: the agent's container holds only the handbook and the `ward` CLI. The simul
 
 ## 4. One agent episode (3:00, 2:00)
 
-Open the saved trial’s `agent/trajectory.json` and identify two or three decisions from #19. For each, show the tick, the latest observation the agent had, and its next actions. In `verifier/score_full.json`, match affected patients by ID and show their final outcomes or first covered ticks. Use the corresponding handbook rule to explain the available action. Compare with the reference at the same seed when the evidence supports it.
+Open the saved [Gemini trajectory](../eval/results/2026-11-14-gemini-seed42/trajectory.json) and identify two or three decisions from #19. For each, show the tick, the latest observation the agent had, and its next actions. In `verifier/score_full.json`, match affected patients by ID and show their final outcomes or first covered ticks. Use the corresponding handbook rule to explain the available action. Compare with the reference at the same seed when the evidence supports it.
 
 ## 5. Score breakdown (5:00, 1:00)
 
@@ -105,7 +105,7 @@ The [round 1 report](REDTEAM.md) links each tested probe to its regression check
 
 ## 7. Results (7:15, 1:15)
 
-Show the seed-42 calibration first: reference reward 0.989617 and do-nothing reward 0.000000. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
+Show the seed-42 calibration first. Reference reward 0.989617, Gemini reward 0.811712, and do-nothing reward 0.000000. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
 
 Once #18 is available, show the per-seed model means and ranges and compare each with the matching reference. Keep the confirmed baselines on screen if the matrix is still pending.
 
