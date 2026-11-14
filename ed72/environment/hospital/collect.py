@@ -16,29 +16,26 @@ from ed72_sim.world import generate_world
 REPORT_PATH = "/evidence/report.json"
 
 
-def read_step_lines(log_path: Path) -> list[dict]:
+def read_agent_lines(log_path: Path) -> list[dict]:
     # A missing log means the agent never acted: the episode runs with no actions.
     if not log_path.exists():
         return []
-    lines = []
     with log_path.open(encoding="utf-8") as log_file:
-        for raw in log_file:
-            if raw.strip():
-                lines.append(json.loads(raw))
-    # A refused call (call cap, episode over) logs its "error" and resolved no tick, so it is not replayed.
-    return [
-        ln
-        for ln in lines
-        if ln.get("src") == "agent" and ln.get("tool") == "step" and "error" not in ln.get("result", {})
-    ]
+        lines = [json.loads(raw) for raw in log_file if raw.strip()]
+    return [ln for ln in lines if ln.get("src") == "agent"]
 
 
 def collect(seed: int, log_path: Path, out_path: Path) -> dict:
     sim = Simulation(generate_world(seed))
-    for line in read_step_lines(log_path):
+    for line in read_agent_lines(log_path):
         if line["t"] != sim.tick:
-            raise ValueError(f"log step at tick {line['t']} but replay is at tick {sim.tick}")
-        sim.step(line["args"]["actions"])
+            raise ValueError(f"log line at tick {line['t']} but replay is at tick {sim.tick}")
+        # Only a successful step resolves a tick. observe, rules and refused calls (call cap, episode
+        # over) are re-recorded so ended and tool_calls match the live run.
+        if line["tool"] == "step" and "error" not in line["result"]:
+            sim.step(line["args"]["actions"])
+        else:
+            sim.record_call(line["tool"], line["args"], line["result"])
     sim.run_to_end()
     report = score(sim.events)
 
