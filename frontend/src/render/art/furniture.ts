@@ -135,6 +135,9 @@ export const CT_LIGHT = { x: 25, y: 3 }; // status lamp, top-right of the gantry
 
 export function drawCtAt(ctx: CanvasRenderingContext2D, x: number, y: number, working: boolean, frame: number): void {
   const base = proceduralSprite(`ct|${working ? "ok" : "broken"}`, 32, 32, ctPaint(!working));
+  ctx.fillStyle = "rgba(20, 16, 32, 0.22)";
+  ctx.fillRect(Math.round(x) + 3, Math.round(y) + 21, 26, 2);
+  ctx.fillRect(Math.round(x) + 11, Math.round(y) + 31, 10, 1);
   blit(ctx, base, x, y);
   const lx = Math.round(x) + CT_LIGHT.x;
   const ly = Math.round(y) + CT_LIGHT.y;
@@ -343,11 +346,12 @@ export function drawProp(
 export function drawMonitorAt(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number, alarm: boolean): void {
   blit(ctx, pixmapSprite("prop|monitor", MONITOR, PROP_PAL), x, y);
   if (alarm && frame % 2 === 1) return;
-  const trace = [2, 2, 2, 0, 3, 1, 2, 2];
   ctx.fillStyle = alarm ? BAD : GOOD;
   const ox = Math.round(x) + 1;
   const oy = Math.round(y) + 1;
-  for (let i = 0; i < 6; i++) ctx.fillRect(ox + i, oy + trace[(i + frame) % trace.length], 1, 1);
+  // flat line with one beat (up, down) sweeping across
+  const beat = frame % 8;
+  for (let i = 0; i < 6; i++) ctx.fillRect(ox + i, oy + (i === beat ? 0 : i === beat + 1 ? 3 : 2), 1, 1);
 }
 
 export const PROP_PALETTE = PROP_PAL;

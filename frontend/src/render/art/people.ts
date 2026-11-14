@@ -197,12 +197,12 @@ export function personPalette(look: Look): Pal {
   } else {
     top = GOWN;
     const band = ESI_RAMP[look.esi ?? 3][1];
-    Object.assign(p, { a: skin[1], A: skin[2], q: band, x: GOWN[1], g: GOWN[1], G: GOWN[2] });
+    Object.assign(p, { a: skin[1], A: skin[2], q: band, x: GOWN[2], g: GOWN[1], G: GOWN[2] });
     Object.assign(p, { l: skin[1], L: skin[2], k: "#e8e0d2" });
   }
   Object.assign(p, { "*": top[0], c: top[1], C: top[2] });
   if (look.agency) Object.assign(p, { v: VEST[1], V: VEST[2], "=": VEST[0] });
-  else Object.assign(p, { v: top[1], V: top[2], "=": top[1] });
+  else Object.assign(p, { v: look.outfit === "doctor" ? top[0] : top[1], V: top[2], "=": top[1] });
   return p;
 }
 
@@ -258,7 +258,7 @@ function rotateCcw(map: Pixmap): string[] {
 export function poseMap(spec: PoseSpec): string[] {
   if (spec.pose === "bed") {
     const head = (spec.blink ? closeEyes([...HEAD_FRONT]) : HEAD_FRONT).map((r) => `..${r}..`);
-    return [".".repeat(16), ...head, ...BED_BODY];
+    return [".".repeat(16), ".".repeat(16), ...head, ...BED_BODY];
   }
   let map: string[];
   if (spec.pose === "sit") map = [...HEAD_FRONT, ...BODY_FRONT.slice(0, 2), ...SIT_LOWER];

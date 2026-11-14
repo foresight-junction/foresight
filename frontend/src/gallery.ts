@@ -100,10 +100,10 @@ function drawAll(frame: number, t: number): number {
   y += 22;
   const beds: [string, PatientEntity | null][] = [
     ["EMPTY", null],
-    ["COVERED", patient({ id: "P010", esi: 2, state: "in_bed", progress: 0.6 })],
-    ["NO STAFF", patient({ id: "P011", esi: 1, state: "in_bed", covered: false, progress: 0.3 })],
-    ["CT WAIT", patient({ id: "P012", esi: 3, state: "in_bed", waitingForCt: true, progress: 0.5 })],
-    ["DONE SOON", patient({ id: "P013", esi: 5, state: "in_bed", progress: 0.95 })],
+    ["OK", patient({ id: "P010", esi: 2, state: "in_bed", progress: 0.6 })],
+    ["ALONE", patient({ id: "P011", esi: 1, state: "in_bed", covered: false, progress: 0.3 })],
+    ["CT", patient({ id: "P012", esi: 3, state: "in_bed", waitingForCt: true, progress: 0.5 })],
+    ["95%", patient({ id: "P013", esi: 5, state: "in_bed", progress: 0.95 })],
     ["DEAD", patient({ id: "P014", esi: 1, state: "dead", alpha: 0.4 + 0.6 * Math.abs(Math.sin(t / 1500)) })],
   ];
   beds.forEach(([name, p], i) => {
@@ -169,7 +169,7 @@ function drawAll(frame: number, t: number): number {
 
   // ---- effects: animated loop and a static strip
   heading("EFFECTS (LOOPING AGE 0-1, THEN AGE 0.05 / 0.3 / 0.7)", y);
-  y += 34;
+  y += 44;
   const texts: Partial<Record<EffectKind, string>> = {
     spend: "-€900",
     rejected: "NO BED",
@@ -187,12 +187,12 @@ function drawAll(frame: number, t: number): number {
     drawEffect(ctx, fx);
     caption(kind.replace("_", " ").toUpperCase().slice(0, 8), x, y + 20);
   });
-  y += 56;
+  y += 50;
   EFFECT_KINDS.forEach((kind, i) => {
     const x = 4 + i * 33;
-    [0.05, 0.3, 0.7].forEach((age, j) => drawEffect(ctx, { kind, age, x: x + 8, y: y + j * 24 }));
+    [0.05, 0.3, 0.7].forEach((age, j) => drawEffect(ctx, { kind, age, x: x + 8, y: y + j * 30 }));
   });
-  y += 70;
+  y += 84;
 
   // ---- icons and badges
   heading("ICONS + ESI BADGES", y);

@@ -5,7 +5,7 @@ import type { Effect, EffectKind } from "../../replay/frame";
 import { GOLD, OUTLINE, WHITE } from "../palette";
 import { drawTextCentered, FONT_HEIGHT } from "./font";
 import { drawBurst, drawIcon, iconSize, type IconKind, type IconVariant } from "./icons";
-import { withAlpha } from "./pixmap";
+import { blit, proceduralSprite, withAlpha } from "./pixmap";
 
 const ICON_FOR: Record<EffectKind, IconKind> = {
   arrival: "ambulance",
@@ -54,8 +54,11 @@ export function drawEffectAt(ctx: CanvasRenderingContext2D, e: Effect): void {
   // death: a white flash, then the ghost floats up and wobbles
   if (e.kind === "death" && age < 0.12) {
     withAlpha(ctx, 1 - age / 0.12, () => {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-      ctx.fillRect(cx - 8, baseY - 10, 16, 18);
+      const glow = proceduralSprite("death-glow", 20, 20, (x, y) => {
+        const d = Math.hypot(x + 0.5 - 10, y + 0.5 - 10);
+        return d < 6 ? "rgba(255, 255, 255, 0.8)" : d < 9 ? "rgba(255, 255, 255, 0.4)" : null;
+      });
+      blit(ctx, glow, cx - 10, baseY - 12);
       drawBurst(ctx, cx, baseY - 2);
     });
     return;

@@ -13,9 +13,9 @@ import { drawEffectAt } from "./art/effects";
 import { drawBedAt, drawCtAt } from "./art/furniture";
 import { drawEsiBadge, drawIcon } from "./art/icons";
 import { animPhase, lookFor, personSprite, sheetSprite, sitAnim, standAnim, type PoseSpec } from "./art/people";
-import { blit, withAlpha } from "./art/pixmap";
+import { blit, proceduralSprite, withAlpha } from "./art/pixmap";
 import { drawTileAt, drawWallFaceAt } from "./art/tiles";
-import { ESI_RAMP, GOOD, OUTLINE, SHADOW, WARN } from "./palette";
+import { GOOD, OUTLINE, SHADOW, WARN } from "./palette";
 
 export { drawText, drawTextCentered, measureText, FONT_HEIGHT } from "./art/font";
 export { drawIcon, drawEsiBadge, iconSize, ICON_KINDS, type IconKind } from "./art/icons";
@@ -45,13 +45,18 @@ function shadow(ctx: CanvasRenderingContext2D, x: number, y: number): void {
   ctx.fillRect(x + 3, y + 15, 10, 1);
 }
 
-// ESI 1: a soft red glow pulsing under the patient.
+// ESI 1: a red glow ring around the feet that swells and fades on a 4-frame loop.
 function aura(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number): void {
-  const big = frame % 4 < 2;
-  ctx.fillStyle = big ? "rgba(255, 60, 70, 0.22)" : "rgba(255, 60, 70, 0.14)";
-  const r = big ? 1 : 0;
-  ctx.fillRect(x + 1 - r, y + 11 - r, 14 + r * 2, 5 + r);
-  ctx.fillRect(x + 3 - r, y + 10 - r, 10 + r * 2, 7 + r * 2);
+  const step = frame % 4;
+  const rx = 6 + (step === 2 ? 1 : 0) + (step === 1 || step === 3 ? 0.5 : 0);
+  const ry = rx / 2.4;
+  const sprite = proceduralSprite(`aura|${step}`, 18, 10, (px, py) => {
+    const d = Math.hypot((px + 0.5 - 9) / rx, (py + 0.5 - 5) / ry);
+    if (d > 1.05) return null;
+    if (d > 0.8) return step === 2 ? "rgba(255, 70, 80, 0.75)" : "rgba(255, 70, 80, 0.5)";
+    return "rgba(255, 70, 80, 0.16)";
+  });
+  blit(ctx, sprite, x - 1, y + 9);
 }
 
 const BADGE_BOB = [0, 0, -1, -1];
@@ -100,12 +105,6 @@ function drawPatientInBed(
     blink: (frame + phase) % 17 === 0 || (frame + phase) % 17 === 1,
   };
   blit(ctx, personSprite(look, spec), x, y);
-  // ESI plate on the headboard
-  ctx.fillStyle = ESI_RAMP[p.esi][1];
-  ctx.fillRect(x + 5, y + 1, 6, 2);
-  ctx.fillStyle = ESI_RAMP[p.esi][0];
-  ctx.fillRect(x + 5, y + 1, 6, 1);
-
   // treatment progress across the footboard
   const progress = Math.max(0, Math.min(1, p.progress));
   ctx.fillStyle = OUTLINE;
