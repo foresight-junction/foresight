@@ -1,11 +1,12 @@
 """Hidden-information firewall (issue #31): no tool result may leak the future, the seed or the score.
 
 Three groups:
-- checker tests on MOCK CONTRACTS-shaped fixtures, including mutations that must be caught; these
-  run today without the sim or the server;
-- episode tests (a) to (f): a scripted policy plays full episodes on two seeds through the real
-  MCP server (in-memory client) and every raw result is checked; they skip until the sim (#4, #46)
-  and the server (#5) are importable, and (f) until the image layout (#22) exists;
+- checker tests on MOCK CONTRACTS-shaped fixtures, including mutations that must be caught. They
+  pin the checks independently of the sim, so a sim bug cannot hide inside the base case;
+- episode tests (a) to (e): a scripted policy plays full episodes on two seeds against the real
+  sim and every raw result is checked. The same episode through the MCP server (in-memory client),
+  the call cap and the tool list skip until the tool server (#57) merges; (f) skips until the
+  image layout (#58) exists;
 - episode mutations: the sim's view function is monkeypatched to leak, and the suite must fail.
 """
 
@@ -14,7 +15,7 @@ import copy
 import dataclasses
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any
@@ -187,46 +188,7 @@ def test_unknown_tool_and_non_json_are_caught() -> None:
     assert "d" in rules_of(check_result("observe", "seed=918273", fx.TRUTH, fx.TICK))
 
 
-# MOCK: a two-tick log in the CONTRACTS event-log format
-SMALL_LOG = [
-    {"src": "sim", "event": "arrival", "patient": "P001", "esi": 2, "needs_ct": False, "source": "base"},
-    {"src": "sim", "event": "arrival", "patient": "P002", "esi": 4, "needs_ct": False, "source": "base"},
-    {"src": "sim", "event": "arrival", "patient": "P003", "esi": 5, "needs_ct": False, "source": "base"},
-    {"src": "agent", "tool": "step", "args": {"actions": []}, "result": {"results": []}},
-    {"src": "sim", "event": "admitted", "patient": "P001", "zone": "acute", "bed": "A1"},
-    {"src": "sim", "event": "left", "patient": "P003"},
-    {"src": "sim", "event": "faint", "staff": "N2"},
-]
-
-
-def _small_view() -> dict:
-    return {
-        "totals": {"discharged": 0, "deaths": 0, "left": 1, "diverted": 0, "faints": 1},
-        "waiting": [{"id": "P002"}],
-        "beds": [{"bed": "A1", "patient": "P001"}, {"bed": "A2", "patient": None}],
-    }
-
-
-def test_view_that_follows_from_the_log_passes() -> None:
-    assert past_log_violations(_small_view(), SMALL_LOG, "$") == []
-
-
-@pytest.mark.parametrize(
-    "mutate",
-    [
-        _set(["totals", "faints"], 3),  # covert channel: a future count in a legitimate field
-        _append(["waiting"], {"id": "P004"}),
-        _set(["beds", 1, "patient"], "P002"),
-    ],
-    ids=["covert_total", "extra_waiting", "extra_bed"],
-)
-def test_view_not_explained_by_the_log_is_caught(mutate: Callable[[dict], None]) -> None:
-    view = _small_view()
-    mutate(view)
-    assert "a" in rules_of(past_log_violations(view, SMALL_LOG, "$"))
-
-
-# --- episodes through the real sim and server (skip until #4, #46 and #5 merge) ------------------
+# --- episodes on the real sim; the MCP variants skip until the tool server (#57) merges ---------
 
 
 @dataclasses.dataclass(frozen=True)
@@ -249,12 +211,19 @@ class Episode:
     log: list[dict]
 
 
-def _stack() -> tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
-    engine = pytest.importorskip("ed72_sim.engine", reason="needs the sim core (#4)")
+Caller = Callable[[str, dict], Awaitable[tuple[str, tuple[str, ...]]]]
+
+
+def _sim_stack() -> tuple[ModuleType, ModuleType]:
+    engine = pytest.importorskip("ed72_sim.engine", reason="needs the sim core (#48)")
     world = pytest.importorskip("ed72_sim.world", reason="needs the world generator (#46)")
-    fastmcp = pytest.importorskip("fastmcp", reason="needs fastmcp in the hospital project (#5)")
-    server = pytest.importorskip("server", reason="needs the tool server (#5)")
-    return engine, world, server, fastmcp
+    return engine, world
+
+
+def _server_stack() -> tuple[ModuleType, ModuleType]:
+    fastmcp = pytest.importorskip("fastmcp", reason="needs fastmcp in the hospital pyproject (#57)")
+    server = pytest.importorskip("server", reason="needs the tool server (#57)")
+    return server, fastmcp
 
 
 def _handbook() -> str:
@@ -262,40 +231,55 @@ def _handbook() -> str:
     return path.read_text(encoding="utf-8") if path.exists() else "MOCK: handbook not written yet (#7)"
 
 
-async def _drive(sim: Any, truth: Truth, ticks: int, policy: ScriptedPolicy) -> list[Call]:
-    """Play through the MCP server exactly as the agent would, recording each raw result."""
-    _, _, server, fastmcp = _stack()
-    host = server.ToolHost(sim, _handbook())
+async def _loop(call: Caller, sim: Any, truth: Truth, ticks: int, policy: ScriptedPolicy) -> list[Call]:
+    """Play like an agent: rules once, then observe and step every tick, recording each raw result."""
     calls: list[Call] = []
-    async with fastmcp.Client(server.build_server(host)) as client:
 
-        async def call(tool: str, args: dict) -> dict:
-            result = await client.call_tool(tool, args)
-            raw = result.content[0].text
-            extra = output_channel_problems(result.content, result.structured_content, raw)
-            calls.append(Call(tool, copy.deepcopy(args), raw, sim.tick, len(sim.events), extra))
-            return json.loads(raw)
+    async def record(tool: str, args: dict) -> dict:
+        raw, channels = await call(tool, args)
+        calls.append(Call(tool, copy.deepcopy(args), raw, sim.tick, len(sim.events), channels))
+        return json.loads(raw)
 
-        await call("rules", {})
-        while True:
-            obs = await call("observe", {})
-            if obs["finished"]:
-                await call("step", {"actions": []})  # must be episode_over
-                break
-            if obs["tick"] >= ticks:
-                break
-            future = next((pid for pid, t in truth.arrivals.items() if t > obs["tick"]), None)
-            await call("step", {"actions": policy.actions(obs, future)})
+    await record("rules", {})
+    while True:
+        obs = await record("observe", {})
+        if obs["finished"]:
+            await record("step", {"actions": []})  # must be episode_over
+            break
+        if obs["tick"] >= ticks:
+            break
+        future = next((pid for pid, t in truth.arrivals.items() if t > obs["tick"]), None)
+        await record("step", {"actions": policy.actions(obs, future)})
     return calls
 
 
-def play(seed: int, ticks: int = 10_000) -> Episode:
-    engine, world_mod, _, _ = _stack()
+async def _drive(sim: Any, truth: Truth, ticks: int, policy: ScriptedPolicy, via_mcp: bool) -> list[Call]:
+    if not via_mcp:
+        # The sim's own results, as server.ToolHost passes them on below the call cap.
+        async def direct(tool: str, args: dict) -> tuple[str, tuple[str, ...]]:
+            if tool == "rules":
+                return json.dumps({"text": _handbook()}), ()
+            return json.dumps(sim.observe() if tool == "observe" else sim.step(args["actions"])), ()
+
+        return await _loop(direct, sim, truth, ticks, policy)
+    server, fastmcp = _server_stack()
+    async with fastmcp.Client(server.build_server(server.ToolHost(sim, _handbook()))) as client:
+
+        async def mcp(tool: str, args: dict) -> tuple[str, tuple[str, ...]]:
+            result = await client.call_tool(tool, args)
+            raw = result.content[0].text
+            return raw, output_channel_problems(result.content, result.structured_content, raw)
+
+        return await _loop(mcp, sim, truth, ticks, policy)
+
+
+def play(seed: int, ticks: int = 10_000, via_mcp: bool = False) -> Episode:
+    engine, world_mod = _sim_stack()
     world = world_mod.generate_world(seed)
     sim = engine.Simulation(world)
     truth = truth_from_world(world)
     policy = ScriptedPolicy()
-    calls = asyncio.run(_drive(sim, truth, ticks, policy))
+    calls = asyncio.run(_drive(sim, truth, ticks, policy, via_mcp))
     return Episode(seed, truth, world, calls, policy, sim.events)
 
 
@@ -430,8 +414,36 @@ def test_e_rejections_reasons_and_episode_over(episodes: list[Episode]) -> None:
         assert final["finished"] is True and final["ticks_left"] == 0
 
 
+def test_view_not_explained_by_the_log_is_caught(episodes: list[Episode]) -> None:
+    ep = episodes[0]
+    call = next(
+        c
+        for c in ep.calls
+        if c.tool == "observe" and (o := json.loads(c.raw))["waiting"] and o["beds"][-1]["patient"] is None
+    )
+    log = ep.log[: call.log_len]
+    obs = json.loads(call.raw)
+    assert past_log_violations(obs, log, "$") == []
+    covert = copy.deepcopy(obs)
+    covert["totals"]["faints"] += 1  # a future count in a legitimate field
+    extra_waiting = copy.deepcopy(obs)
+    extra_waiting["waiting"].append(dict(obs["waiting"][0], id="P9998"))
+    extra_bed = copy.deepcopy(obs)
+    extra_bed["beds"][-1]["patient"] = obs["waiting"][0]["id"]
+    for view in (covert, extra_waiting, extra_bed):
+        assert "a" in rules_of(past_log_violations(view, log, "$"))
+
+
+def test_mcp_results_equal_the_sim_results_and_leak_nothing(episodes: list[Episode]) -> None:
+    _server_stack()
+    via_mcp = play(SEEDS[0], via_mcp=True)
+    assert firewall_violations(via_mcp) == []
+    assert [json.loads(c.raw) for c in via_mcp.calls] == [json.loads(c.raw) for c in episodes[0].calls]
+
+
 def test_e_call_cap_reached_leaks_nothing() -> None:
-    engine, world_mod, server, fastmcp = _stack()
+    engine, world_mod = _sim_stack()
+    server, fastmcp = _server_stack()
     sim = engine.Simulation(world_mod.generate_world(SEEDS[0]))
     host = server.ToolHost(sim, _handbook())
 
@@ -454,7 +466,8 @@ def test_e_call_cap_reached_leaks_nothing() -> None:
 
 
 def test_exactly_the_contracts_tools() -> None:
-    engine, world_mod, server, fastmcp = _stack()
+    engine, world_mod = _sim_stack()
+    server, fastmcp = _server_stack()
     host = server.ToolHost(engine.Simulation(world_mod.generate_world(SEEDS[0])), "")
 
     async def names() -> list[str]:
@@ -514,7 +527,7 @@ def _leak_score(obs: dict, state: Any) -> None:
 def test_episode_mutation_makes_the_suite_fail(
     leak: Callable[[dict, Any], None], rule: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    engine, _, _, _ = _stack()
+    engine, _ = _sim_stack()
     view = engine.build_observation
 
     def leaky(state: Any, tick: int, finished: bool) -> dict:
@@ -527,7 +540,7 @@ def test_episode_mutation_makes_the_suite_fail(
     assert rule in rules_of(violations)
 
 
-# --- (f) the agent image holds no sim code, seed, config or scorer (skip until #22) --------------
+# --- (f) the agent image holds no sim code, seed, config or scorer (skip until #58) --------------
 
 MAIN_COPY_ALLOWED = re.compile(r"(workspace/[\w./-]+|ward)")
 HIDDEN_MARKERS = (
@@ -571,7 +584,7 @@ def test_f_main_image_has_no_sim_seed_config_or_scorer() -> None:
     dockerfile = ENVIRONMENT / "Dockerfile"
     compose = ENVIRONMENT / "docker-compose.yaml"
     if not dockerfile.exists() or not compose.exists():
-        pytest.skip("needs the Harbor layout ed72/environment/Dockerfile and docker-compose.yaml (#22)")
+        pytest.skip("needs the Harbor layout ed72/environment/Dockerfile and docker-compose.yaml (#58)")
     for op, args in _instructions(dockerfile.read_text(encoding="utf-8")):
         if op in ("COPY", "ADD"):
             sources = [a for a in args if not a.startswith("--")][:-1]
