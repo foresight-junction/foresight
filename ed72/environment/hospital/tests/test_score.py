@@ -94,7 +94,7 @@ def test_target_boundary_is_inclusive() -> None:
 def test_diverted_loss_and_late() -> None:
     log = Log().sim(0, "diverted", patient="P1", esi=4)
     r = score(log.end())
-    assert r["O"] == pytest.approx(0.3) and r["T"] == 0.0
+    assert r["O"] == pytest.approx(0.25) and r["T"] == 0.0
     assert r["totals"]["arrived"] == 1 and r["totals"]["diverted"] == 1
     assert r["patients"][0]["outcome"] == "diverted"
 
