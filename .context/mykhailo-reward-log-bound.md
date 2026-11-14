@@ -20,6 +20,7 @@ Bound the bytes a refused tool call adds to the event log without changing repla
 ## Status
 - [x] Sanitise refused step args; `args: {}` past the cap
 - [x] Tests, REDTEAM note
+- [x] Round 2 dispositions: successful steps now pass only CONTRACTS fields to the sim (fixes 4 MiB lines and N5)
 
 ## Decisions and notes
 - Past-cap lines keep one line per call so `tool_calls` stays len(agent lines).
