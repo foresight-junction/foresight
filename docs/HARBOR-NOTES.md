@@ -38,3 +38,15 @@ uvx --python 3.12 --from harbor==0.25.0 harbor run -p task -a opencode \
 ```
 
 Check the tool call in the trial's agent logs and the scalar result in `verifier/reward.txt`. A reward of 1 confirms the sidecar recorded exactly one ping.
+
+## v1 hospital interface
+
+The v1 smoke fixture replaces `ping` with `rules()`, `observe()`, and `step(actions=[])`.
+It serves an empty synthetic observation and advances the clock by one tick for the empty batch.
+The sidecar records calls and the collect hook writes the report to `/evidence/report.json`.
+The separate verifier awards a fixture reward of 1 for the exact three-call sequence and 0 otherwise.
+
+Harbor 0.25.0 completed both Docker baseline trials against v1 with no exceptions.
+The oracle scored 1 and the no-op scored 0. Their job names are `junction-v1-oracle` and
+`junction-v1-nop`. The live model job is `junction-v1-opencode`.
+Use the OpenCode command above with `-p v1` in place of `-p task` when running the three-tool fixture.
