@@ -33,9 +33,13 @@ class SimClient:
         return self._sim.events
 
 
+def play(policy: Policy, seed: int) -> list[dict]:
+    client = SimClient(seed)
+    run_episode(client, policy)
+    return client.finish()
+
+
 def play_and_score(policy: Policy, seed: int) -> dict:
     from ed72_sim.scoring import score
 
-    client = SimClient(seed)
-    run_episode(client, policy)
-    return score(client.finish())
+    return score(play(policy, seed))
