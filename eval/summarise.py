@@ -19,12 +19,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import manifest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_JOBS = REPO_ROOT / "eval" / "results" / "jobs"
 DEFAULT_OUT = REPO_ROOT / "eval" / "results" / "summary.md"
 
 POLICY_LABELS = {"oracle": "reference (oracle)", "nop": "do-nothing (nop)"}
 COMPONENTS = ("O", "T", "W", "B")
+UNKNOWN = "unknown"
 
 
 @dataclass
@@ -34,6 +38,8 @@ class Trial:
     policy: str
     model: str
     seed: str
+    config: str
+    instruction: str
     reward: float | None
     error: str | None
     report: dict | None
@@ -97,6 +103,25 @@ def _policy(result: dict) -> str:
     return POLICY_LABELS.get(name, name)
 
 
+def _identity(trial_dir: Path, report: dict | None) -> dict[str, str]:
+    """Seed, config hash and instruction hash of a trial; `unknown` when no source records them.
+
+    Order: seed in the report (CONTRACTS v1 has none yet), then the job's manifest.json, then
+    what manifest.derive() can read from the task dir Harbor recorded for the trial.
+    """
+    facts = manifest.load_manifest(trial_dir) or manifest.derive(trial_dir, REPO_ROOT)
+    seed = report["seed"] if report and "seed" in report else facts.get("seed")
+
+    def short(digest: str | None) -> str:
+        return digest[:8] if digest else UNKNOWN
+
+    return {
+        "seed": UNKNOWN if seed is None else str(seed),
+        "config": short(facts.get("config_sha256")),
+        "instruction": short(facts.get("instruction_sha256")),
+    }
+
+
 def load_trial(trial_dir: Path) -> Trial | None:
     """Return None for a trial that has not finished (Harbor writes result.json at the end)."""
     result = _read_json(trial_dir / "result.json")
@@ -108,14 +133,15 @@ def load_trial(trial_dir: Path) -> Trial | None:
     error = exc.get("exception_type")
     if reward is None and error is None:
         error = "no reward"
-    # CONTRACTS v1 has no seed field yet; show one if the report starts carrying it.
-    seed = str(report["seed"]) if report and "seed" in report else "-"
+    ident = _identity(trial_dir, report)
     return Trial(
         job=trial_dir.parent.name,
         name=result["trial_name"],
         policy=_policy(result),
         model=_model(result),
-        seed=seed,
+        seed=ident["seed"],
+        config=ident["config"],
+        instruction=ident["instruction"],
         reward=reward,
         error=error,
         report=report,
@@ -143,6 +169,8 @@ class Row:
     policy: str
     model: str
     seed: str
+    config: str
+    instruction: str
     runs: int
     errors: int
     mean: float
@@ -152,11 +180,15 @@ class Row:
 
 
 def build_rows(trials: list[Trial]) -> list[Row]:
-    groups: dict[tuple[str, str, str], list[Trial]] = {}
+    groups: dict[tuple[str, ...], list[Trial]] = {}
     for t in trials:
-        groups.setdefault((t.policy, t.model, t.seed), []).append(t)
+        key: tuple[str, ...] = (t.policy, t.model, t.seed, t.config, t.instruction)
+        if UNKNOWN in key[2:]:
+            # Unknown provenance could hide a different seed, config or prompt, so each such trial stays alone.
+            key += (t.job, t.name)
+        groups.setdefault(key, []).append(t)
     rows = []
-    for (policy, model, seed), group in groups.items():
+    for (policy, model, seed, config, instruction, *_), group in groups.items():
         # A trial with no reward counts as 0, as Harbor's own mean metric does.
         rewards = [t.reward if t.reward is not None else 0.0 for t in group]
         reports = [t.report for t in group if t.report is not None]
@@ -168,6 +200,8 @@ def build_rows(trials: list[Trial]) -> list[Row]:
                 policy=policy,
                 model=model,
                 seed=seed,
+                config=config,
+                instruction=instruction,
                 runs=len(group),
                 errors=sum(1 for t in group if t.error is not None),
                 mean=mean(rewards),
@@ -176,20 +210,28 @@ def build_rows(trials: list[Trial]) -> list[Row]:
                 extras=extras,
             )
         )
-    rows.sort(key=lambda r: (-r.mean, r.policy, r.model, r.seed))
+    rows.sort(key=lambda r: (-r.mean, r.policy, r.model, r.seed, r.config, r.instruction))
     return rows
+
+
+def _identity_key(r: Row) -> tuple[str, str, str] | None:
+    """Rows are comparable only when seed, config and instruction are all known."""
+    key = (r.seed, r.config, r.instruction)
+    return None if UNKNOWN in key else key
 
 
 def _gaps(rows: list[Row]) -> list[str]:
     reference = POLICY_LABELS["oracle"]
-    refs = {r.seed: r.mean for r in rows if r.policy == reference}
+    refs = {_identity_key(r): r.mean for r in rows if r.policy == reference and _identity_key(r)}
     lines = []
     for r in rows:
-        if r.model == "-" or r.policy == reference:
+        key = _identity_key(r)
+        if r.model == "-" or r.policy == reference or key is None or key not in refs:
             continue
-        ref = refs.get(r.seed, refs.get("-"))
-        if ref is not None:
-            lines.append(f"- {r.policy} `{r.model}` seed {r.seed}: {ref - r.mean:+.3f}")
+        lines.append(
+            f"- {r.policy} `{r.model}` seed {r.seed} config {r.config} instruction {r.instruction}: "
+            f"{refs[key] - r.mean:+.3f}"
+        )
     return lines
 
 
@@ -203,13 +245,23 @@ def render(trials: list[Trial], sources: list[str], pending: int) -> str:
         f"{len(trials)} finished trials" + (f", {pending} still running (left out)" if pending else "") + ".",
         "Reward = score / 100 (SPEC section 6). A trial with no reward counts as 0.",
         "Errors = trials where Harbor recorded an exception or no reward.",
+        "Seed, Config (SHA-256 prefix of the hospital config) and Instruction (SHA-256 prefix of instruction.md)",
+        "come from the job's manifest.json or the task dir; `unknown` rows are never pooled or compared.",
         "O, T, W, B, deaths and faints are means over runs with a report.json.",
         "",
-        "| Policy | Model | Seed | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Policy | Model | Seed | Config | Instruction | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |",
+        "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for r in rows:
-        cells = [r.policy, f"`{r.model}`" if r.model != "-" else "-", r.seed, str(r.runs), str(r.errors)]
+        cells = [
+            r.policy,
+            f"`{r.model}`" if r.model != "-" else "-",
+            r.seed,
+            r.config,
+            r.instruction,
+            str(r.runs),
+            str(r.errors),
+        ]
         cells += [_fmt(r.mean), _fmt(r.low), _fmt(r.high)]
         cells += [_fmt(r.extras[k]) for k in (*COMPONENTS, "died", "faints")]
         out.append("| " + " | ".join(cells) + " |")
