@@ -15,9 +15,6 @@ __pycache__/
 .claude/worktrees/
 .claude/settings.local.json
 
-# harbor output from make eval (#23)
-eval/results/jobs/
-
 # python packaging (uv.lock is committed)
 *.egg-info/
 
