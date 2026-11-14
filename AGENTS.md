@@ -16,7 +16,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
   - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --with pytest pytest -q` inside each Python project you changed, and `pnpm lint && pnpm build && pnpm test` in `frontend/`
-- **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
+- **Integrator:** `kostiantyn-claude-4`, the only agent that merges into `main` (golden rule 8), in dependency order. Humans can still merge or revert anything.
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
 | Person | Lane | Label | Agents (ids) |
@@ -35,7 +35,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 5. **Commit small and often:** every time something works, and at least every 30 minutes. Every commit goes through the `pre-commit-gate` skill. Push after each commit.
 6. **Get into `main` early:** open a PR (the `ship-pr` skill) as soon as a slice works end to end. Aim for under 300 changed lines per PR and at least one merge every 2 hours per task.
 7. **No secrets in git.** Keys go in `.env` (gitignored). Add the variable name to `.env.example`.
-8. **Agents never merge into `main`, force-push, delete branches, or rewrite history** on shared branches. Humans merge.
+8. **One integrator merges into `main`.** Push your task branch after every commit. Only the integrator (section 1) runs `gh pr merge` on a PR into `main`. When your PR is ready, run `gh pr ready <n>` and comment `[<agent id>] ready to merge` on it. Ready means: CI is green, `cross-review` is done and every review thread is answered, there are no conflicts with current `main`, the description names any PRs it depends on (`Depends on #N`), and any PR touching `scoring/`, patients, events or tool behaviour has the baseline table in its description. The integrator merges in dependency order or comments on the PR with exactly what is missing. Helper branches are still merged into their parent branch by that task's lead. Never: force-push a shared branch (`--force-with-lease` on your own task branch after a rebase is fine), delete branches, or rewrite `main`'s history.
 9. **Demo first.** Mock or hardcode before building real infrastructure. Happy path before edge cases. Label every mock clearly (section 7).
 10. **Don't guess APIs.** Before using a library function, check that it exists in the installed version (read the package source or docs). Hallucinated APIs are the most common cause of lost time.
 
@@ -63,8 +63,14 @@ All 10 agents are on different laptops, so **GitHub Issues is the single source 
 - **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
 - **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). #41 has landed and the issue bodies are realigned to the rulebook; if a body still disagrees with `docs/SPEC.md` or `docs/CONTRACTS.md`, follow the docs and comment on the issue.
 - **See the board:** `scripts/wt.sh board`
-- **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
-- **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
+- **Messages between agents** are issue comments. To reach another task, comment on **its** issue. Keep the first line readable on its own, since `wt.sh status` and `wt.sh inbox` show only that line:
+  ```
+  [<your id>] <kind>: <one line>                      kinds: claimed, progress, question, blocked, handoff, standing down
+  [<your id>] to <their id>: <what you need>          a direct message; they find it with `wt.sh inbox <their id>`
+  ```
+- **Post when your state changes**: on claim, on every push (`progress: <sha> <what>, next: <what>`), when blocked, and a `handoff` before you stop (what's done, what's next, whether the worktree is free). Comments are the only way other laptops learn about you, so a silent agent looks finished.
+- **Check for messages** at the start of each session, after every push and before each PR: `scripts/wt.sh inbox <your id>` (anything addressed to you) and `gh issue view <n> --comments` (your issue).
+- **Comments lag behind reality.** A comment can be hours older than what an agent is doing now. Before you give an agent someone else's worktree or task, or take one over yourself, run `scripts/wt.sh status <slug|branch>`. It shows the last commit and push, uncommitted edits, processes running in that worktree and the latest issue comments, and exits 1 if anything happened in the last 30 minutes. If it says **BUSY**, don't hand it over: ask the active agent on the issue and wait for a reply. If it says idle, still post `[<your id>] taking over from <their id>` on the issue first. Processes are only visible on the same laptop, so for a branch on another laptop, a recent push or comment means busy.
 - Issue **#1 "Contracts"** is pinned. Contract proposals go there, and so does news every agent needs (a merged spec, a layout or rules decision). Read its latest comments at the start of each session: `gh issue view 1 --comments | tail -40`.
 - **No issue for your work yet?** Don't work silently. Comment on #1 with your agent id and branch, then create or claim an issue as soon as a human OKs it.
 
@@ -86,6 +92,9 @@ scripts/wt.sh new <owner> <area> <task> -i <issue>   # e.g. scripts/wt.sh new ye
 scripts/wt.sh new <owner> <area> <task> <agent>      # helper branch off an existing task, e.g. for Codex
 scripts/wt.sh list
 scripts/wt.sh board
+scripts/wt.sh status                                 # which worktrees on this laptop are busy right now
+scripts/wt.sh status <slug|branch>                   # is anyone working there? run before any handover
+scripts/wt.sh inbox <agent-id>                       # latest comments that mention you
 scripts/wt.sh done <slug>                            # removes the folder, keeps the branch
 ```
 
@@ -141,7 +150,7 @@ A task is done only when:
 - [ ] The demo path for this feature works by hand
 - [ ] `cross-review` is done and real issues are fixed
 - [ ] The context file's **Handoff** section is up to date
-- [ ] The PR is open with `Closes #<issue>`, and the issue is labelled `review`
+- [ ] The PR has `Closes #<issue>`, you commented `ready to merge` on it, and the integrator merged it into `main` (golden rule 8) with `main`'s CI still green
 
 ## 9. If you are Codex
 

@@ -11,12 +11,13 @@ You are the only lead agent in your worktree. For each task:
 1. `claim-task` skill → read `.context/<branch-slug>.md` and the issue's comments.
 2. Plan 3 to 7 steps and write them into the context file's **Status** section. For anything bigger than a small fix, use the superpowers `brainstorming` and `writing-plans` skills first, kept short since this is a hackathon.
 3. Build in small slices. After each working slice: `noslop` → `pre-commit-gate` → commit → push.
-4. When a slice works end to end: `cross-review` → `ship-pr`.
+4. When a slice works end to end: `cross-review` → `ship-pr`, which ends with you merging your PR once CI is green (AGENTS.md golden rule 8).
 
 ## Subagents
 
 - Use subagents in parallel for **independent** pieces: e.g. one writes the endpoint while another writes its tests, or several read different parts of the codebase or docs at once.
 - Give each subagent the **exact list of files it may edit**. Two subagents never edit the same file.
+- Before you give a subagent or Codex an existing worktree, run `scripts/wt.sh status <slug>`. If it says BUSY, another agent is still working there (often a Codex run that hasn't commented yet), so give the subagent a new worktree instead.
 - For larger parallel edits, give each one its own worktree (`scripts/wt.sh new <owner> <area> <task> claude`) and merge the helper branches into yours.
 - Research subagents (reading docs, checking whether an API exists) are cheap and catch hallucinated APIs early. Use them.
 

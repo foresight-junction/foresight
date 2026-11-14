@@ -17,7 +17,7 @@ Task board = GitHub Issues (`scripts/wt.sh board`). This file is the map; the is
 | **C. Reference and experiments** | `area:ref` | Reference policy, agent runs, failure analysis | The gap (30) + the explanation half of difficulty |
 | **D. Harness, repro and story** | `area:harness` | Harbor packaging, one-command eval, CI, README, demo, submission, stretch | Craft (15) + tiebreaker |
 
-Fill in names in AGENTS.md section 1. D is also the integrator (merges PRs).
+Fill in names in AGENTS.md section 1. One integrator, `kostiantyn-claude-4`, merges every PR into `main` in dependency order (AGENTS.md golden rule 8) and watches that `main`'s CI stays green.
 
 ## Timeline
 | When | Milestone | Proof |

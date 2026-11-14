@@ -171,6 +171,8 @@ The `[[verifier.collect]]` hook runs `collect.py` inside `hospital` after the ag
 ## 12. Decisions on the rulebook's open items (rulebook §14)
 Recorded for issue #41. "Adopted" means build it; `TUNE` values are tuned in A6 (#8) with lane C.
 
+**Confirmed by Denys, the rulebook author, Sat 14 Nov 15:32 (issue #35).** Every "Adopted" row below stands as written. The `TUNE` rows stand as starting values until A6 (#8) sets the final numbers before the 22:00 rules freeze. There is no JavaScript prototype, so the rulebook's §14 instruction to check the [Proposed] rules against it is met by this confirmation. No row changed, so nothing in `docs/CONTRACTS.md` or HANDBOOK changes.
+
 | Rulebook §14 item | Decision |
 |---|---|
 | Arrival rate and daily cycle | `TUNE`: mean 1.5 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 215 patients before events) |
