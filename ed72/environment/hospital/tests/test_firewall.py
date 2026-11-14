@@ -16,7 +16,7 @@ import json
 import re
 from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import firewall_fixtures as fx
@@ -148,6 +148,7 @@ MUTATIONS = [
     ("bed_wrong_zone", "step", _set([*OBS, "beds", 0, "zone"], "acute"), "d"),
     ("waited_inconsistent", "step", _set([*OBS, "waiting", 0, "waited_ticks"], 5), "d"),
     ("tick_mismatch", "step", _set([*OBS, "tick"], 36), "d"),
+    ("countdown_on_regular_staff", "step", _set([*OBS, "staff", 0, "ticks_until_change"], 23), "d"),
 ]
 
 
@@ -235,6 +236,7 @@ class Call:
     raw: str
     as_of: int  # the sim's true tick after the call
     log_len: int  # length of the sim's event log after the call
+    channels: tuple[str, ...] = ()  # anything the agent received besides the one JSON text block
 
 
 @dataclasses.dataclass
@@ -270,7 +272,8 @@ async def _drive(sim: Any, truth: Truth, ticks: int, policy: ScriptedPolicy) -> 
         async def call(tool: str, args: dict) -> dict:
             result = await client.call_tool(tool, args)
             raw = result.content[0].text
-            calls.append(Call(tool, copy.deepcopy(args), raw, sim.tick, len(sim.events)))
+            extra = output_channel_problems(result.content, result.structured_content, raw)
+            calls.append(Call(tool, copy.deepcopy(args), raw, sim.tick, len(sim.events), extra))
             return json.loads(raw)
 
         await call("rules", {})
@@ -296,12 +299,74 @@ def play(seed: int, ticks: int = 10_000) -> Episode:
     return Episode(seed, truth, world, calls, policy, sim.events)
 
 
+def output_channel_problems(content: list[Any], structured: Any, raw: str) -> tuple[str, ...]:
+    """The agent must get one text block, and structured content (if any) equal to it."""
+    problems = []
+    if len(content) != 1 or getattr(content[0], "type", None) != "text":
+        problems.append(f"{len(content)} content blocks: {[getattr(b, 'type', b) for b in content]}")
+    if structured is not None and structured != json.loads(raw):
+        problems.append("structured content differs from the text block")
+    return tuple(problems)
+
+
+def echo_violations(calls: list[Call]) -> list[Violation]:
+    """last_rejected must be exactly the rejected actions of the previous applied step.
+
+    walk() does not look inside last_rejected[i].action, so this is what keeps that echo from
+    becoming a channel, in observe results as well as step results.
+    """
+    out = []
+    expected: list[dict] = []
+    for c in calls:
+        payload = json.loads(c.raw)
+        if not isinstance(payload, dict) or "error" in payload:
+            continue
+        if c.tool == "step" and isinstance(payload.get("results"), list):
+            expected = [
+                {"index": r["index"], "action": c.args["actions"][r["index"]], "reason": r.get("reason")}
+                for r in payload["results"]
+                if isinstance(r, dict) and r.get("ok") is False
+            ]
+        obs = payload if c.tool == "observe" else payload.get("observation")
+        if isinstance(obs, dict) and obs.get("last_rejected") != expected:
+            out.append(
+                Violation("d", "$.last_rejected", f"not the verbatim rejections of the last step: {c}")
+            )
+    return out
+
+
 def firewall_violations(episode: Episode) -> list[Violation]:
-    return [
+    out = [
         v
         for c in episode.calls
         for v in check_result(c.tool, c.raw, episode.truth, c.as_of, episode.log[: c.log_len])
     ]
+    out += [Violation("d", "$", f"{c.tool}: {p}") for c in episode.calls for p in c.channels]
+    return out + echo_violations(episode.calls)
+
+
+def test_output_channels_beyond_one_text_block_are_caught() -> None:
+    raw = json.dumps(fx.observation())
+    text = SimpleNamespace(type="text", text=raw)
+    assert output_channel_problems([text], json.loads(raw), raw) == ()
+    assert output_channel_problems([text, SimpleNamespace(type="text", text="seed 918273")], None, raw)
+    assert output_channel_problems([text], {**json.loads(raw), "seed": fx.SEED}, raw)
+
+
+def _echo_calls(observed_action: dict) -> list[Call]:
+    sent = [{"type": "divert"}, {"type": "admit", "patient": "P050", "zone": "fast_track"}]
+    obs = fx.observation()
+    obs["last_rejected"][0]["action"] = observed_action
+    return [
+        Call("step", {"actions": sent}, json.dumps(fx.step_result()), fx.TICK, 0),
+        Call("observe", {}, json.dumps(obs), fx.TICK, 0),
+    ]
+
+
+def test_echo_of_the_sent_action_passes_and_an_altered_echo_is_caught() -> None:
+    action = {"type": "admit", "patient": "P050", "zone": "fast_track"}
+    assert echo_violations(_echo_calls(action)) == []
+    assert "d" in rules_of(echo_violations(_echo_calls({**action, "seed": fx.SEED})))
 
 
 @pytest.fixture(scope="module")
@@ -359,14 +424,7 @@ def test_e_rejections_reasons_and_episode_over(episodes: list[Episode]) -> None:
             result = by_tick[probe.tick]["results"][probe.index]
             assert result == {"index": probe.index, "ok": False, "reason": probe.reason}, probe
         assert {p.reason for p in ep.policy.probes} == set(REASONS), "every CONTRACTS reason exercised"
-        for c in steps[:-1]:
-            payload = json.loads(c.raw)
-            echoed = [
-                {"index": r["index"], "action": c.args["actions"][r["index"]], "reason": r["reason"]}
-                for r in payload["results"]
-                if not r["ok"]
-            ]
-            assert payload["observation"]["last_rejected"] == echoed  # the echo is verbatim, nothing added
+        assert echo_violations(ep.calls) == []
         assert json.loads(steps[-1].raw) == {"error": "episode_over"}
         final = json.loads(ep.calls[-2].raw)
         assert final["finished"] is True and final["ticks_left"] == 0
@@ -428,6 +486,11 @@ def _leak_next_arrivals_as_a_total(obs: dict, state: Any) -> None:
     obs["totals"]["faints"] = sum(p.arrival_tick == obs["tick"] + 1 for p in state.world.patients)
 
 
+def _leak_sick_call_countdown(obs: dict, state: Any) -> None:
+    sick = next(e for e in state.world.events if e.kind == "staff_sickness")
+    obs["staff"][0]["ticks_until_change"] = max(0, sick.start_tick - obs["tick"])
+
+
 def _leak_seed(obs: dict, state: Any) -> None:
     obs["seed"] = state.world.seed
 
@@ -442,10 +505,11 @@ def _leak_score(obs: dict, state: Any) -> None:
         (_leak_future_arrival, "a"),
         (_leak_unannounced_event, "a"),
         (_leak_next_arrivals_as_a_total, "a"),
+        (_leak_sick_call_countdown, "d"),
         (_leak_seed, "b"),
         (_leak_score, "b"),
     ],
-    ids=["future_arrival", "unannounced_event", "covert_total", "seed", "score_value"],
+    ids=["future_arrival", "unannounced_event", "covert_total", "sick_call_countdown", "seed", "score_value"],
 )
 def test_episode_mutation_makes_the_suite_fail(
     leak: Callable[[dict, Any], None], rule: str, monkeypatch: pytest.MonkeyPatch
@@ -486,8 +550,21 @@ def _instructions(dockerfile: str) -> list[tuple[str, list[str]]]:
 
 
 def _service_block(compose: str, name: str) -> str:
-    match = re.search(rf"^  {name}:\s*\n((?:(?:    .*)?\n)*)", compose, flags=re.MULTILINE)
-    return match.group(1) if match else ""
+    """The lines under `name:` inside `services:`, at any indentation (stdlib only, no YAML parser)."""
+    lines = compose.splitlines()
+    start = next((i for i, line in enumerate(lines) if line.strip() == "services:"), None)
+    assert start is not None, "docker-compose.yaml has no services: key"
+    head = next(
+        (i for i in range(start + 1, len(lines)) if re.fullmatch(rf"\s+{name}:\s*(#.*)?", lines[i])), None
+    )
+    assert head is not None, f"docker-compose.yaml has no {name} service"
+    indent = len(lines[head]) - len(lines[head].lstrip())
+    block = []
+    for line in lines[head + 1 :]:
+        if line.strip() and len(line) - len(line.lstrip()) <= indent:
+            break
+        block.append(line)
+    return "\n".join(block)
 
 
 def test_f_main_image_has_no_sim_seed_config_or_scorer() -> None:

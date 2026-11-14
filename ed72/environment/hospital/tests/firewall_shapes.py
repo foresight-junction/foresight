@@ -135,6 +135,16 @@ def observation_errors(obs: Any, path: str) -> list[str]:
     for i, row in enumerate(obs["waiting"]):
         if row["waited_ticks"] != obs["tick"] - row["arrived_tick"]:
             errors.append(f"{path}.waiting[{i}]: waited_ticks does not match tick - arrived_tick")
+    for i, s in enumerate(obs["staff"]):
+        # A countdown is public only for a known pending change: a faint, a sick call already
+        # under way, an ordered agency arrival or an agency contract end.
+        pending = s["status"] in ("fainted", "sick", "agency_ordered") or (
+            s["agency"] and s["status"] != "agency_left"
+        )
+        if (s["ticks_until_change"] is not None) != pending:
+            errors.append(
+                f"{path}.staff[{i}]: ticks_until_change {s['ticks_until_change']!r} for {s['status']}"
+            )
     return errors
 
 

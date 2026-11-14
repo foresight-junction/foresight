@@ -31,7 +31,8 @@ A test suite proving no `rules` / `observe` / `step` result leaks hidden state (
 - [x] 2. Checker layer + fixture tests
 - [x] 3. Mutation tests on fixtures (29 field mutations + 3 log mutations)
 - [x] 4. Episode tests (a)-(f) + 5 episode mutations; skip today, all green on a scratch merge of sim-core + world + tool-server + task-skeleton
-- [ ] 5. Draft PR; re-run once #46/#48/#5/#22 merge and drop the skips
+- [x] 5. Codex CLI cross-review (MCP down): 4 findings, all fixed
+- [ ] 6. Draft PR; re-run once #46/#48/#5/#22 merge and drop the skips
 
 ## Decisions and notes
 - 2026-11-14: The hospital uv project is not on main yet, so run from the worktree root: `uv run --with pytest pytest -q ed72/environment/hospital/tests`. Once #48 lands: `cd ed72/environment/hospital && uv run --with pytest pytest -q tests/test_firewall.py` (fastmcp must be in that pyproject or the episode tests skip).
@@ -39,10 +40,11 @@ A test suite proving no `rules` / `observe` / `step` result leaks hidden state (
 - 2026-11-14: Added a past-log check: totals, waiting and bed occupants must follow from the sim's event log so far. A scratch leak that wrote next tick's arrival count into `totals.faints` passed every name, value and shape check and was caught only by this.
 - 2026-11-14: The rules text is not value-checked (it names event kinds and example ids). The test checks instead that it is byte-identical across seeds, so it cannot carry per-seed data.
 - 2026-11-14: The seed's digits are matched only for seeds >= 100000; the episodes use 918273 and 4071999.
-- Not covered: future information hidden in fatigue floats or `ticks_until_change`. The past-log check covers the counts and ids only.
+- 2026-11-14: Codex review fixes: every MCP content block and `structured_content` is checked (only one JSON text block allowed); `last_rejected` must equal the previous step's rejections in observe results too; `ticks_until_change` must be null unless a public pending change exists; the compose `main` block is found at any indentation and its absence fails the test.
+- Not covered: future information hidden in fatigue floats, or in the value of a legitimate countdown. The past-log check covers counts and ids only.
 
 ## Handoff
-- Done: checkers, fixtures, policy, all tests. Today: 44 pass, 13 skip (episodes need #46/#48 + #5, (f) needs #22).
-- Verified: on a scratch merge of `kostiantyn/env-sim-core` + `env-world` world.py + `mykhailo/env-tool-server` + `yehor/harness-task-skeleton`, all 57 firewall tests pass in about 2.3 s, and the whole hospital suite (105) passes. Two sim leaks injected by hand were caught.
+- Done: checkers, fixtures, policy, all tests. Today: 47 pass, 14 skip (episodes need #46/#48 + #5, (f) needs #22).
+- Verified: on a scratch merge of `kostiantyn/env-sim-core` + `env-world` world.py + `mykhailo/env-tool-server` + `yehor/harness-task-skeleton`, all 61 firewall tests pass in about 2.3 s, and the whole hospital suite (109) passes. Two sim leaks injected by hand were caught.
 - Next: once those merge, rerun and confirm no skips; wire into CI (#24) by making sure fastmcp is in the hospital pyproject.
 - How to test: see Decisions above.
