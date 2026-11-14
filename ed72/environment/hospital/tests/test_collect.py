@@ -20,12 +20,16 @@ class FakeSimulation:
         self.tick = 0
         self.events: list[dict] = []
         self.steps: list[list[dict]] = []
+        self.calls: list[tuple[str, dict, dict]] = []
         self.ran_to_end = False
         FakeSimulation.instances.append(self)
 
     def step(self, actions: list[dict]) -> None:
         self.steps.append(actions)
         self.tick += 1
+
+    def record_call(self, tool: str, args: dict, result: dict) -> None:
+        self.calls.append((tool, args, result))
 
     def run_to_end(self) -> None:
         self.ran_to_end = True
@@ -57,7 +61,14 @@ def write_log(path: Path, lines: list[dict]) -> None:
 
 
 def step_line(tick: int, actions: list[dict]) -> dict:
-    return {"seq": tick, "t": tick, "src": "agent", "tool": "step", "args": {"actions": actions}}
+    return {
+        "seq": tick,
+        "t": tick,
+        "src": "agent",
+        "tool": "step",
+        "args": {"actions": actions},
+        "result": {},
+    }
 
 
 def test_replays_steps_in_order_and_writes_report(collect_module, tmp_path: Path) -> None:
@@ -98,21 +109,23 @@ def test_missing_log_means_zero_steps(collect_module, tmp_path: Path) -> None:
     assert out.exists()
 
 
-def test_observe_rules_and_sim_lines_are_ignored(collect_module, tmp_path: Path) -> None:
+def test_observe_and_rules_are_recorded_and_sim_lines_ignored(collect_module, tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     write_log(
         log,
         [
             {"seq": 0, "t": 0, "src": "sim", "event": "episode_start"},
-            {"seq": 1, "t": 0, "src": "agent", "tool": "observe", "args": {}},
-            {"seq": 2, "t": 0, "src": "agent", "tool": "rules", "args": {}},
+            {"seq": 1, "t": 0, "src": "agent", "tool": "observe", "args": {}, "result": {"tick": 0}},
+            {"seq": 2, "t": 0, "src": "agent", "tool": "rules", "args": {}, "result": {"text": "r"}},
             step_line(0, [{"type": "wait"}]),
         ],
     )
 
     collect_module.collect(1, log, tmp_path / "report.json")
 
-    assert FakeSimulation.instances[0].steps == [[{"type": "wait"}]]
+    sim = FakeSimulation.instances[0]
+    assert sim.steps == [[{"type": "wait"}]]
+    assert sim.calls == [("observe", {}, {"tick": 0}), ("rules", {}, {"text": "r"})]
 
 
 def test_corrupt_log_fails_loudly(collect_module, tmp_path: Path) -> None:
@@ -128,4 +141,6 @@ def test_refused_step_calls_are_not_replayed(collect_module, tmp_path: Path) -> 
     refused = step_line(1, [{"type": "divert"}]) | {"result": {"error": "call_cap_reached"}}
     write_log(log, [step_line(0, []), refused])
     collect_module.collect(7, log, tmp_path / "report.json")
-    assert FakeSimulation.instances[0].steps == [[]]
+    sim = FakeSimulation.instances[0]
+    assert sim.steps == [[]]
+    assert sim.calls == [("step", refused["args"], {"error": "call_cap_reached"})]
