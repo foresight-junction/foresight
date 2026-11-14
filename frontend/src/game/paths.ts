@@ -2,16 +2,16 @@
 // Owner: agent D (playback + animation).
 
 import type { Point } from "../replay/frame";
+import { route } from "../world/path";
 
 export type Router = (from: Point, to: Point) => Point[];
 
-// MOCK: an L-shaped path (horizontal, then vertical) until agent B's pathfinder lands.
-// At merge, switch to it with: `import { route } from "../world/path";` and `const ROUTER: Router = route;`
+// An L-shaped path (horizontal, then vertical); kept for tests that run without a floor plan.
 export function lPath(from: Point, to: Point): Point[] {
   return [from, { x: to.x, y: from.y }, to];
 }
 
-const ROUTER: Router = lPath;
+const ROUTER: Router = route;
 
 const cache = new Map<string, Point[]>();
 

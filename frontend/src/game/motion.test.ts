@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { easeSettle, linearAt, poseAt, stepAt, type Leg } from "./motion";
+
+// These legs use made-up coordinates, not floor-plan spots, so walk them straight instead of routing
+// around the real map's walls.
+vi.mock("../world/path", () => ({ route: () => [] }));
 
 const leg = (over: Partial<Leg> = {}): Leg => ({
   t0: 0.2,

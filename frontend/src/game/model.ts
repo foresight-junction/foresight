@@ -224,7 +224,8 @@ export function buildModel(replay: Replay, layout: Layout): ReplayModel {
   const bedPoint = (bed: string): Point => {
     const at = layout.beds[bed];
     if (!at) throw new Error(`layout has no bed ${bed}`);
-    return { x: at.x, y: at.y + 4 };
+    // drawPatient draws an in-bed patient from the bed's top-left.
+    return { x: at.x, y: at.y };
   };
   const pointOf = (place: Place): Point => {
     switch (place.k) {

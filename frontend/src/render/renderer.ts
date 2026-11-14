@@ -26,7 +26,7 @@ import {
 } from "../world/layout";
 import { darkness, fitZoom, hourOfDay } from "./camera";
 import { type Burst, Particles } from "./particles";
-import { drawBed, drawCt, drawEffect, drawPatient, drawStaff, drawTile } from "./sprites";
+import { drawBed, drawCt, drawEffect, drawPatient, drawStaff, drawTile, drawWallFace } from "./sprites";
 
 const MAP_W = MAP_COLS * TILE;
 const MAP_H = MAP_ROWS * TILE;
@@ -198,23 +198,9 @@ function drawWallShadows(ctx: CanvasRenderingContext2D, layout: Layout): void {
   }
 }
 
-// 16x16 piece of a wall's front face (3/4 view). Placeholder art.
-// swap to sprites.drawWallFace at merge
+// 16x16 piece of a wall's front face (3/4 view): one tile row of the sprites' wall face.
 function wallFace(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  ctx.fillStyle = "#c9ddd4";
-  ctx.fillRect(x, y, TILE, TILE);
-  ctx.fillStyle = "#dcebe4";
-  ctx.fillRect(x, y, TILE, 2);
-  ctx.fillStyle = "#b3cdc2";
-  ctx.fillRect(x, y + 8, TILE, 1);
-  ctx.fillStyle = "#8fb3a7";
-  ctx.fillRect(x, y + 9, TILE, 1);
-  ctx.fillStyle = "#6f8f86";
-  ctx.fillRect(x, y + 13, TILE, 3);
-  ctx.fillStyle = "#5c7a72";
-  ctx.fillRect(x, y + 15, TILE, 1);
-  ctx.fillStyle = "#bcd3c9";
-  ctx.fillRect(x + 15, y + 2, 1, 6);
+  drawWallFace(ctx, x, y, TILE);
 }
 
 const CAP = 6; // how far a wall's top cap rises above its face, in px

@@ -17,7 +17,7 @@ function frameAt(pb: Playback, tick: number, phase: number): Frame {
   return pb.frame();
 }
 
-const bedPoint = (bed: string) => ({ x: layout.beds[bed].x, y: layout.beds[bed].y + 4 });
+const bedPoint = (bed: string) => ({ x: layout.beds[bed].x, y: layout.beds[bed].y });
 const byId = <T extends { id: string }>(xs: T[]): Map<string, T> => new Map(xs.map((x) => [x.id, x]));
 
 // Invariants every replay must satisfy, checked tick by tick.

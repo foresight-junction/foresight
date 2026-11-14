@@ -30,8 +30,9 @@ A top-down 2D pixel replay of one ED-72 episode in `frontend/`, showing every ch
 
 ## Status
 - [x] Issue #97, skeleton with types, frame contract and working stubs; reference replay seed 42
-- [ ] Agents 1a–1e on helper branches
-- [ ] Merge helpers, check in browser, PR
+- [x] Agents 1a–1e on helper branches, all merged (Sat 20:5x)
+- [x] Merge helpers, integration fixes (route(), bed offset, wall face), browser check
+- [ ] PR to main (needs cross-review)
 
 ## Decisions and notes
 - Sat 20:05. Vite + TypeScript + Canvas 2D, no game engine: small, fast to build, no new runtime deps. Dev deps typescript, vite, vitest only.
