@@ -1,3 +1,23 @@
 [
-  { "file": "reference-seed42.json", "label": "Reference policy (scripted)", "policy": "reference", "seed": 42, "reward": 0.990 }
+  {
+    "file": "reference-seed42.json",
+    "label": "Reference policy (scripted)",
+    "policy": "reference",
+    "seed": 42,
+    "reward": 0.989617
+  },
+  {
+    "file": "gemini-seed42.json",
+    "label": "Gemini 3.8 Flash (its own script)",
+    "policy": "gemini",
+    "seed": 42,
+    "reward": 0.811712
+  },
+  {
+    "file": "reactive-seed42.json",
+    "label": "Reactive proxy (typical model play)",
+    "policy": "reactive",
+    "seed": 42,
+    "reward": 0.60097
+  }
 ]
