@@ -42,17 +42,16 @@ Say:
 - Four events: staff sickness and a CT breakdown with no warning, a flu wave and a bus crash with a warning.
 - Three tools: `rules`, `observe`, `step(actions)`. Five actions: `admit`, `assign`, `agency`, `repair`, `divert`.
 
-Show what the agent sees at tick 0. This runs the simulator in-process on a demo seed, works on `main` today:
+Show what the agent sees at tick 0. This runs the simulator in-process on a demo seed and works on `main` today. Every command in this script starts from the repo root; the subshell keeps it there:
 
 ```bash
-cd ed72/environment/hospital
-uv run python -c "
+(cd ed72/environment/hospital && uv run python -c "
 import json
 from ed72_sim.world import generate_world
 from ed72_sim.engine import Simulation
 sim = Simulation(generate_world(7), log_path='/tmp/ed72-demo.jsonl')
 print(json.dumps(sim.observe(), indent=1))
-"
+")
 ```
 
 Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fatigue 0) and the empty `warnings`.
@@ -62,14 +61,14 @@ Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fa
 Start a run live so the judges see the command they will rerun:
 
 ```bash
-uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m <provider/model>
+uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m <provider/model>   # key exported in the shell
 ```
 
 Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". TODO(results): add how long a full agent run took, from #37 or #18.
 
 ## 4. One agent episode (3:00, 2:00)
 
-Use the trial picked under "Before the demo". Each event-log line has a tick `t` and an `event` (CONTRACTS "Event log"): `arrival`, `admitted`, `covered`, `discharged`, `death` (with `cause`: `waiting`, `uncovered_bed`, `fatigue`), `upgrade`, `left`, `faint`, `spend`, `event_start`, `event_end`.
+Use the trial picked under "Before the demo". Every event-log line has a tick `t` and a `src` (CONTRACTS "Event log"). Agent lines (`"src": "agent"`) record one tool call: `tool`, `args` (the actions) and `result`. Simulator lines (`"src": "sim"`) carry an `event`: `arrival`, `admitted`, `covered`, `discharged`, `death` (with `cause`: `waiting`, `uncovered_bed`, `fatigue`), `upgrade`, `left`, `faint`, `spend`, `event_start`, `event_end`.
 
 Useful filters on a log file:
 
@@ -97,8 +96,7 @@ Say: the score is computed only from the hospital's event log, after the agent s
 Show the exploit baselines (lands with #52; needs the scorer from #47 on `main`). Each one tries one shortcut through the same tools an agent has:
 
 ```bash
-cd eval/baselines
-PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3
+(cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3)
 ```
 
 Pick one row and explain why it loses, using SPEC §11:
@@ -110,7 +108,7 @@ Read the numbers off the screen; don't quote them from memory.
 Backup if time allows (lands with #56): the leak tests, which check every tool result for future arrivals, unannounced events, the seed and score values.
 
 ```bash
-cd ed72/environment/hospital && uv run --with pytest pytest -q tests/test_firewall.py
+(cd ed72/environment/hospital && uv run --with pytest pytest -q tests/test_firewall.py)
 ```
 
 TODO(redteam): add the strongest attempt from red-team rounds 1 and 2 (`docs/REDTEAM.md`, #13, #14) and the test that now blocks it.

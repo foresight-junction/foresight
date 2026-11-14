@@ -50,14 +50,16 @@ Prerequisites:
 
 - Docker, running.
 - [uv](https://docs.astral.sh/uv/). Harbor 0.25.0 runs through `uvx`, no separate install.
-- For agent runs only: one model key in the shell or in `.env` (copy `.env.example`): `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`.
+- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below; `make eval` also reads it from `.env` (copy `.env.example`).
+
+From the repo root:
 
 ```bash
-HARBOR="uvx --python 3.12 --from harbor==0.25.0 harbor"
+alias harbor='uvx --python 3.12 --from harbor==0.25.0 harbor'
 
-$HARBOR run -p ed72 -a oracle                            # reference policy (ed72/solution/, lands with #16)
-$HARBOR run -p ed72 -a nop                               # do-nothing baseline, scores 0
-$HARBOR run -p ed72 -a opencode -m <provider/model> -k 3 # three agent runs
+harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/, lands with #16)
+harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
+harbor run -p ed72 -a opencode -m <provider/model> -k 3 # three agent runs
 ```
 
 Everything the judges rerun, in one command (lands with #53):
@@ -104,7 +106,7 @@ The score is a pure function of the hospital's append-only event log (`/var/lib/
 - **No admin back door.** The only HTTP endpoint besides MCP is `GET /health`. There is no finalise, reset, undo, seed or ground-truth endpoint.
 - **Tool outputs are tested for leaks** (#31, PR #56). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer.
 - **Shortcuts are played as baselines and must lose** (#12, PR #52). Scripted policies try one shortcut each through the same tools: divert all the time, rest everyone in quiet periods, admit only ESI 4-5, admit without staff, fill every bed at the last tick, spend to the limit, and random play. A CI test checks that do-nothing scores exactly 0, that stop-early scores below the reactive proxy and the reactive proxy below the reference, that every exploit scores below the reference, and that the same seed and actions give the same score.
-- **Stopping does not end the episode.** If the agent stops, hits the call cap or times out, the remaining ticks run with no actions while patients keep arriving and dying. The score object records how it ended (`tick_143`, `agent_stopped`, `call_cap`, `timeout`).
+- **Stopping does not end the episode.** If the agent stops, hits the call cap or times out, the remaining ticks run with no actions while patients keep arriving and dying. The score object's `ended` field records whether the agent played to `tick_143`, stopped (`agent_stopped`) or hit the call cap (`call_cap`).
 - **Rejected actions do nothing.** Invalid actions return a reason and have no effect, so spamming them gains nothing.
 
 The shortcuts we expect judges to try first, and the rule that stops each, are listed in SPEC §11.
@@ -144,7 +146,7 @@ TODO(findings): waits on the failure analysis in `docs/FINDINGS.md` (#19).
 | `ed72/` | The Harbor task. `harbor run -p ed72` points here |
 | `ed72/task.toml` | Timeouts, separate verifier mode, the collect hook, the MCP server (lands with #58) |
 | `ed72/instruction.md`, `ed72/environment/workspace/HANDBOOK.md` | What the agent is told and the agent-visible rules (lands with #7) |
-| `ed72/environment/Dockerfile`, `docker-compose.yaml` | The `main` agent image and the `hospital` sidecar service (lands with #58) |
+| `ed72/environment/Dockerfile`, `ed72/environment/docker-compose.yaml` | The `main` agent image and the `hospital` sidecar service (lands with #58) |
 | `ed72/environment/hospital/ed72_sim/` | Seeded world (`world.py`), tick engine (`engine.py`), actions, observation, random streams |
 | `ed72/environment/hospital/ed72_sim/scoring/` | The scorer (lands with #47) |
 | `ed72/environment/hospital/server.py`, `ed72/environment/ward` | MCP tool server and the `ward` fallback CLI (lands with #57) |
@@ -162,7 +164,7 @@ Lint and tests, from the repo root and inside each Python project you changed:
 
 ```bash
 uvx ruff format . && uvx ruff check --fix .
-cd ed72/environment/hospital && uv run --with pytest pytest -q
+(cd ed72/environment/hospital && uv run --with pytest pytest -q)
 ```
 
 The team workflow (one issue, one branch, one worktree per task) is in [`AGENTS.md`](AGENTS.md).
