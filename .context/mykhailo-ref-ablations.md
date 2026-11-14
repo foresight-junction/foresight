@@ -25,15 +25,20 @@ each variant run on seeds 1-3, scored by the real scorer in process.
 - [x] In-process runner and markdown table (`run.py`)
 - [x] Tests: valid actions only, determinism, each lever changes actions, beats do-nothing
 - [x] README with seeds 1-3 table and per-lever reading
-- [ ] Swap the stand-in for the #16 reference when it exists; move the table into docs/FINDINGS.md
+- [x] Review fixes: levers decoupled (lockstep ownership test), counts_as in staffing, stateless repair,
+  obs-key and constants-sync tests, F6 listed as an added habit, `--policy reference` row
+- [ ] Move the table into docs/FINDINGS.md (coordinate with #19); file the toothless-lever numbers on #8
 
 ## Decisions and notes
 - Sat: import the sim via `sys.path` (stdlib-only) rather than a path dependency, which would pull fastmcp.
-- Sat: the `agency` lever also gates the warning-driven agency orders, so "no agency" means no agency at all.
-- Sat: F3, F4, F5 cost 0.0 at the default config; F3 stays 0 even at arrival_mean 3.0. Finding for #8.
+- Sat: surge agency on a warning belongs to `warnings` (F3); shortfall agency to `agency` (F5).
+- Sat: spend order repair -> surge -> shortfall, all capped at the soft budget (the only cross-lever coupling).
+- Sat: F3, F4, F5 are about 0 at the default and at arrival_mean 3.0. The #16 reference (5264305)
+  scores the same as the full stand-in. Finding for #8.
+- Sat: `--policy reference` needs ed72/solution/ (not on main yet); pass `--reference-dir` to an extracted copy.
 
 ## Handoff
 - Done: stand-in + runner + tests + README, results in `analysis/ablations/README.md`.
-- Next: run the real #16 reference with the same switches; issue for #8 with the toothless levers.
-- Test: `cd analysis/ablations && uv run --python 3.12 --with pytest pytest -q` (17 tests);
+- Next: FINDINGS.md section; rerun with `--policy reference` once #16 merges.
+- Test: `cd analysis/ablations && uv run --python 3.12 --with pytest pytest -q` (24 tests);
   table: `uv run --python 3.12 python -m ed72_ablations.run`.
