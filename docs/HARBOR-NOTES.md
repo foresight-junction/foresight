@@ -22,3 +22,19 @@ uvx --python 3.12 --from harbor==0.25.0 harbor run -p task -a nop -o jobs --job-
 In both runs, `trial.log` records that Harbor stopped the agent container before running `python /app/collect.py` on the hospital sidecar. Harbor passes `/evidence/report.json` to the separate verifier, which writes `verifier/reward.txt` in each local trial directory. The job summary is `jobs/<job-name>/result.json`.
 
 The Gemini-backed OpenCode run is pending. The oracle result verifies the MCP and verifier paths using a direct MCP client.
+
+## OpenCode run
+
+OpenCode 1.19.5 lists `google/gemini-3.8-flash` in its Google catalog. Harbor takes the `gemini/` selector and maps it to the `google/` selector inside OpenCode.
+
+From the same fixture parent directory, set `JUNCTION_ENV_FILE` to the absolute path to the ignored `.env` containing `GEMINI_API_KEY`, then run:
+
+```bash
+uvx --python 3.12 --from harbor==0.25.0 harbor run -p task -a opencode \
+  -m gemini/gemini-3.8-flash --api-key-name GEMINI_API_KEY \
+  --env-file "$JUNCTION_ENV_FILE" --ak version=1.19.5 \
+  --agent-setup-timeout-multiplier 3 \
+  -o jobs --job-name junction-s0-opencode -n 1 -y
+```
+
+Check the tool call in the trial's agent logs and the scalar result in `verifier/reward.txt`. A reward of 1 confirms the sidecar recorded exactly one ping.
