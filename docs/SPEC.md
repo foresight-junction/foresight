@@ -84,7 +84,7 @@ The rulebook's policy interface is `policy(observation) → list of JSON actions
 - **`observe`**: the current observation (step 4 of the tick). Read-only.
 - **`step(actions)`**: applies the action list in order (step 5), resolves the rest of the tick and the start of the next one, and returns a result per action plus the next observation. `step([])` passes a tick with no actions.
 
-Actions (rulebook §8): `admit` a waiting patient to a zone with a free allowed bed; `assign` a staff member to a zone or to `rest`; `agency` (doctor €900, nurse €350); `repair` (€2 000, only while the CT is down; it returns 3 ticks after the order, or at its original time if sooner); `divert` (free; 70% of arrivals, including bus-crash patients, are turned away for 4 ticks; not while a diversion is active). `agency` and `repair` are refused if total spending would exceed €24 000. Admission is only from the waiting area; there are no transfers between zones. Staff can be reassigned every tick for free. Invalid actions are rejected with a reason, have no effect and no extra penalty, and the valid actions in the same list still apply.
+Actions (rulebook §8): `admit` a waiting patient to a zone with a free allowed bed; `assign` a staff member to a zone or to `rest`; `agency` (doctor €900, nurse €350); `repair` (€2 000, only while the CT is down; it returns 3 ticks after the order, or at its original time if sooner); `divert` (free; 75% of arrivals, including bus-crash patients, are turned away for 4 ticks; not while a diversion is active). `agency` and `repair` are refused if total spending would exceed €24 000. Admission is only from the waiting area; there are no transfers between zones. Staff can be reassigned every tick for free. Invalid actions are rejected with a reason, have no effect and no extra penalty, and the valid actions in the same list still apply.
 
 The observation shows the whole current state and nothing of the future (rulebook §10): time, budget, every waiting patient, every bed, every staff member, the CT, warnings, diversion, running totals and the rejected actions of the last step.
 
@@ -115,6 +115,8 @@ The score is a pure function of the hospital's append-only event log (CONTRACTS 
 
 ## 7. Difficulty knobs (one config file, hospital side, via `ED72_CONFIG`)
 Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.
+
+Current defaults (`docs/TUNING.md`): mean 4.0 arrivals per tick (#98), and a diversion turns away 75% of arrivals (was 70%). The diversion share only matters to a policy that diverts. It keeps permanent diversion under about 47 points at the higher load, as rulebook §13 requires.
 
 ## 8. Fairness rules (30 points depend on these)
 - Every rule the scorer uses and every rate table is written in the agent-visible `HANDBOOK.md` (served by `rules`). A scorer rule or rate without a handbook line is a bug.
