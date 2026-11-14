@@ -6,30 +6,56 @@
 - **Parent branch:** main
 - **Created:** Sat 17:32
 
-# Model matrix handoff
+## Matrix handoff
 
-Issue #18. Run on Kostiantyn’s laptop as assigned on #1, using the authorized models and keys. The frozen revision is `474829a`. The first full OpenCode attempt on seed 42 timed out during setup before model calls. #17 tracks the retry with a setup timeout multiplier of four.
+Run after the 22:00 rules freeze on Kostiantyn's laptop, with the models and budget agreed in #17, #18 and #37. The three attempts recorded so far in #17 used `474829a` and reached no model calls. One wrote a zero reward after a provider authentication error. Keep those attempts in the calibration record.
 
-From a clean checkout of the frozen revision, run `scripts/make_seeds.sh 1 2 3`. Use one job output root per seed and record the frozen revision, Harbor version, OpenCode version, exact model ID and seed. Use the same seed task for its oracle, nop and all model trials.
+The latest main checked for this handoff is `083a723`. It includes #89, which installs OpenCode 1.19.5 in the agent image. Use Harbor 0.26.0 for this matrix. Its OpenCode installer checks the installed version first. The 0.25.0 version pinned by `make eval` still runs the cold install. Confirm the first successful run on the post-#89 image in #17 before expanding to the matrix.
+
+### Prepare the tasks
+
+Use Bash from a clean checkout of the agreed release revision. Stamp the three matrix seeds and any held-out seeds agreed with the runner. The generator replaces any existing generated folders for those seeds.
 
 ```bash
-# Set MODEL, KEY_NAME (the provider key variable name), and SEED before running.
-# Export the provider key itself separately.
-HARBOR_RUN=(uvx --python 3.12 --from harbor==0.25.0 harbor)
-TASK="ed72-s${SEED}"
-JOBS="eval/results/jobs/matrix-$(git rev-parse --short HEAD)/seed-${SEED}"
-mkdir -p "$JOBS"
-
-# Run these two baselines once per seed.
-"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name reference -y -a oracle -n 1
-"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name do-nothing -y -a nop -n 1
-
-# Run this once per authorized model. Use a distinct job name per model.
-"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name "model-${MODEL//\//-}" -y \
-  -a opencode -m "$MODEL" --api-key-name "$KEY_NAME" --ak version=1.19.5 \
-  --agent-setup-timeout-multiplier 4 -k 3 -n 3
-
-uv run --no-project --python 3.12 python eval/summarise.py "$JOBS" --out "$JOBS/summary.md"
+HARBOR_RUN=(uvx --python 3.12 --from harbor==0.26.0 harbor)
+"${HARBOR_RUN[@]}" --version
+scripts/make_seeds.sh 1 2 3
+scripts/make_seeds.sh --check 1 2 3
+REVISION=$(git rev-parse HEAD)
+MATRIX_ROOT="eval/results/jobs/matrix-${REVISION:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
 ```
 
-Use the explicit seed from the job directory in the combined results. The frozen report lacks the seed field used by the summariser. Verify three completed model trials with scores and evidence per seed and model. Report setup failures separately, retain their logs, and compare each model's maximum reward against its same-seed oracle. Preserve the trajectory, score report and reward for the submission. Job folders are gitignored, so review the intended artifacts before committing them. #83 tracks the absent Harbor stop-early adapter. The in-process stop-early result is in `docs/TUNING.md`.
+Set `SEED` to the generated task seed. Repeat the baselines once per seed, including each agreed held-out seed, and reuse that seed's task for all model runs.
+
+```bash
+TASK="ed72-s${SEED}"
+JOBS="$MATRIX_ROOT/seed-${SEED}"
+mkdir -p "$JOBS"
+"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name reference -y -a oracle -k 1 -n 1
+"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name do-nothing -y -a nop -k 1 -n 1
+```
+
+### Run the models
+
+Set `MODEL` to the agreed provider/model ID. Export the provider key on the host. For Gemini, #17 confirmed that OpenCode needs the key under `GOOGLE_GENERATIVE_AI_API_KEY`. If the host stores it as `GEMINI_API_KEY`, configure the literal shell argument below and let Harbor resolve the variable. Use the verified provider setup from #37 for other models.
+
+```bash
+# Gemini example. Kostiantyn's shell already has GEMINI_API_KEY exported.
+AUTH=(--ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}')
+"${HARBOR_RUN[@]}" run -p "$TASK" -o "$JOBS" --job-name "model-${MODEL//\//-}" -y \
+  -a opencode -m "$MODEL" "${AUTH[@]}" --ak version=1.19.5 \
+  -k 3 -n 1 --max-retries 0
+```
+
+Run one command per model and seed. `-k 3` schedules three attempts. `-n 1` runs them sequentially. If the runner chooses to use the first attempt in a matrix cell as a smoke check, run with `-k 1`, inspect its trajectory and verifier evidence, then use a fresh job name and `-k 2` to finish that cell. The #17 calibration on seed 42 is tracked separately.
+
+### Record the results
+
+- Keep each seed under its own output root. Generate the local summary with `uv run --no-project --python 3.12 python eval/summarise.py "$JOBS" --out "$JOBS/summary.md"`. Assign the seed from the task and output directory in the combined table, since the score object has no seed field.
+- Record the full revision, Harbor and OpenCode versions, seed, model ID and job path. Verify the planned number of completed trials, model activity, verifier rewards and score evidence. List setup or auth failures separately and keep their logs. Mark cells with missing trials as incomplete.
+- Report per-model, per-seed reward mean and range, O/T/W/B, deaths, faints and failure counts. Compare each model's range and mean against the oracle from the same seed. Preserve the trajectory, score report and reward paths. Review the intended artifacts for secrets before sharing them.
+- Stop-early stays in process for this submission. See the baseline evidence in `docs/TUNING.md` and the deferred Harbor adapter in #83.
+
+## Handoff
+
+Seed generation was checked against `083a723`. A Harbor 0.26.0 dry run with a placeholder credential resolved the Gemini key mapping and scheduled exactly three trials. Post-#89 calibration, final model and seed selections, and matrix results remain pending with the assigned runner.
