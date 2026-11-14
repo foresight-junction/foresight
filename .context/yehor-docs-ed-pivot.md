@@ -38,5 +38,5 @@ Replace the Custodian idea with ED-72 (Emergency Department simulator, 72 sim ho
 
 ## Handoff
 - Done: see Status.
-- Not done: issues #3 to #27 still carry Custodian titles. `scripts/bootstrap-board.sh` skips existing codes, so retitle by hand with the table in the PR.
+- Merged as PR #29 (24f6abf). Issues #3 to #27 were retitled from the `mk` calls in `scripts/bootstrap-board.sh` after the merge, and B6 moved to p1.
 - How to test: `grep -ri custodian AGENTS.md docs scripts` returns nothing; `bash -n scripts/bootstrap-board.sh` passes.

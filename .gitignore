@@ -10,3 +10,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+
+# claude code local state
+.claude/worktrees/
+.claude/settings.local.json
+
+# python packaging (uv.lock is committed)
+*.egg-info/

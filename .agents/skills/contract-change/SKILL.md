@@ -1,14 +1,14 @@
 ---
 name: contract-change
-description: The only allowed way to add or change an API route, request/response shape, shared type, DB table, env var or port. Use before touching docs/CONTRACTS.md, backend/app/schemas.py or frontend/src/types.ts.
+description: The only allowed way to add or change an ED-72 tool name or its args/result shape, the score object, an event-log line, an env var or a port. Use before touching docs/CONTRACTS.md or the Python types that implement a contract.
 ---
 
 # contract-change
 
-Contracts let the frontend and backend agents work in parallel. A silent change breaks someone else's work, sometimes hours later.
+Contracts let lanes A, B, C and D work in parallel: tool shapes, the score object, event-log lines, env vars and ports. A silent change breaks someone else's work, sometimes hours later.
 
 ## 1. Prefer additive changes
-- **OK without discussion:** adding a new route, adding a new **optional** field, adding an env var.
+- **OK without discussion:** adding a new tool, adding a new **optional** field, adding an env var.
 - **Needs agreement:** renaming or removing anything, changing a type, making a field required, changing the meaning of a field.
 
 ## 2. Announce it
@@ -21,9 +21,9 @@ For a **breaking** change, wait for a human (or the owners of the affected areas
 ## 3. Make it a tiny separate PR
 Do it on its own branch (`scripts/wt.sh new <owner> <area> contract-<name> -i 1`), changing only:
 - `docs/CONTRACTS.md`
-- `backend/app/schemas.py` (Pydantic models)
-- `frontend/src/types.ts` (TypeScript types)
-- a stub or mock route if it's new, so others can build against it straight away
+- the code that implements the shape: today `backend/app/schemas.py` (Pydantic) and `frontend/src/types.ts` (TypeScript); in the `ed72/` layout, the types in `ed72/environment/hospital/ed72_sim/`
+- the agent-visible rules (`HANDBOOK.md` or the rules tool), if the agent can see the change
+- a stub tool or fixture returning the new shape, so other lanes can build against it straight away
 
 Open the PR with `ship-pr`, labelled `contract`, and ask your human to merge it quickly.
 

@@ -6,13 +6,15 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 
 - **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
-- **Read these before any task:** `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
+- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys, Sat 14 Nov, in Russian). It defines the department, patients, staff, hazards, events, actions, tick order, observation and score. Where `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/PLAN.md` or an issue body disagree with it, this file wins until those docs are updated to match. Rules marked **[Proposed]** are its recommended defaults; build them unless a human says otherwise.
+- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
 - **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
   - Reference run: `harbor run -p ed72 -a oracle`
   - Do-nothing baseline: `harbor run -p ed72 -a nop`
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
+  - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --with pytest pytest -q` inside each Python project you changed, and `pnpm lint && pnpm build && pnpm test` in `frontend/`
 - **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
@@ -61,7 +63,8 @@ All 10 agents are on different laptops, so **GitHub Issues is the single source 
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
-- Issue **#1 "Contracts"** is pinned. Contract proposals go there.
+- Issue **#1 "Contracts"** is pinned. Contract proposals go there, and so does news every agent needs (a merged spec, a layout or rules decision). Read its latest comments at the start of each session: `gh issue view 1 --comments | tail -40`.
+- **No issue for your work yet?** Don't work silently. Comment on #1 with your agent id and branch, then create or claim an issue as soon as a human OKs it.
 
 ## 5. Worktrees and branches
 
@@ -110,6 +113,8 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
+- Every folder with a `pyproject.toml` is its own uv project. Today that is `backend/` (Kostiantyn's ED engine `backend/app/edsim/` and its MCP server, on `kostiantyn/env-ed-sim`). `docs/SPEC.md` section 9 plans `ed72/environment/hospital/` instead; until the team picks one, tooling supports both. `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
+- Ruff settings for the whole repo are in `ruff.toml` (line length 110). `spikes/` and `harbor/unfindable/` are excluded as historical reference.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
 - Simulator and scorer are pure and deterministic: all randomness comes from one seeded `random.Random` passed in, never the global `random`, never wall-clock time, never the network.

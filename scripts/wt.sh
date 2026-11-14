@@ -8,7 +8,7 @@
 #   scripts/wt.sh board                                       open GitHub issues (the team task board)
 #   scripts/wt.sh done <slug> [-f]                            remove a worktree (keeps the branch)
 #
-# Set SKIP_INSTALL=1 to skip pnpm install / uv sync in new worktrees.
+# Set SKIP_INSTALL=1 to skip uv sync / pnpm install in new worktrees.
 
 set -euo pipefail
 
@@ -38,7 +38,7 @@ cmd_init() {
     gh label create review   --color 0e8a16 --force >/dev/null
     gh label create blocked  --color b60205 --force >/dev/null
     gh label create contract --color 5319e7 --force >/dev/null
-    for a in fe api data ai infra docs; do
+    for a in env reward ref harness train docs infra; do
       gh label create "area:$a" --color 1d76db --force >/dev/null
     done
     if ! gh issue list --search "Contracts in:title" --state all --json number -q '.[0].number' | grep -q .; then
@@ -120,8 +120,16 @@ cmd_new() {
   fi
 
   if [ "${SKIP_INSTALL:-0}" != "1" ]; then
-    if [ -f "$path/frontend/package.json" ]; then (cd "$path/frontend" && pnpm install --prefer-offline --silent) || true; fi
-    if [ -f "$path/backend/pyproject.toml" ]; then (cd "$path/backend" && uv sync --quiet) || true; fi
+    local d
+    for d in . backend ed72/environment/hospital eval analysis training; do
+      if [ -f "$path/$d/pyproject.toml" ]; then
+        (cd "$path/$d" && uv sync --quiet) || echo "warning: uv sync failed in $d (is uv installed?)" >&2
+      fi
+    done
+    if [ -f "$path/frontend/package.json" ]; then
+      (cd "$path/frontend" && pnpm install --frozen-lockfile --silent) \
+        || echo "warning: pnpm install failed in frontend (is pnpm installed?)" >&2
+    fi
   fi
 
   echo
