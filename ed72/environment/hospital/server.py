@@ -110,11 +110,14 @@ def _make_sim(seed: int) -> Sim:
         from mock_sim import EVENT_LOG_PATH, MockSimulation  # MOCK: until #46/#48 land on main
 
         return MockSimulation(seed, _fresh_log(EVENT_LOG_PATH))
+    from ed72_sim.config import load_config
     from ed72_sim.constants import EVENT_LOG_PATH
     from ed72_sim.engine import Simulation
     from ed72_sim.world import generate_world
 
-    return Simulation(generate_world(seed), _fresh_log(EVENT_LOG_PATH))
+    # Same config as collect.py, so the live episode and its replay build the same world.
+    config = load_config(os.environ.get("ED72_CONFIG"))
+    return Simulation(generate_world(seed, config), _fresh_log(EVENT_LOG_PATH))
 
 
 def main() -> None:
