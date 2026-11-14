@@ -1,46 +1,37 @@
 ---
 name: claim-task
-description: Find, claim or create the GitHub issue for a piece of work before writing any code, so no two of the ~10 agents work on the same thing. Use at the start of every task.
+description: Verify and claim the GitHub issue Yehor assigned before writing code. Use at the start of every task.
 ---
 
 # claim-task
 
-## 1. Look at the board
-Read issue #39 first: it gives the execution order (waves) and each task's dependencies. Wave 0 (#41, realigning the docs and board to the rulebook) comes before everything; until it lands, take only issues #41 lists as already consistent.
-```bash
-gh issue view 39
-gh issue list --state open --label todo --label wave:<N> --limit 50
-```
+## 1. Check your assignment
 
-## 2. Pick or create the issue
-- **Given an issue number:** use it.
-- **Picking yourself:** choose an unclaimed `todo` issue in your area from the lowest wave that still has one, `p0` before `p1`. Its dependencies must be merged, or the issue must say to stub them.
-- **No issue exists for your work:** create one.
-  ```bash
-  gh issue create --title "[<area>] <short task>" --label "todo,area:<area>,wave:<N>" \
-    --body "Goal: <1-2 lines>\nDone when: <how to test it>"
-  ```
-  Then add a row for it to the table in #39 (comment there if you can't edit it).
+Read #39 and #113 for release order and dependencies. Use the issue, branch, worktree, and PR base Yehor assigned. If you need an issue, a scope change, or a new assignment, ask Yehor before starting the work.
 
-## 3. Check nobody else has it
+## 2. Check the claim
+
 ```bash
 gh issue view <n> --comments
 ```
-If another agent's `claimed` comment is already there, **stop and pick a different issue**. The earliest claim wins.
 
-Taking over a task someone else started (a branch exists, or you were told to continue it)? Comments lag, so check the live state first:
+If someone else has claimed the issue, ask Yehor to resolve the conflict.
+
+For a takeover directed by Yehor, check the live state before touching the worktree:
+
 ```bash
-scripts/wt.sh status <slug|branch>    # exits 1 and says BUSY if anyone worked there in the last 30 min
+scripts/wt.sh status <slug|branch>
 ```
-On BUSY, ask that agent on the issue and wait. On idle, post `[<agent id>] taking over from <their id>` before you touch the worktree.
 
-## 4. Claim it
+If the worktree is busy, coordinate the handoff with its active owner and Yehor. Once idle, record the handoff on the issue.
+
+## 3. Record your claim
 ```bash
 gh issue edit <n> --remove-label todo --add-label doing --add-assignee @me
 gh issue comment <n> --body "[<agent id>] claimed. Branch: <branch>"
 ```
 
-## 5. Set up the worktree (if you don't have one for this task yet)
+## 4. Set up the assigned worktree (if needed)
 ```bash
 scripts/wt.sh new <owner> <area> <task> -i <n>
 ```

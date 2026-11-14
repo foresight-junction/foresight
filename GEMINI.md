@@ -3,7 +3,7 @@
 Before doing anything, read `AGENTS.md` in full and follow it. It applies to you exactly as it does to Claude Code and Codex. This file only adds what is specific to Gemini CLI.
 
 ## Your role
-- Same as any lead agent: one issue, one branch, one worktree (`scripts/wt.sh new <owner> <area> <task> -i <issue>`). Pick tasks in the order of issue #39, with wave 0 (#41) first, as AGENTS.md section 4 says.
+- Same as any lead agent: one issue, one branch, one worktree (`scripts/wt.sh new <owner> <area> <task> -i <issue>`). Use the issue, branch, worktree, and PR base Yehor assigns. See #39 and #113 for release order and dependencies.
 - Your agent id is `<owner>-gemini-<n>`, e.g. `yehor-gemini-1`. Start every issue comment and commit trailer with it.
 
 ## Skills
