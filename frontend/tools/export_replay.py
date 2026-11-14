@@ -93,7 +93,7 @@ def do_nothing(sim: RecordingSim) -> None:
 # Order here is the order of index.json (reference first).
 POLICIES: dict[str, tuple[str, Callable[[RecordingSim], None]]] = {
     "reference": ("Reference policy (scripted)", reference),
-    "gemini": ("Gemini 3.8 Flash (its own script)", gemini),
+    "gemini": ("Gemini 3.8 Flash script (replayed)", gemini),
     "reactive": ("Reactive proxy (typical model play)", reactive),
     "do-nothing": ("Do nothing", do_nothing),
 }

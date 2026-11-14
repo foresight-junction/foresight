@@ -84,6 +84,24 @@ class LiveRecorder:
             if self.final_obs is None:
                 self._finish()
 
+    def reset(self, sim: Simulation, meta: dict, save_path: Path | None) -> None:
+        """Switch to a new episode (the viewer's "New run"); every subscriber gets its snapshot."""
+        with self.lock:
+            if self.final_obs is None and self.ticks:
+                # The old episode was cut short: its saved file says so instead of looking finished.
+                self.meta["live"].update(state="error", error="stopped: a new run was started")
+                self._save()
+            self.sim = sim
+            self.meta = meta
+            self.save_path = save_path
+            self.ticks = []
+            self.final_obs = None
+            self._by_tick = {}
+            self._seen = 0
+            self._thought = None
+            self._collect()
+            self._publish(self._snapshot())
+
     # --- browser side ---------------------------------------------------------------------------
 
     def subscribe(self) -> tuple[queue.Queue[str], str]:
@@ -91,14 +109,7 @@ class LiveRecorder:
         with self.lock:
             q: queue.Queue[str] = queue.Queue()
             self._subscribers.append(q)
-            snapshot = {
-                "type": "snapshot",
-                "meta": self.meta,
-                "ticks": self.ticks,
-                "head": self._head(),
-                "final_obs": self.final_obs,
-            }
-            return q, _encode(snapshot)
+            return q, _encode(self._snapshot())
 
     def unsubscribe(self, q: queue.Queue[str]) -> None:
         with self.lock:
@@ -106,6 +117,15 @@ class LiveRecorder:
                 self._subscribers.remove(q)
 
     # --- internals (caller holds the lock) ------------------------------------------------------
+
+    def _snapshot(self) -> dict:
+        return {
+            "type": "snapshot",
+            "meta": self.meta,
+            "ticks": self.ticks,
+            "head": self._head(),
+            "final_obs": self.final_obs,
+        }
 
     def _collect(self) -> None:
         for e in self.sim.events[self._seen :]:

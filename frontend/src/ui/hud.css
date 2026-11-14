@@ -956,3 +956,71 @@
   font-size: 9px;
   letter-spacing: 0.12em;
 }
+
+/* Seed picker beside the replay picker, and the live "New run" form */
+.pick-row {
+  display: flex;
+  gap: 6px;
+}
+.pick-row .picker {
+  flex: 1;
+  min-width: 0;
+}
+.pick-row .seed-picker {
+  flex: 0 0 auto;
+  width: auto;
+}
+.new-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.new-run .picker {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.new-run-l {
+  color: var(--dim);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+.seed-in {
+  width: 92px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid;
+  border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+  padding: 3px 6px;
+}
+.seed-in:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+.gbtn.dice,
+.gbtn.start-run {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+.gbtn.start-run {
+  background: var(--good);
+  color: #0c1a10;
+}
+.gbtn.start-run:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.new-run-msg {
+  flex-basis: 100%;
+  color: var(--warn);
+  font-size: 10px;
+}
+.new-run-msg:empty {
+  display: none;
+}

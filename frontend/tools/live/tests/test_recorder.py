@@ -128,7 +128,13 @@ def test_finish_runs_out_the_episode(tmp_path):
     assert [t["tick"] for t in rec.ticks] == list(range(144))
     messages = drain(q)
     assert [m["type"] for m in messages].count("done") == 1
-    assert rec.meta["live"] == {"agent": "reference", "model": None, "state": "done", "error": "boom"}
+    assert rec.meta["live"] == {
+        "agent": "reference",
+        "model": None,
+        "state": "done",
+        "error": "boom",
+        "run": "",
+    }
     assert rec.final_obs["finished"]
     # Only the 10 real steps reach the log as agent lines.
     steps = [e for e in rec.sim.events if e.get("src") == "agent" and e.get("tool") == "step"]
@@ -156,3 +162,29 @@ def test_saves_the_replay_after_every_tick_and_at_the_end(tmp_path):
     assert final["meta"]["live"]["state"] == "done"
     assert final["meta"]["reward"] == rec.meta["reward"]
     assert not save.with_name("run.json.tmp").exists()
+
+
+def test_reset_starts_a_new_episode_and_tells_every_viewer(tmp_path):
+    old_save = tmp_path / "old.json"
+    rec = LiveRecorder(
+        Simulation(generate_world(SEED), tmp_path / "a.jsonl"),
+        make_meta("reference", SEED, None, "r1"),
+        old_save,
+    )
+    q, _ = rec.subscribe()
+    play_reference(ToolHost(rec, "HANDBOOK"), max_steps=3)
+    drain(q)
+    new_save = tmp_path / "new.json"
+    rec.reset(
+        Simulation(generate_world(7), tmp_path / "b.jsonl"), make_meta("reactive", 7, None, "r2"), new_save
+    )
+    [snap] = drain(q)
+    assert snap["type"] == "snapshot"
+    assert snap["meta"]["seed"] == 7 and snap["meta"]["live"]["run"] == "r2"
+    assert snap["ticks"] == [] and snap["head"]["tick"] == 0
+    # The cut-short run is saved as stopped, not left looking like it is still playing.
+    old = json.loads(old_save.read_text(encoding="utf-8"))
+    assert len(old["ticks"]) == 3
+    assert old["meta"]["live"]["state"] == "error"
+    play_reference(ToolHost(rec, "HANDBOOK"), max_steps=2)
+    assert [t["tick"] for t in json.loads(new_save.read_text(encoding="utf-8"))["ticks"]] == [0, 1]

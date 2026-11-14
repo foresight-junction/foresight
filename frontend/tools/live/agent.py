@@ -1,7 +1,7 @@
 """The live player: an MCP client of the hospital tool server, like any external agent would be.
 
 It calls `rules` once, `observe`, then `step` once per tick until the episode is finished. The
-decider (Gemini or a scripted policy) only ever sees what the tools return.
+decider (an LLM or a scripted policy) only ever sees what the tools return.
 """
 
 import asyncio
@@ -10,7 +10,7 @@ import sys
 import time
 from typing import Any, Protocol
 
-from gemini import GeminiFatal
+from llm import ModelFatal
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from recorder import LiveRecorder
@@ -74,7 +74,7 @@ async def play(url: str, recorder: LiveRecorder, decider: Decider, min_tick_seco
                 try:
                     # The decider blocks (HTTP, policy code); off the loop, the MCP session stays served.
                     actions, thought = await asyncio.to_thread(decider.decide, obs, actions, results)
-                except GeminiFatal as err:
+                except ModelFatal as err:
                     failed = str(err)
                     recorder.set_state("error", failed)
             if failed is not None:

@@ -103,7 +103,7 @@ export interface ScoreSummary {
 export interface ReplayMeta {
   name: string; // file stem, e.g. "reference-seed42"
   policy: string;
-  label: string; // human title, e.g. "Gemini 3.8 Flash (its own script)"
+  label: string; // human title, e.g. "Gemini 3.8 Flash script (replayed)"
   seed: number;
   reward: number | null; // null while a live episode is still running
   score: ScoreSummary | null;
@@ -111,11 +111,14 @@ export interface ReplayMeta {
 }
 
 export interface LiveStatus {
-  agent: string; // "llm" | "reference" | "reactive"
+  agent: string; // a LiveAgent; runs saved before Kimi and Claude joined say "llm" for Gemini
   model: string | null; // model id for the LLM agent
   state: "starting" | "thinking" | "acting" | "done" | "error";
   error?: string;
+  run?: string; // unique per episode: a new value means the server started a new run
 }
+
+export type LiveAgent = "gemini" | "kimi" | "claude" | "reference" | "reactive";
 
 // Server-sent events from frontend/tools/live (GET /live/stream, one JSON object per `data:` line).
 // The browser keeps `ticks` (finished ticks) plus `head` (the tick the agent is deciding now: its obs

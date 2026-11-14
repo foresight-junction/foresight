@@ -3,7 +3,7 @@
 
 import { Playback } from "./game/playback";
 import { Renderer } from "./render/renderer";
-import { connectLive } from "./replay/live";
+import { connectLive, liveAgents, startLiveRun } from "./replay/live";
 import type { Replay, ReplayIndexEntry } from "./replay/types";
 import "./style.css";
 import { mountHud, type Hud } from "./ui/hud";
@@ -36,15 +36,28 @@ async function start(): Promise<void> {
 
   if (params.has("live")) {
     hudRoot.textContent = "Waiting for the live episode… start it with frontend/tools/live (see its README).";
+    const agents = await liveAgents();
+    let run: string | undefined;
     connectLive(
       (replay: Replay) => {
-        if (!playback || !hud) {
+        const thisRun = replay.meta.live?.run;
+        if (!playback || !hud || thisRun !== run) {
+          // First episode, or a new run started (here or from another browser): fresh player and HUD,
+          // keeping the speed the viewer picked.
+          run = thisRun;
+          const speed = playback?.speed ?? 1;
+          hud?.destroy();
           playback = new Playback(replay, layout);
-          playback.speed = 1;
+          playback.speed = speed;
           // Joining mid-episode: start one tick behind the agent, so you watch it decide right away.
           playback.seek(replay.ticks.length - 2);
           playback.play();
-          hud = mountHud(hudRoot, replay, playback, { replays: index, currentFile: null, onSelectReplay: openFile });
+          hud = mountHud(hudRoot, replay, playback, {
+            replays: index,
+            currentFile: null,
+            onSelectReplay: openFile,
+            live: { agents, onStart: startLiveRun },
+          });
           return;
         }
         playback.setReplay(replay);

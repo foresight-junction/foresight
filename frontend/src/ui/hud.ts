@@ -3,7 +3,7 @@
 // department status and the episode's mistakes. Owner: agent E (HUD).
 
 import type { Playback } from "../game/playback";
-import type { Observation, Replay, ReplayIndexEntry, ReplayTick, Staff, Zone } from "../replay/types";
+import type { LiveAgent, Observation, Replay, ReplayIndexEntry, ReplayTick, Staff, Zone } from "../replay/types";
 import {
   bannersFor,
   describeActions,
@@ -28,7 +28,18 @@ export interface HudOptions {
   replays: ReplayIndexEntry[];
   currentFile: string | null; // null in live mode
   onSelectReplay: (file: string) => void;
+  // Live mode: the agents the server can run and how to start a new run (resolves to an error or null).
+  live?: { agents: LiveAgent[]; onStart: (seed: number, agent: LiveAgent) => Promise<string | null> };
 }
+
+const AGENT_LABEL: Record<LiveAgent, string> = {
+  gemini: "Gemini",
+  kimi: "Kimi",
+  claude: "Claude",
+  reference: "Reference",
+  reactive: "Reactive",
+};
+const MAX_SEED = 2 ** 31 - 1;
 
 export interface Hud {
   update(): void; // called every animation frame
@@ -250,29 +261,103 @@ function renderStatus(body: HTMLElement, obs: Observation, active: Band[]): void
   body.replaceChildren(...out);
 }
 
+// Live mode: pick a seed and an agent and start a fresh episode on the live server.
+function newRunForm(live: NonNullable<HudOptions["live"]>, current: Replay): HTMLElement {
+  const form = el("form", "new-run");
+  const seedIn = el("input", "seed-in");
+  seedIn.type = "number";
+  seedIn.min = "0";
+  seedIn.max = String(MAX_SEED);
+  seedIn.step = "1";
+  seedIn.required = true;
+  seedIn.value = String(current.meta.seed);
+  seedIn.setAttribute("aria-label", "Seed");
+  seedIn.title = "World seed: the same seed gives every agent the same patients and events";
+  const agentSel = el("select", "picker");
+  agentSel.setAttribute("aria-label", "Agent");
+  for (const a of live.agents) {
+    const o = el("option", "", AGENT_LABEL[a]);
+    o.value = a;
+    o.selected = a === current.meta.live?.agent;
+    agentSel.append(o);
+  }
+  const go = el("button", "gbtn start-run", "NEW RUN");
+  go.type = "submit";
+  go.title = "Start a new live episode (the one playing now stops)";
+  const msg = el("div", "new-run-msg");
+  const random = el("button", "gbtn dice", "?");
+  random.type = "button";
+  random.title = "Random seed";
+  random.addEventListener("click", () => {
+    seedIn.value = String(Math.floor(Math.random() * 100000));
+  });
+  if (!live.agents.length) {
+    msg.textContent = "The live server is not running: start frontend/tools/live/serve.py.";
+    go.disabled = true;
+  }
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const seed = Number(seedIn.value);
+    if (!Number.isInteger(seed) || seed < 0 || seed > MAX_SEED) {
+      msg.textContent = `Seed must be a whole number from 0 to ${MAX_SEED}.`;
+      return;
+    }
+    go.disabled = true;
+    msg.textContent = "Starting…";
+    void live.onStart(seed, agentSel.value as LiveAgent).then((err) => {
+      go.disabled = false;
+      msg.textContent = err ? `Could not start: ${err}` : "";
+    });
+  });
+  form.append(el("span", "new-run-l", "SEED"), seedIn, random, agentSel, go, msg);
+  return form;
+}
+
 export function mountHud(root: HTMLElement, initial: Replay, playback: Playback, opts: HudOptions): Hud {
   let replay = initial;
   const hud = el("div", "hud");
 
   // Header: picker, label, reward and the four score meters.
   const header = el("section", "panel header");
+  const pickRow = el("div", "pick-row");
   const picker = el("select", "picker");
   picker.setAttribute("aria-label", "Replay");
+  const seed = initial.meta.seed;
   if (opts.currentFile === null) {
     const o = el("option", "", "● LIVE episode");
     o.value = "";
     o.selected = true;
     picker.append(o);
-  } else if (!opts.replays.some((r) => r.file === opts.currentFile)) {
-    // A file outside the index, e.g. a saved live run.
-    const r = initial.meta.reward;
-    const o = el("option", "", `${initial.meta.label} · seed ${initial.meta.seed} · ${r === null ? "unfinished" : r.toFixed(3)}`);
-    o.value = "";
-    o.selected = true;
-    picker.append(o);
+  } else {
+    // Seed first, then the replays recorded on that seed.
+    const seeds = [...new Set([seed, ...opts.replays.map((r) => r.seed)])].sort((a, b) => a - b);
+    const seedSel = el("select", "picker seed-picker");
+    seedSel.setAttribute("aria-label", "Seed");
+    seedSel.title = "World seed: the same seed gives every policy the same patients and events";
+    for (const s of seeds) {
+      const o = el("option", "", `SEED ${s}`);
+      o.value = String(s);
+      o.selected = s === seed;
+      seedSel.append(o);
+    }
+    seedSel.addEventListener("change", () => {
+      const s = Number(seedSel.value);
+      const onSeed = opts.replays.filter((r) => r.seed === s);
+      const same = onSeed.find((r) => r.policy === initial.meta.policy) ?? onSeed[0];
+      if (same) opts.onSelectReplay(same.file);
+    });
+    pickRow.append(seedSel);
+    if (!opts.replays.some((r) => r.file === opts.currentFile)) {
+      // A file outside the index, e.g. a saved live run.
+      const r = initial.meta.reward;
+      const o = el("option", "", `${initial.meta.label} · ${r === null ? "unfinished" : r.toFixed(3)}`);
+      o.value = "";
+      o.selected = true;
+      picker.append(o);
+    }
   }
-  for (const r of opts.replays) {
-    const o = el("option", "", `${r.label} · seed ${r.seed} · ${r.reward.toFixed(3)}`);
+  for (const r of opts.replays.filter((x) => opts.currentFile === null || x.seed === seed)) {
+    const o = el("option", "", opts.currentFile === null ? `${r.label} · seed ${r.seed} · ${r.reward.toFixed(3)}` : `${r.label} · ${r.reward.toFixed(3)}`);
     o.value = r.file;
     o.selected = r.file === opts.currentFile;
     picker.append(o);
@@ -280,9 +365,12 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
   picker.addEventListener("change", () => {
     if (picker.value) opts.onSelectReplay(picker.value);
   });
+  pickRow.append(picker);
   const titleRow = el("div", "title-row");
   const parts = el("div", "parts");
-  header.append(picker, titleRow, parts);
+  header.append(pickRow);
+  if (opts.live) header.append(newRunForm(opts.live, initial));
+  header.append(titleRow, parts);
 
   function renderHeader(): void {
     const meta = replay.meta;
