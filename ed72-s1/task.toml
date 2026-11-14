@@ -1,0 +1,31 @@
+schema_version = "1.4"
+
+artifacts = [
+  { source = "/evidence/report.json", service = "hospital" },
+]
+
+[task]
+name = "ed72/emergency-department-s1"
+description = "Manage a fictional emergency department for 72 simulated hours"
+
+[agent]
+timeout_sec = 1800
+
+[verifier]
+environment_mode = "separate"
+timeout_sec = 120
+
+[[verifier.collect]]
+service = "hospital"
+command = "python /app/collect.py"
+timeout_sec = 60
+
+[environment]
+build_timeout_sec = 900
+cpus = 1
+memory_mb = 2048
+
+[[environment.mcp_servers]]
+name = "hospital"
+transport = "streamable-http"
+url = "http://hospital:8000/mcp"

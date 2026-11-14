@@ -1,0 +1,5 @@
+# Local dev artefacts. Harbor validates and uploads the solution tree, and a uv/pytest .venv
+# contains a python symlink pointing outside the task, which makes Harbor reject the task (#22, #88).
+.venv/
+__pycache__/
+.pytest_cache/
