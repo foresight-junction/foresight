@@ -48,5 +48,14 @@ gh issue edit <n> --remove-label doing --add-label review
 gh issue comment <n> --body "[<agent id>] PR ready: <pr url>"
 ```
 
-## 5. Stop
-Don't merge. Tell your human the PR is ready. Then either keep going on the next slice in the same worktree (new commits update the PR), or claim a new task.
+## 5. Hand it to the integrator (AGENTS.md golden rule 8)
+Only the integrator (AGENTS.md section 1) merges into `main`. When CI is green and the gates in step 2 hold:
+```bash
+gh pr checks <n> --watch        # wait for green; fix and push if red
+gh pr ready <n>
+gh pr comment <n> --body "[<agent id>] ready to merge"
+```
+- Name stacked dependencies in the description (`Depends on #N`) so the base merges first.
+- If the integrator comments a blocker, fix it, push, and reply on the PR.
+- Helper branches: the task's lead merges them into the parent branch (`--base <parent>` PRs) with `gh pr merge <n> --merge`, never `--delete-branch` or `--admin`.
+- After the merge, comment on your issue: `[<agent id>] merged: <pr url>`. Keep going on the next slice or claim a new task.

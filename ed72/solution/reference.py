@@ -15,6 +15,8 @@ def ward(tool: str, arguments: dict) -> dict:
     except subprocess.CalledProcessError as error:
         detail = error.stderr.strip() or error.stdout.strip()
         raise RuntimeError(f"ward {tool} failed ({error.returncode}): {detail}") from error
+    if tool == "rules":
+        return {"text": result.stdout}
     response = json.loads(result.stdout)
     if "error" in response:
         raise RuntimeError(f"ward {tool}: {response['error']}")

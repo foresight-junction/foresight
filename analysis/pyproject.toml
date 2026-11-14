@@ -1,0 +1,10 @@
+[project]
+name = "ed72-analysis"
+version = "0.1.0"
+description = "ED-72 failure analysis: score_full.json and event logs to report.md and failures.svg"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

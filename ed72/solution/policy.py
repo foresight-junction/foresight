@@ -84,6 +84,7 @@ def staff_plan(patients: dict[str, list[dict]], staff: list[dict]) -> tuple[dict
 
 @dataclass
 class ReferencePolicy:
+    name = "reference"
     hired_warnings: set[tuple[str, int]] = field(default_factory=set)
     repair_tick: int | None = None
 
@@ -141,3 +142,5 @@ class ReferencePolicy:
         if len(actions) > 50:
             raise RuntimeError("Reference plan exceeds the 50-action limit")
         return actions
+
+    act = actions
