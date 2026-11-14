@@ -9,7 +9,7 @@ A [Harbor](https://github.com/laude-institute/harbor) task for the Junction 2026
 | **Agent's job** | Admit patients to beds, staff the zones, rotate rest, buy agency staff, repair the CT, divert ambulances. 144 ticks, up to 50 actions per tick |
 | **Interface** | Three MCP tools on the `hospital` sidecar: `rules`, `observe`, `step(actions)`. The `ward` CLI calls the same functions |
 | **Reward** | `Score / 100` in [0, 1], computed from the hospital's event log. No LLM judge |
-| **Result** | Reference 0.990, Gemini 3.8 Flash 0.812, do-nothing 0.000 (seed 42, arrival mean 3.0). Every scripted shortcut scores 0.727 or less |
+| **Result** | At the shipped difficulty (arrival mean 4.0): reference 0.940 and do-nothing 0.000 on seed 42, reference 0.934 to 0.990 on seeds 7, 1001 and 2026, every scripted shortcut 0.544 or less. No model has been run at 4.0 yet. At arrival mean 3.0 on seed 42: reference 0.990, Gemini 3.8 Flash 0.812 |
 
 Rules: [`docs/ED_Management_Simulator_RU.md`](docs/ED_Management_Simulator_RU.md) (the rulebook, in Russian) and its English summary [`docs/SPEC.md`](docs/SPEC.md). Tool and score shapes: [`docs/CONTRACTS.md`](docs/CONTRACTS.md). Evaluation: [`docs/EVAL.md`](docs/EVAL.md). Demo script: [`docs/DEMO.md`](docs/DEMO.md).
 
@@ -20,9 +20,12 @@ You need Docker (running) and [uv](https://docs.astral.sh/uv/). Harbor 0.26.0 ru
 ```bash
 alias harbor='uvx --python 3.12 --from harbor==0.26.0 harbor'
 
-harbor run -p ed72 -a oracle          # reference policy (ed72/solution/), about 0.99
+harbor run -p ed72 -a oracle          # reference policy (ed72/solution/), 0.940 on seed 42
 harbor run -p ed72 -a nop             # do nothing, scores 0
+ED72_SEED=7 harbor run -p ed72 -a oracle   # another seed
 ```
+
+The seed defaults to 42. `ED72_SEED` on the machine running Harbor picks another one, and `make eval` passes it through as well. Only the `hospital` sidecar receives it; the agent's container never does.
 
 To run a model through OpenCode, use the command from our Gemini calibration run. OpenCode's Google provider reads the key as `GOOGLE_GENERATIVE_AI_API_KEY`, so the command maps it. Harbor fills `${...}` from your shell, so the key never appears on the command line:
 
@@ -45,7 +48,7 @@ Only Gemini has been run end to end.
 To run the whole evaluation in one command, set `ED72_MODEL` (for example `gemini/gemini-3.8-flash`) and the matching key in `.env` (copy `.env.example`). `eval/run_all.sh` picks the key and the mapping from the model prefix:
 
 ```bash
-make eval              # reference, do-nothing, then 3 OpenCode runs on $ED72_MODEL, seed 42
+make eval              # reference, do-nothing, then 3 OpenCode runs on $ED72_MODEL, seed 42 or $ED72_SEED
 make eval-baselines    # reference and do-nothing only, no API key needed
 make eval-summary      # rebuild eval/results/summary.md from the latest run
 ```
@@ -132,6 +135,16 @@ W and B are multiplied by O, so rested staff and saved money are worth nothing i
 ## Results
 
 <!-- Difficulty-dependent: the seed-42 rewards below, the Result row in the summary table at the top and the gap figures change if the SPEC §7 knobs are retuned and the runs are repeated. -->
+| Run (arrival mean 4.0, the shipped default, Harbor 0.26.0, main `83f93c9`) | Seed | Reward |
+|---|---:|---:|
+| Reference (`-a oracle`), 3 concurrent trials (`-k 3 -n 3`), all identical | 42 | 0.940221 |
+| Reference | 7 | 0.934310 |
+| Reference | 1001 | 0.945043 |
+| Reference | 2026 | 0.989635 |
+| Do-nothing (`-a nop`) | 42 and 7 | 0.000000 |
+
+Seeds 7, 1001 and 2026 ran with `ED72_SEED=<n>`. Seeds 1001 and 2026 are outside the twelve tuning seeds (42, 1–11, [`docs/TUNING.md`](docs/TUNING.md)). Every Harbor reward equals the in-process score on the same seed, and no trial raised an exception ([#110](https://github.com/xand1ex999/guinness/issues/110)). On these four seeds the best scripted shortcut, the reactive proxy, scores 54.4 or less, and divert-all 45.8 or less (the 70% diversion share with diversion loss 0.75, #108). No model has been run at 4.0 yet, so the table below, at 3.0, is still the only measured model gap.
+
 | Run (seed 42, arrival mean 3.0, Harbor 0.26.0) | Reward | Evidence |
 |---|---:|---|
 | Reference (`-a oracle`) | 0.989617 | [#17](https://github.com/xand1ex999/guinness/issues/17); the in-process score is identical |
