@@ -7,6 +7,7 @@ an `events` list whose `seq` is the list index, a JSONL log file, and the
 tests; it is not copied into the hospital image.
 """
 
+import copy
 import json
 import random
 from pathlib import Path
@@ -81,13 +82,14 @@ class MockSimulation:
         results = []
         self.last_rejected = []
         for index, action in enumerate(actions):
-            reason = self._admit(action) if action.get("type") == "admit" else "bad_action"
+            is_admit = isinstance(action, dict) and action.get("type") == "admit"
+            reason = self._admit(action) if is_admit else "bad_action"
             if reason is None:
                 results.append({"index": index, "ok": True})
             else:
                 results.append({"index": index, "ok": False, "reason": reason})
                 self.last_rejected.append({"index": index, "action": action, "reason": reason})
-        self.record_call("step", {"actions": actions}, {"results": results})
+        self.record_call("step", {"actions": copy.deepcopy(actions)}, {"results": results})
         if self.tick == TICKS - 1:
             self.finished = True
         else:

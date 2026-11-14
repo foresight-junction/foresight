@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from fastmcp import Client
+from fastmcp.client.client import CallToolResult
 from starlette.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -21,8 +22,8 @@ def read_log(host: server.ToolHost) -> list[dict]:
     return [json.loads(line) for line in host.sim.log_path.read_text().splitlines()]
 
 
-def mcp_call(host: server.ToolHost, tool: str, args: dict, raise_on_error: bool = True):
-    async def run():
+def mcp_call(host: server.ToolHost, tool: str, args: dict, raise_on_error: bool = True) -> CallToolResult:
+    async def run() -> CallToolResult:
         async with Client(server.build_server(host)) as c:
             return await c.call_tool(tool, args, raise_on_error=raise_on_error)
 
@@ -132,6 +133,15 @@ def test_sim_admitted_event_is_logged(tmp_path):
 
 def test_invalid_args_give_tool_error(tmp_path):
     assert mcp_call(make_host(tmp_path), "step", {"actions": "bad"}, raise_on_error=False).is_error
+
+
+def test_non_dict_action_is_counted_and_rejected_per_index(tmp_path):
+    host = make_host(tmp_path)
+    out = mcp_call(host, "step", {"actions": ["repair", {"type": "repair"}]}).data
+    assert [r["reason"] for r in out["results"]] == ["bad_action", "bad_action"]
+    assert host.calls == 1
+    step_line = next(line for line in read_log(host) if line.get("tool") == "step")
+    assert step_line["args"]["actions"] == ["repair", {"type": "repair"}]
 
 
 def test_same_seed_same_actions_same_log(tmp_path):

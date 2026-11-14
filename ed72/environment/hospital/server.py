@@ -80,7 +80,7 @@ def build_server(host: ToolHost) -> FastMCP:
         return host.call("observe", {})
 
     @mcp.tool
-    def step(actions: list[dict]) -> dict:
+    def step(actions: list[Any]) -> dict:
         """Apply up to 50 actions in order, then advance one tick (30 min).
 
         Actions: {"type":"admit","patient":"P042","zone":"resus|acute|fast_track"},

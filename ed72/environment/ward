@@ -40,8 +40,8 @@ def main() -> int:
 
     try:
         result = asyncio.run(call(args.url, args.command, tool_args))
-    except Exception as e:  # noqa: BLE001 - any transport failure becomes a short message
-        print(f"ward: cannot reach {args.url}: {e}", file=sys.stderr)
+    except Exception as e:  # noqa: BLE001 - the agent needs one readable line, not a traceback
+        print(f"ward: {args.command} call to {args.url} failed: {type(e).__name__}: {e}", file=sys.stderr)
         return 1
     if result.is_error:
         print(f"ward: {result.content[0].text}", file=sys.stderr)

@@ -38,6 +38,7 @@ Expose the sim to the agent per CONTRACTS v1 (on `kostiantyn/docs-rules-realign`
 - 2026-11-14: More than 50 actions: the extra ones get `bad_action`, so no new error code is needed.
 - 2026-11-14: The sim owns the event log (`seq`, file at `constants.EVENT_LOG_PATH`, `step` lines). The server only adds lines for `rules`, `observe` and refused calls via `sim.record_call`. It truncates the log at startup, because a restarted server restarts the sim at tick 0.
 - 2026-11-14: Refused `step` calls are logged with `result: {"error": ...}`; asked #11 to skip those in the replay.
+- 2026-11-14: code-review round 1. Fixed: non-dict actions reach the sim (`list[Any]`) so they are counted and logged; ward is +x in git; clearer ward failure message; mock deep-copies logged actions. Open, for the PR body: actions past 50 are missing from `last_rejected` (better as a cap inside the sim's apply_actions, offered on #4); a non-list `actions` is rejected by the MCP schema before it is counted; `mock_sim.py` isn't in the image, so USE_MOCKS=1 works locally only.
 - API gotchas: mcp 2.x client is `mcp.client.streamable_http.streamable_http_client(url)` yielding `(read, write)`; results are snake_case (`structured_content`). `@mcp.custom_route(path, methods=[...])`. FastMCP may reject non-localhost Host headers: pass `allowed_hosts` if Docker's `hospital` host is refused.
 
 ## Handoff
