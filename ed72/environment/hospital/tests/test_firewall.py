@@ -358,25 +358,37 @@ def episodes() -> list[Episode]:
     return [play(seed) for seed in SEEDS]
 
 
-def _rule(episodes: list[Episode], rule: str) -> list[tuple[int, Violation]]:
-    return [(ep.seed, v) for ep in episodes for v in firewall_violations(ep) if v.rule == rule]
+@pytest.fixture(scope="module")
+def violations(episodes: list[Episode]) -> list[tuple[int, Violation]]:
+    """Every check over every result is the slow part, so run it once and let tests (a) to (d) filter."""
+    return [(ep.seed, v) for ep in episodes for v in firewall_violations(ep)]
 
 
-def test_a_no_future_arrival_or_unannounced_event(episodes: list[Episode]) -> None:
+def _rule(violations: list[tuple[int, Violation]], rule: str) -> list[tuple[int, Violation]]:
+    return [(seed, v) for seed, v in violations if v.rule == rule]
+
+
+def test_a_no_future_arrival_or_unannounced_event(
+    episodes: list[Episode], violations: list[tuple[int, Violation]]
+) -> None:
     for ep in episodes:
         assert any(t > 0 for t in ep.truth.arrivals.values()), "nothing in the future to protect"
         assert {"staff_sickness", "ct_breakdown"} <= {e.kind for e in ep.truth.events}
         assert ep.calls[-1].as_of == 143, "the episode must reach the end so every event is covered"
-    assert _rule(episodes, "a") == []
+    assert _rule(violations, "a") == []
 
 
-def test_b_no_seed_rng_dice_log_or_score(episodes: list[Episode]) -> None:
-    assert _rule(episodes, "b") == []
+def test_b_no_seed_rng_dice_log_or_score(
+    episodes: list[Episode], violations: list[tuple[int, Violation]]
+) -> None:
+    assert _rule(violations, "b") == []
     texts = {next(c.raw for c in ep.calls if c.tool == "rules") for ep in episodes}
     assert len(texts) == 1, "the rules text differs between seeds, so it can carry per-seed data"
 
 
-def test_c_warnings_only_announced_exact_tick_and_lead_time(episodes: list[Episode]) -> None:
+def test_c_warnings_only_announced_exact_tick_and_lead_time(
+    episodes: list[Episode], violations: list[tuple[int, Violation]]
+) -> None:
     for ep in episodes:
         for e in ep.world.events:  # the generator must use the rulebook's lead times
             assert e.warning_ticks == WARNING_LEAD.get(e.kind, 0), e
@@ -391,13 +403,15 @@ def test_c_warnings_only_announced_exact_tick_and_lead_time(episodes: list[Episo
             if e.kind in WARNING_LEAD
         }
         assert first_seen == expected
-    assert _rule(episodes, "c") == []
+    assert _rule(violations, "c") == []
 
 
-def test_d_results_match_contracts_exactly(episodes: list[Episode]) -> None:
+def test_d_results_match_contracts_exactly(
+    episodes: list[Episode], violations: list[tuple[int, Violation]]
+) -> None:
     for ep in episodes:
         assert {c.tool for c in ep.calls} == set(TOOLS)
-    assert _rule(episodes, "d") == []
+    assert _rule(violations, "d") == []
 
 
 def test_e_rejections_reasons_and_episode_over(episodes: list[Episode]) -> None:

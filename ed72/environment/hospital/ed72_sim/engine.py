@@ -10,6 +10,17 @@ from ed72_sim.model import World
 from ed72_sim.observation import build_observation
 from ed72_sim.state import FAINT10, GAIN10, REST10, PatientState, State
 
+_SCALARS = (str, int, float, bool, type(None))
+
+
+def _copy_actions(actions: object) -> object:
+    """copy.deepcopy, with a fast path for the usual list of flat dicts of scalars."""
+    if type(actions) is list and all(
+        type(a) is dict and all(type(k) is str and type(v) in _SCALARS for k, v in a.items()) for a in actions
+    ):
+        return [dict(a) for a in actions]
+    return copy.deepcopy(actions)
+
 
 class Simulation:
     def __init__(self, world: World, log_path: str | Path | None = None) -> None:
@@ -19,11 +30,15 @@ class Simulation:
         self.finished = False
         self.events: list[dict] = []
         self._log_path = Path(log_path) if log_path is not None else None
+        self._pending: list[str] = []  # log lines not yet on disk; flushed before each public call returns
         self._arrivals: dict[int, list] = {}
         for spec in world.patients:
             self._arrivals.setdefault(spec.arrival_tick, []).append(spec)
-        self._emit("episode_start", budget=world.budget, hard_limit=world.hard_limit)
-        self._begin_tick()
+        try:
+            self._emit("episode_start", budget=world.budget, hard_limit=world.hard_limit)
+            self._begin_tick()
+        finally:
+            self._flush()
 
     def observe(self) -> dict:
         return build_observation(self.state, self.tick, self.finished)
@@ -31,28 +46,43 @@ class Simulation:
     def step(self, actions: list[dict]) -> dict:
         if self.finished:
             return {"error": "episode_over"}
-        results = apply_actions(self.state, self.tick, actions, self._emit)
-        self._write(
-            {
-                "src": "agent",
-                "tool": "step",
-                "args": {"actions": copy.deepcopy(actions)},
-                "result": {"results": results},
-            }
-        )
-        self._finish_tick()
+        results = self._resolve(actions, copy_actions=True)
         return {"results": results, "observation": self.observe()}
+
+    def replay_step(self, actions: list[dict]) -> None:
+        """step() for collect.py's replay: the same log lines, without the observation it never reads.
+        The actions come fresh from json.loads and nothing else holds them, so they are logged uncopied."""
+        if not self.finished:
+            self._resolve(actions, copy_actions=False)
+
+    def _resolve(self, actions: list[dict], *, copy_actions: bool) -> list[dict]:
+        try:
+            results = apply_actions(self.state, self.tick, actions, self._emit)
+            logged = _copy_actions(actions) if copy_actions else actions
+            self._write(
+                {"src": "agent", "tool": "step", "args": {"actions": logged}, "result": {"results": results}}
+            )
+            self._finish_tick()
+        finally:
+            self._flush()
+        return results
 
     def run_to_end(self) -> None:
         """Run the remaining ticks with no actions. Writes no agent lines: the agent made no calls,
         and the scorer reads `ended`, `tool_calls` and F10 from the agent lines."""
-        while not self.finished:
-            self._finish_tick()
+        try:
+            while not self.finished:
+                self._finish_tick()
+        finally:
+            self._flush()
 
     def record_call(self, tool: str, args: dict, result: dict) -> None:
         """Log a call the server answered without resolving a tick: rules, observe, or a refused call.
         A refused call carries "error" in its result; collect.py and the scorer never replay it."""
-        self._write({"src": "agent", "tool": tool, "args": args, "result": result})
+        try:
+            self._write({"src": "agent", "tool": tool, "args": args, "result": result})
+        finally:
+            self._flush()
 
     def _finish_tick(self) -> None:
         self._step6_treat()
@@ -71,8 +101,16 @@ class Simulation:
         line = {"seq": len(self.events), "t": self.tick, **fields}
         self.events.append(line)
         if self._log_path is not None:
+            # Serialised now, so a later change to a mutable field cannot alter what reaches the file.
+            self._pending.append(json.dumps(line, separators=(",", ":")) + "\n")
+
+    def _flush(self) -> None:
+        # One open per public call instead of one per line: a tick writes about 15 lines, and on
+        # some filesystems opening the file costs far more than writing to it.
+        if self._pending and self._log_path is not None:
             with self._log_path.open("a", encoding="utf-8", newline="\n") as handle:
-                handle.write(json.dumps(line, separators=(",", ":")) + "\n")
+                handle.write("".join(self._pending))
+        self._pending.clear()
 
     def _emit(self, event: str, **fields: object) -> None:
         self._write({"src": "sim", "event": event, **fields})
