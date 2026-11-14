@@ -17,7 +17,7 @@ Add D9 (#83, stop-early as a Harbor agent) to `docs/PLAN.md` and `scripts/bootst
 
 ## Contracts used or changed
 Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
+- None.
 
 ## Status
 - [x] Cherry-picked a5c98d7 (it missed #80's merge)
