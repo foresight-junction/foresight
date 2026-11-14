@@ -68,7 +68,7 @@ not an ablation.
 | no ct_repair (F4) | 87.18 | 0.903 | 0.809 | 0.861 | 1.000 | -0.64 | 73.70 | 94.95 | 87.36 | 92.70 |
 | no agency (F5) | 43.63 | 0.478 | 0.373 | 0.565 | 1.000 | -44.18 | 39.04 | 52.31 | 40.14 | 43.06 |
 | adds panic divert (F6) | 59.70 | 0.628 | 0.472 | 1.000 | 1.000 | -28.11 | 57.02 | 62.63 | 56.46 | 62.70 |
-| reference (unablated, #16) | 92.50 | 0.976 | 0.870 | 0.989 | 0.705 | +4.69 | 94.02 | 93.37 | 88.59 | 94.01 |
+| reference (unablated, #98) | 92.50 | 0.976 | 0.870 | 0.989 | 0.705 | +4.69 | 94.02 | 93.37 | 88.59 | 94.01 |
 
 Per-seed delta vs full (seed 42, 1, 2, 3), in points:
 
@@ -83,7 +83,7 @@ Per-seed delta vs full (seed 42, 1, 2, 3), in points:
 | reference (#98), for scale | +4.9 | -0.9 | +10.3 | +4.5 |
 
 **Stand-in vs reference.** The stand-in (87.8 mean) is 4.7 below the current reference (92.5): behind on
-three seeds out of four, level on seed 1, and with O 0.911 against 0.976. It is still a strong policy
+three seeds out of four, ahead by 0.9 on seed 1, and with O 0.911 against 0.976. It is still a strong policy
 (severity-first alone scores about 31 on seed 1), so ablating it says something real, but the deltas are
 those of a policy about 5 points short of the reference, not of the reference. The stand-in keeps B at
 1.000 by staying under the soft budget (spend 11.2-11.9k), while the reference overspends (15.5-15.8k,
@@ -97,7 +97,7 @@ B 0.705) and buys 4.7 points of O and T with it. It was tuned for 1.5-3.0 and no
 - **F2 rest rotation (-44.4):** W falls to 0 and 53-79 patients die; 60 faints per seed.
 - **F1 resus reservation (-39.6):** low-acuity patients take resus beds and each ties up a doctor; deaths
   42-76 per seed.
-- **F6 panic divert (-28.1):** an added habit, not a skill. 270-365 diversions per seed at loss 0.75.
+- **F6 panic divert (-28.1):** an added habit, not a skill. 269-365 diversions per seed (of 561-635 arrivals) at loss 0.75.
   It shows that diverting hurts.
 - **F3 warnings (-5.7):** small but consistent on all four seeds (-3.7 to -7.4), the first nonzero delta
   for warnings. It shows up as T and O (0.864 vs 0.911): holding acute free and ordering surge agency
