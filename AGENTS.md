@@ -1,13 +1,14 @@
 # AGENTS.md
 
-Read this whole file before doing anything. It applies to every agent (Claude Code, Codex, their subagents) and every human on the team. About 10 agents work on this repo at once from 4 laptops, so these rules exist to stop agents overwriting each other, breaking `main`, or shipping slop.
+Read this whole file before doing anything. It applies to every agent (Claude Code, Codex, Gemini CLI, their subagents) and every human on the team. About 10 agents work on this repo at once from 4 laptops, so these rules exist to stop agents overwriting each other, breaking `main`, or shipping slop.
 
 ## 1. Project
 
 - **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
-- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys, Sat 14 Nov, in Russian). It defines the department, patients, staff, hazards, events, actions, tick order, observation and score. Where `docs/SPEC.md`, `docs/CONTRACTS.md`, `docs/PLAN.md` or an issue body disagree with it, this file wins until those docs are updated to match. Rules marked **[Proposed]** are its recommended defaults; build them unless a human says otherwise.
-- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
+- **Source of truth for the game rules:** `docs/ED_Management_Simulator_RU.md` (Denys's rulebook, in Russian): department, patients, staff, hazards, events, actions, tick order, observation and score. Rules marked **[Proposed]** are its defaults. Decisions on its open items (section 14) are recorded in `docs/SPEC.md`; the rulebook itself changes only through Denys or a decision on #1.
+- **Realigned: #41 / PR #43.** `docs/SPEC.md` (English summary of the rulebook plus decisions), `docs/CONTRACTS.md` v1 (tools `rules`, `observe`, `step`; observation, actions, event log, score object), `docs/EVAL.md` and `docs/PLAN.md` match the rulebook. If anything still disagrees with it, the rulebook wins: follow it and comment on the issue. The rulebook does not cover the harness, so the Harbor packaging and isolation in SPEC section 9 and the CONTRACTS services and admin-endpoint rules apply as written.
+- **Read these before any task:** `docs/ED_Management_Simulator_RU.md` (rules), `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment; section 9 harness), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/EVAL.md` (how we are judged and measured), `docs/PLAN.md` (lanes, timeline, tasks), then issues #39 (execution order) and #41 (realignment).
 - **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
   - Reference run: `harbor run -p ed72 -a oracle`
@@ -15,7 +16,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
   - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --with pytest pytest -q` inside each Python project you changed, and `pnpm lint && pnpm build && pnpm test` in `frontend/`
-- **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
+- **Integrator:** none. Every lead agent pushes its branch and merges its own PRs into `main` (golden rule 8). Humans can still merge or revert anything.
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
 | Person | Lane | Label | Agents (ids) |
@@ -34,7 +35,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 5. **Commit small and often:** every time something works, and at least every 30 minutes. Every commit goes through the `pre-commit-gate` skill. Push after each commit.
 6. **Get into `main` early:** open a PR (the `ship-pr` skill) as soon as a slice works end to end. Aim for under 300 changed lines per PR and at least one merge every 2 hours per task.
 7. **No secrets in git.** Keys go in `.env` (gitignored). Add the variable name to `.env.example`.
-8. **Agents never merge into `main`, force-push, delete branches, or rewrite history** on shared branches. Humans merge.
+8. **Agents push and merge their own work.** Push your task branch after every commit. Merge your own PR into `main` with `gh pr merge <n> --merge` as soon as: CI is green, `cross-review` is done, the branch is rebased on current `main` with no conflicts, and any PR touching `scoring/`, patients, events or tool behaviour has the baseline table in its description. Merge another task's PR only when its owner asked for it on the issue or PR. If your merge breaks `main` (CI red, a baseline off), fix it or `git revert` it at once. Still never: force-push a shared branch (`--force-with-lease` on your own task branch after a rebase is fine), delete branches, or rewrite `main`'s history.
 9. **Demo first.** Mock or hardcode before building real infrastructure. Happy path before edge cases. Label every mock clearly (section 7).
 10. **Don't guess APIs.** Before using a library function, check that it exists in the installed version (read the package source or docs). Hallucinated APIs are the most common cause of lost time.
 
@@ -51,15 +52,16 @@ Team skills live in `.agents/skills/` (Codex reads them there; `.claude/skills` 
 | `ship-pr` | When a slice works and should go into `main` (or into your parent branch) |
 | `contract-change` | Before changing an API route, data shape, env var, or anything in `docs/CONTRACTS.md` |
 
-Tool-specific extras are in `CLAUDE.md` (Claude) and section 9 (Codex).
+Tool-specific extras are in `CLAUDE.md` (Claude), section 9 (Codex) and `GEMINI.md` (Gemini).
 
 ## 4. Task board: GitHub Issues
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`.
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`, and `wave:0` to `wave:8` (execution order, see #39).
 - **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
-- **Create the board:** `scripts/bootstrap-board.sh` (once, by a human).
+- **Create the board:** `scripts/bootstrap-board.sh` (once, by a human). Kostiantyn owns the board now: new issues get a `wave:N` label and a row in #39.
+- **Pick tasks** in the order of #39: the lowest wave with an open `todo` in your area, `p0` before `p1`, and only when the issue's dependencies are merged (or it says to stub them). #41 has landed and the issue bodies are realigned to the rulebook; if a body still disagrees with `docs/SPEC.md` or `docs/CONTRACTS.md`, follow the docs and comment on the issue.
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
@@ -113,7 +115,7 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
-- Every folder with a `pyproject.toml` is its own uv project. Today that is `backend/` (Kostiantyn's ED engine `backend/app/edsim/` and its MCP server, on `kostiantyn/env-ed-sim`). `docs/SPEC.md` section 9 plans `ed72/environment/hospital/` instead; until the team picks one, tooling supports both. `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
+- Every folder with a `pyproject.toml` is its own uv project. The board's target layout is `ed72/` (`docs/SPEC.md` section 9, built by D2 #22), with the sim, tools and scorer in `ed72/environment/hospital/`. The older engine in `backend/app/edsim/` and its `frontend/` viewer on `kostiantyn/env-ed-sim` model a different game and are not used for ED-72 (SPEC section 9). Tooling still supports both layouts: `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
 - Ruff settings for the whole repo are in `ruff.toml` (line length 110). `spikes/` and `harbor/unfindable/` are excluded as historical reference.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
@@ -130,7 +132,7 @@ Refs #<issue>
 Agent: <agent id>
 ```
 
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add assess tool`
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add step tool`
 
 ## 8. Definition of done
 
@@ -139,7 +141,7 @@ A task is done only when:
 - [ ] The demo path for this feature works by hand
 - [ ] `cross-review` is done and real issues are fixed
 - [ ] The context file's **Handoff** section is up to date
-- [ ] The PR is open with `Closes #<issue>`, and the issue is labelled `review`
+- [ ] The PR has `Closes #<issue>` and is merged into `main` by you (golden rule 8), and `main`'s CI is still green
 
 ## 9. If you are Codex
 
@@ -156,7 +158,7 @@ Judges rerun our code and spend 15 minutes trying to cheat the reward. These rul
 2. **The reward is computed from the hospital's event log only.** Never from files the agent can write. No LLM judge anywhere in the reward.
 3. **No hidden rules.** A rule the scorer applies, and every sim rate table, must be written in `HANDBOOK.md` in the same PR. If the agent cannot find out, it is unfair, and unfair difficulty scores zero on 30 points.
 4. **The reference policy uses only the public tools.** It never reads the seed or ground truth. If it cannot decide what to do for a patient, fix the environment.
-5. **These must hold after every merge:** reference >= 0.9, do-nothing = 0, FCFS-by-label / discharge-all / transfer-all / divert-all / call-in-everyone / random <= 0.05, same seed and actions give the same score. Any PR touching `scoring/`, patients, events or tool behaviour pastes the baseline table in its description.
+5. **These must hold after every merge** (`docs/EVAL.md` section 5): do-nothing = 0; stop-early < reactive proxy < reference on every shipped seed; divert-all < reference and about 47 points or less; every exploit baseline (rest-everyone, admit-light-only, admit-without-coverage, fill-beds-at-the-last-tick, spend-to-the-limit) < reference; same seed and actions give the same score. Any PR touching `scoring/`, patients, events or tool behaviour pastes the baseline table in its description.
 6. **`tests/test.sh` always writes a number** to `/logs/verifier/reward.txt`, 0 on any error.
 7. **Synthetic data only.** Invented patients, staff and records. Never copy real personal data into the repo, a prompt or a test.
 8. **Rules freeze Sat 22:00.** After that: bug fixes and knob tuning only. No code changes after Sun 09:00.
