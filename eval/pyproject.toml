@@ -1,0 +1,10 @@
+[project]
+name = "ed72-eval"
+version = "0.1.0"
+description = "ED-72 one-command eval: run_all.sh and summarise.py (stdlib only)"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+# eval/baselines/ is its own uv project with its own tests; collect only eval/tests here.
+testpaths = ["tests"]
