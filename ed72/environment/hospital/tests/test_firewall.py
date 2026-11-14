@@ -543,6 +543,7 @@ def test_episode_mutation_makes_the_suite_fail(
 # --- (f) the agent image holds no sim code, seed, config or scorer (skip until #58) --------------
 
 MAIN_COPY_ALLOWED = re.compile(r"(workspace/[\w./-]+|ward)")
+MAIN_NODE_COPY_ALLOWED = frozenset({"/usr/local/bin/node", "/usr/local/lib/node_modules"})
 HIDDEN_MARKERS = (
     "ED72_SEED",
     "ED72_CONFIG",
@@ -585,9 +586,21 @@ def test_f_main_image_has_no_sim_seed_config_or_scorer() -> None:
     compose = ENVIRONMENT / "docker-compose.yaml"
     if not dockerfile.exists() or not compose.exists():
         pytest.skip("needs the Harbor layout ed72/environment/Dockerfile and docker-compose.yaml (#58)")
+    stages: dict[str, str] = {}
     for op, args in _instructions(dockerfile.read_text(encoding="utf-8")):
+        if op == "FROM" and len(args) == 3 and args[1].upper() == "AS":
+            stages[args[2]] = args[0]
         if op in ("COPY", "ADD"):
             sources = [a for a in args if not a.startswith("--")][:-1]
+            stage = next((a.split("=", 1)[1] for a in args if a.startswith("--from=")), None)
+            if stage is not None:
+                # The OpenCode preinstall (#89) may take only the Node runtime from an official node image.
+                assert stages.get(stage, "").startswith("node:"), (
+                    f"main image copies from a non-node stage: {args}"
+                )
+                for src in sources:
+                    assert src in MAIN_NODE_COPY_ALLOWED, f"main image copies {src!r} from the node stage"
+                continue
             assert not any(a.startswith("--from") for a in args), (
                 f"main image copies from another stage: {args}"
             )
