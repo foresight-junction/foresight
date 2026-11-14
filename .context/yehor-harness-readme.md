@@ -35,6 +35,6 @@ A factual README skeleton ordered for a judge, and a 10-minute demo script with 
 - Sat: docs/CHALLENGE.md "Starting points" still describes the old game (15 beds, `assess`, 8+13 tools, M1-M4 harm). README follows SPEC and the rulebook.
 
 ## Handoff
-- Done: README.md skeleton and docs/DEMO.md, every number taken from SPEC/CONTRACTS/EVAL, no results numbers.
+- Done: README.md skeleton and docs/DEMO.md, every number taken from SPEC/CONTRACTS/EVAL, no results numbers. Draft PR #70 (Refs #25); Kostiantyn merges once the HUMAN slots are written.
 - Next: human writes the `<!-- HUMAN: ... -->` slots; replace every `TODO(` once #18/#19/#14 land; drop "(lands with #N)" as PRs merge.
 - Test: `grep -n -e 'HUMAN:' -e 'TODO(' README.md docs/DEMO.md` lists what is left. The DEMO segment 2 command runs on main: `cd ed72/environment/hospital && uv run python -c "..."`.
