@@ -30,7 +30,7 @@ Reproduce (the simulator needs Python 3.12): `uv run --python 3.12 python analys
 
 Shipped seeds 42, 1-5 range 88.6-94.1, mean 92.79: this matches #103 (mean about 92.8, seed 2 = 88.6).
 Held-out 11-20 minimum is 84.42 (seed 11): confirmed. Weakest after it: seeds 2 (88.6), 19 (89.0), 20 (89.9).
-All weak seeds score high on W/B and lose elsewhere; B is about 0.68-0.71 on every seed (spend about 15.8k against the 12k budget, about 3 points, a constant).
+All weak seeds score high on W/B and lose elsewhere; B is 0.671-0.771 across these seeds (0.67-0.71 on all but seeds 17 and 18; spend 14.75k-15.95k against the 12k budget, about 2.3-3.3 points).
 
 ## 2. Where the weak seeds lose points
 
