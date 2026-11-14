@@ -129,6 +129,65 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(policy.actions(obs), [{"type": "agency", "role": "doctor"}])
         self.assertEqual(policy.actions(obs), [])
 
+    def test_staff_at_the_fresh_cap_rest_for_patients_who_can_wait(self) -> None:
+        obs = observation()
+        for member in obs["staff"]:
+            member["fatigue"] = 55
+        obs["waiting"] = [patient("P001", 4)]
+        self.assertEqual(ReferencePolicy().actions(obs), [])
+
+    def test_tired_staff_still_cover_an_urgent_patient(self) -> None:
+        obs = observation()
+        for member in obs["staff"]:
+            member["fatigue"] = 55
+        obs["waiting"] = [patient("P001", 1)]
+        actions = ReferencePolicy().actions(obs)
+        self.assertIn({"type": "admit", "patient": "P001", "zone": "resus"}, actions)
+
+    def test_backlog_orders_the_role_with_no_fresh_person_left(self) -> None:
+        obs = observation()
+        obs["staff"] = [s for s in obs["staff"] if s["id"] in ("D1", "N1", "N2", "N3", "N4", "N5")]
+        obs["waiting"] = [patient(f"P{i:03}", 4) for i in range(10)]
+        hires = [a for a in ReferencePolicy().actions(obs) if a["type"] == "agency"]
+        self.assertEqual(hires, [{"type": "agency", "role": "doctor"}])
+
+    def test_no_backlog_order_while_one_is_affordable_only_past_the_budget(self) -> None:
+        obs = observation()
+        obs["staff"] = [obs["staff"][0], obs["staff"][6]]
+        obs["budget"]["spent"] = 11800
+        obs["waiting"] = [patient(f"P{i:03}", 4) for i in range(9)]
+        # One doctor and one nurse cover two fast-track beds, so seven wait: under the overspend line.
+        self.assertFalse([a for a in ReferencePolicy().actions(obs) if a["type"] == "agency"])
+
+    def test_large_backlog_spends_past_the_budget_up_to_the_cap(self) -> None:
+        obs = observation()
+        obs["staff"] = [obs["staff"][0], obs["staff"][6]]
+        obs["waiting"] = [patient(f"P{i:03}", 4) for i in range(12)]
+        obs["budget"]["spent"] = 11800
+        hires = [a for a in ReferencePolicy().actions(obs) if a["type"] == "agency"]
+        self.assertEqual(hires, [{"type": "agency", "role": "doctor"}, {"type": "agency", "role": "nurse"}])
+        obs["budget"]["spent"] = 15500
+        obs["tick"] = 80  # the CT breakdown window has passed, so no repair reserve is held back
+        hires = [a for a in ReferencePolicy().actions(obs) if a["type"] == "agency"]
+        self.assertEqual(hires, [{"type": "agency", "role": "nurse"}])
+
+    def test_backlog_orders_wait_for_those_in_transit(self) -> None:
+        obs = observation()
+        obs["staff"] = [obs["staff"][0], obs["staff"][6]]
+        obs["staff"] += [
+            {
+                "id": f"AD{i}",
+                "role": "doctor",
+                "location": "rest",
+                "fatigue": 0,
+                "counts_as": 1,
+                "status": "agency_ordered",
+            }
+            for i in (1, 2)
+        ]
+        obs["waiting"] = [patient(f"P{i:03}", 4) for i in range(12)]
+        self.assertFalse([a for a in ReferencePolicy().actions(obs) if a["type"] == "agency"])
+
     def test_repair_order_once_and_again_for_new_breakdown(self) -> None:
         obs = observation()
         obs["ct"]["working"] = False

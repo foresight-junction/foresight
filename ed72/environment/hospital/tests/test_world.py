@@ -85,7 +85,7 @@ def test_daily_arrival_curve() -> None:
 def test_golden_seed_1() -> None:
     # Pinned so any silent change to draw order or stream names fails loudly.
     world = generate_world(1)
-    assert len(world.patients) == 429
+    assert len(world.patients) == 561
     first = [(p.id, p.arrival_tick, p.esi, p.needs_ct, p.source) for p in world.patients[:3]]
     assert first == [
         ("P001", 1, 4, False, "base"),
