@@ -1,4 +1,5 @@
 import hashlib
+import math
 import random
 
 import pytest
@@ -80,3 +81,15 @@ def test_invalid_inputs_raise() -> None:
         weighted_choice(rng, {"a": 0.0})
     with pytest.raises(ValueError):
         weighted_choice(rng, {"a": 2.0, "b": -1.0})
+
+
+@pytest.mark.parametrize("mean", [math.inf, math.nan])
+def test_poisson_rejects_non_finite_mean(mean: float) -> None:
+    with pytest.raises(ValueError):
+        poisson(stream(1, "x"), mean)
+
+
+@pytest.mark.parametrize("bad", [math.inf, math.nan])
+def test_weighted_choice_rejects_non_finite_weights(bad: float) -> None:
+    with pytest.raises(ValueError):
+        weighted_choice(stream(1, "x"), {"a": 1.0, "b": bad})
