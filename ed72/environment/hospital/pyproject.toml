@@ -1,0 +1,10 @@
+[project]
+name = "ed72-hospital"
+version = "0.1.0"
+description = "ED-72 hospital sidecar: simulator, scorer and tool server"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
