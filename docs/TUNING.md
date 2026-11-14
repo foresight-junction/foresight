@@ -162,3 +162,22 @@ The Gemini proxy is the Python controller Gemini 3.8 Flash wrote in its seed-42 
 All of AGENTS 10.5 holds on these seeds: do-nothing is 0; stop-early < reactive proxy < reference; divert-all is at most 45.2; every exploit is below the reference. On seed 42 the reference beats the Gemini proxy by 35.1 points, up from 17.8 at 3.0. On seeds 6–10 and the held-out seeds 11–20, divert-all is at most 45.0, and the reference (mean 92.7 over 1–10 and 42; mean 92.0 and minimum 84.4 over 11–20) beats every baseline on every seed. The Gemini proxy averages 52.5 over 1–10 and 42 and 52.8 over 11–20.
 
 Tests moved with the value: the diversion boundary test in `tests/test_rules_actions.py` now checks 0.74 against 0.75.
+
+## Revised, Sat 14 Nov: 70% diversion share, diversion loss 0.75
+
+The 75% share contradicted rulebook §8 (70%). Rulebook §13 names two fixes for a divert-all that scores too high: a cooldown, or a higher diversion loss. Kostiantyn chose the loss: `DIVERT_SHARE` goes back to 0.70 and `LOSS_DIVERTED` rises from 0.7 to 0.75 (scorer value, HANDBOOK §8). Only divert-all diverts, so the reference, the Gemini proxy and every other baseline are unchanged. Divert-all max is about 46.5 on seeds 1-10 and 42. Table below from `eval/baselines` on this commit.
+
+| Policy | seed 1 | seed 2 | seed 3 | seed 4 | seed 5 | seed 42 | mean | deaths (mean) | faints (mean) |
+|---|---|---|---|---|---|---|---|---|---|
+| reactive_proxy | 47.3 | 44.7 | 50.1 | 49.7 | 47.4 | 48.1 | 47.9 | 66.2 | 0.0 |
+| stop_early | 4.2 | 5.4 | 5.0 | 4.7 | 5.1 | 5.8 | 5.0 | 216.2 | 13.0 |
+| do_nothing | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 241.0 | 0.0 |
+| divert_all | 46.1 | 46.3 | 41.4 | 43.2 | 40.2 | 41.8 | 43.2 | 0.0 | 0.0 |
+| rest_in_quiet_periods | 29.8 | 26.1 | 40.2 | 34.6 | 33.7 | 29.3 | 32.3 | 115.0 | 0.0 |
+| admit_light_only | 11.8 | 11.7 | 11.1 | 12.9 | 12.1 | 14.7 | 12.4 | 241.0 | 0.0 |
+| admit_without_coverage | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 235.2 | 0.0 |
+| fill_beds_at_last_tick | 1.8 | 1.7 | 1.7 | 1.7 | 1.7 | 2.0 | 1.8 | 240.3 | 0.0 |
+| spend_to_limit | 46.8 | 34.3 | 43.1 | 46.1 | 35.6 | 39.6 | 40.9 | 76.0 | 0.0 |
+| random | 4.5 | 4.6 | 6.2 | 5.1 | 4.5 | 5.0 | 5.0 | 206.3 | 16.2 |
+| severity_base | 30.6 | 26.1 | 29.8 | 37.4 | 32.4 | 29.3 | 30.9 | 120.3 | 0.0 |
+Reference is unchanged by this change (it never diverts): 92.8 mean, 94.0 on seed 42 (see the table above).
