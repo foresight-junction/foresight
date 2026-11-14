@@ -59,10 +59,19 @@ alias harbor='uvx --python 3.12 --from harbor==0.26.0 harbor'
 
 harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/)
 harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
-# For Gemini, export GEMINI_API_KEY and set ED72_MODEL to the Gemini model ID.
-harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
-  --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' --ak version=1.19.5
+harbor run -p ed72 -a opencode -m "$ED72_MODEL" --api-key-name "$KEY" \
+  --ae "$OPENCODE_KEY=\${$KEY}" --ak version=1.19.5     # model run, see the table below
 ```
+
+For a model run, export your provider's key, set `ED72_MODEL`, and set `KEY` and `OPENCODE_KEY` from this table. Harbor fills `${...}` from your shell, so the key itself never goes on the command line. Gemini is the provider we have run end to end; it needs the mapping because OpenCode's Google provider reads a different variable name.
+
+| `ED72_MODEL` starts with | Key you export (`KEY`) | Variable OpenCode reads (`OPENCODE_KEY`) |
+|---|---|---|
+| `gemini/` or `google/` | `GEMINI_API_KEY` | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| `anthropic/` | `ANTHROPIC_API_KEY` | `ANTHROPIC_API_KEY` |
+| `openai/` | `OPENAI_API_KEY` | `OPENAI_API_KEY` |
+
+For example, for Gemini: `export KEY=GEMINI_API_KEY OPENCODE_KEY=GOOGLE_GENERATIVE_AI_API_KEY`. `make eval` does this mapping itself from `ED72_MODEL`.
 
 Run the evaluation from the repository root:
 
