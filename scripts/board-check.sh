@@ -35,8 +35,9 @@ import json, os, re, sys
 T = sys.argv[1]
 rd = lambda f: open(os.path.join(T, f), encoding="utf-8").read()
 issues = {i["number"]: i for i in json.load(open(os.path.join(T, "open.json"), encoding="utf-8"))}
-META = {1, 39}  # pinned Contracts issue and the execution-order issue are not tasks
-tasks = {n: i for n, i in issues.items() if n not in META}
+# Tasks carry a code in the title ("[env] A1: ..."); #1 Contracts, #39 and legacy issues like #2 do not.
+tasks = {n: i for n, i in issues.items() if re.match(r"\[[a-z]+\] [A-DW]\d+:", i["title"])}
+others = sorted(n for n in issues if n not in tasks)
 labels = {n: [l["name"] for l in i["labels"]] for n, i in tasks.items()}
 branches = set(rd("branches").split())
 fails = 0
@@ -54,7 +55,7 @@ def wave_of(n: int) -> int | None:
     w = [l for l in labels.get(n, []) if l.startswith("wave:")]
     return int(w[0][5:]) if len(w) == 1 else None
 
-print("1. Labels and claims")
+print(f"1. Labels and claims (not tasks, skipped: {['#%d' % n for n in others]})")
 for n in sorted(tasks):
     L = labels[n]
     counts = {
@@ -80,7 +81,9 @@ task_codes = {c for c in title_codes if not c.startswith("W")}
 sources = {
     "PLAN.md (" + os.environ["PLAN_REF"] + ")": set(re.findall(r"\b([A-D]\d+)\b", rd("plan.md"))),
     "bootstrap-board.sh": set(re.findall(r"^mk ([A-D]\d+) ", rd("bootstrap.sh"), re.M)),
-    "#39 table": set(re.findall(r"^\|[^|]*\|\s*#\d+ ([A-DW]\d+)\b", rd("order.md"), re.M)),
+    "#39 table": {
+        c for n, c in re.findall(r"^\|[^|]*\|\s*#(\d+) ([A-DW]\d+)\b", rd("order.md"), re.M) if int(n) in tasks
+    },
 }
 for name, codes in sources.items():
     ref = title_codes if name == "#39 table" else task_codes
@@ -92,11 +95,13 @@ table_wave: dict[int, int] = {}
 for w, n, dep in re.findall(r"^\|\s*(\d+)\s*\|\s*#(\d+)[^|]*\|[^|]*\|([^|]*)\|", rd("order.md"), re.M):
     w, n = int(w), int(n)
     table_wave[n] = w
-    deps[n] = [] if "agree with" in dep else [
-        int(d) for d, tail in re.findall(r"#(\d+)(\s*\((?:stub|agree)[^)]*\))?", dep) if not tail
-    ]
+    # "#4 (stub)" is soft; other parentheticals such as "(start on #17)" are notes, not dependencies.
+    hard = [d for d, tail in re.findall(r"#(\d+)(\s*\((?:stub|agree)[^)]*\))?", dep) if not tail]
+    notes = set(re.findall(r"#(\d+)", " ".join(re.findall(r"\([^)]*\)", dep))))
+    deps[n] = [] if "agree with" in dep else [int(d) for d in hard if d not in notes]
 for n, w in sorted(table_wave.items()):
-    report(wave_of(n) == w, f"#{n} table wave {w} = label wave {wave_of(n)}")
+    if n in tasks:  # closed issues may stay in the table as history
+        report(wave_of(n) == w, f"#{n} table wave {w} = label wave {wave_of(n)}")
 for n, ds in sorted(deps.items()):
     for d in ds:
         if d in table_wave:
@@ -126,7 +131,10 @@ owns: dict[int, list[str]] = {}
 for n, i in tasks.items():
     m = re.search(r"\*\*Files you own:\*\*(.*?)(?:\n\*\*|\n\n|$)", i["body"] or "", re.S)
     if m:
-        owns[n] = [p.rstrip("/") for p in re.findall(r"`([^`\s]+)`", m.group(1)) if "/" in p or "." in p]
+        claimed = re.split(r"\bexcept\b", m.group(1))[0]  # "ed72_sim/ except world.py" carves files out
+        owns[n] = [p.rstrip("/") for p in re.findall(r"`([^`\s]+)`", claimed) if "/" in p or "." in p]
+        if claimed != m.group(1):
+            owns[n] = [p for p in owns[n] if not p.endswith("ed72_sim")] + [f"{p}/*" for p in owns[n] if p.endswith("ed72_sim")]
 overlaps = 0
 for a in sorted(owns):
     for b in sorted(owns):

@@ -27,7 +27,8 @@ Make the board, #39 and `scripts/bootstrap-board.sh` tell the same story as the 
 - [x] Waves re-derived: 7 unclaimed relabelled, 3 claimed proposed (#22, #11, #16), #39 table edited
 - [x] `scripts/board-check.sh` written and run
 - [x] `scripts/bootstrap-board.sh` regenerated from the live board (31 codes, wave labels); `bash -n` and a stubbed parse pass; never run
-- [ ] AGENTS.md §10 rule 5 + realignment line: separate PR after #43, after asking on #40
+- [x] Review fixes in board-check.sh (Sonnet reviewer): "except" carve-outs, closed issues in #39, non-task issues, "(start on #N)" notes
+- AGENTS.md §10 rule 5 + realignment line: handed to kostiantyn-claude-1 (Sat 15:10), who opens that PR
 
 ## Decisions and notes
 - Sat 14:55: wave = 1 + highest hard dependency wave; "(stub)" and "agree with" deps are soft. Max wave is now 8.
