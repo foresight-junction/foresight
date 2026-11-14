@@ -3,7 +3,12 @@ name = "ed72-hospital"
 version = "0.1.0"
 description = "ED-72 hospital sidecar: simulator, scorer and tool server"
 requires-python = ">=3.12"
-dependencies = []
+# fastmcp: the tool server (server.py); pinned to the hospital Dockerfile's version.
+dependencies = ["fastmcp==4.2.0"]
+
+[dependency-groups]
+# mcp: the ward CLI client, only for tests/test_ward.py; the hospital image never needs it.
+dev = ["mcp==2.3.0"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
