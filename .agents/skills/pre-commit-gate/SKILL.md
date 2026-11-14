@@ -41,7 +41,7 @@ Re-stage after formatting: `git add -A`.
 ## 6. Contracts
 If you changed a tool name or its args/result shape, the score object, an event-log line, an env var or a port: `docs/CONTRACTS.md` must be updated **in this same commit**, and you must have followed the `contract-change` skill. If not, stop and do that first.
 
-If you changed a rule the scorer applies or a sim rate, the agent-visible rules (`HANDBOOK.md` or the rules tool) and `docs/ED_Management_Simulator_RU.md` must be updated in the same PR (AGENTS.md rule 10.3).
+If you changed a rule the scorer applies or a sim rate, the agent-visible rules (`HANDBOOK.md` or the rules tool) and `docs/SPEC.md` must be updated in the same PR (AGENTS.md rule 10.3).
 
 ## 7. Context file
 Update `.context/<branch-slug>.md` (Status, and any new decisions) and stage it.
