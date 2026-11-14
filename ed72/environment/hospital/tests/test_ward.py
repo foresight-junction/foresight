@@ -89,3 +89,10 @@ def test_step_accepts_the_tool_args_object(url):
     r = ward(url, "step", "--json", '{"actions": []}')
     assert r.returncode == 0
     assert json.loads(r.stdout)["observation"]["tick"] == tick + 1
+
+
+def test_rules_json_prints_the_tool_result(url):
+    for args in (["--json"], ["--json", "{}"]):
+        r = ward(url, "rules", *args)
+        assert r.returncode == 0
+        assert json.loads(r.stdout) == {"text": "HANDBOOK TEXT"}

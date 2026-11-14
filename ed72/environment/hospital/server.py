@@ -51,6 +51,9 @@ class ToolHost:
                 result = self._step(args["actions"])
                 if "error" not in result:
                     return result
+            if tool == "step":
+                # A refused step must not bypass the 50-action cap and bloat the log (red team E1, #14).
+                args = {"actions": args["actions"][:MAX_ACTIONS]}
             # The observation follows from the log, so only errors are worth storing.
             self.sim.record_call(tool, args, result if "error" in result else {"ok": True})
             return result
@@ -110,11 +113,14 @@ def _make_sim(seed: int) -> Sim:
         from mock_sim import EVENT_LOG_PATH, MockSimulation  # MOCK: until #46/#48 land on main
 
         return MockSimulation(seed, _fresh_log(EVENT_LOG_PATH))
+    from ed72_sim.config import load_config
     from ed72_sim.constants import EVENT_LOG_PATH
     from ed72_sim.engine import Simulation
     from ed72_sim.world import generate_world
 
-    return Simulation(generate_world(seed), _fresh_log(EVENT_LOG_PATH))
+    # Same config as collect.py, so the live episode and its replay build the same world.
+    config = load_config(os.environ.get("ED72_CONFIG"))
+    return Simulation(generate_world(seed, config), _fresh_log(EVENT_LOG_PATH))
 
 
 def main() -> None:
