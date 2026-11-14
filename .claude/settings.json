@@ -27,7 +27,34 @@
       "Bash(git push * +*)",
       "Bash(gh pr merge * --delete-branch*)",
       "Bash(gh pr merge * -d*)",
-      "Bash(gh pr merge * --admin*)"
+      "Bash(gh pr merge * --admin*)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push * *:main)",
+      "Bash(git push * *:main *)",
+      "Bash(git push * *:refs/heads/main)",
+      "Bash(git push * *:refs/heads/main *)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git push --all*)",
+      "Bash(git push * --all*)",
+      "Bash(git push --prune*)",
+      "Bash(git push * --prune*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-push-from-main.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
