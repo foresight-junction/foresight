@@ -1,5 +1,5 @@
 {
-  "arrival_mean": 1.5,
+  "arrival_mean": 3.0,
   "arrival_amplitude": 0.5,
   "arrival_peak_hour": 15.0,
   "flu_mix": {"3": 0.40, "4": 0.35, "5": 0.25},

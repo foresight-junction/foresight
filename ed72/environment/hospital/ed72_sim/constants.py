@@ -37,7 +37,7 @@ CT_ESI: Final = (1, 2)
 CT_SHARE: Final = 0.5
 
 # Arrivals (§4, SPEC §12): Poisson per tick, mean ARRIVAL_MEAN * (1 + AMPLITUDE * cos(2*pi*(h - PEAK)/24)).
-ARRIVAL_MEAN: Final = 1.5  # TUNE
+ARRIVAL_MEAN: Final = 3.0  # TUNE
 ARRIVAL_AMPLITUDE: Final = 0.5  # TUNE
 ARRIVAL_PEAK_HOUR: Final = 15.0  # TUNE
 

@@ -10,12 +10,14 @@ from pathlib import Path
 
 import pytest
 from ed72_sim import constants as c
+from ed72_sim.config import Config
 from ed72_sim.engine import Simulation
 from ed72_sim.scoring.score import score
 from ed72_sim.world import generate_world
 from sim_fixtures import admit, advance, crew, lines, make_world, patient
 
 SEEDS = (1, 2, 3)
+ROUND_ONE_CONFIG = Config(arrival_mean=1.5)
 HOSPITAL_DIR = Path(__file__).resolve().parents[1]
 TESTS_DIR = HOSPITAL_DIR.parents[1] / "tests"
 
@@ -77,7 +79,8 @@ def greedy_actions(
 
 
 def play(seed: int, stop_at: int | None = None, **options: bool) -> tuple[Simulation, dict]:
-    sim = Simulation(generate_world(seed))
+    # Preserve the documented round-one greedy comparison at its original load.
+    sim = Simulation(generate_world(seed, ROUND_ONE_CONFIG))
     while not sim.finished and (stop_at is None or sim.tick < stop_at):
         sim.step(greedy_actions(sim.observe(), **options))
     sim.run_to_end()
