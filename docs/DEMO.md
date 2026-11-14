@@ -58,13 +58,13 @@ Point at `waiting`, `beds` (each bed's `patient` field is `null`), `staff` (ever
 
 ## 3. A `harbor run` (1:50, 1:10)
 
-For a fresh live run, set `ED72_MODEL` and `ED72_KEY_NAME` and export the provider key as shown in the README. To reproduce the saved trial exactly, use its recorded Harbor version and arguments. See the Gemini key setup if using that provider. [Calibration notes (#17)](https://github.com/xand1ex999/guinness/issues/17).
+For a fresh live run, set `ED72_MODEL` and `ED72_KEY_NAME` and export the provider key. To reproduce the saved trial exactly, use its recorded Harbor version and arguments.
 
-Start the live run with the README defaults:
+Start the live run with Harbor 0.26.0 so it can use the preinstalled OpenCode. For Gemini, use the command with `--ae` in the README. [Provider commands](../README.md#how-to-run-it).
 
 ```bash
-uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
-  --api-key-name "$ED72_KEY_NAME" --ak version=1.19.5 --agent-setup-timeout-multiplier 4
+uvx --python 3.12 --from harbor==0.26.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+  --api-key-name "$ED72_KEY_NAME" --ak version=1.19.5
 ```
 
 The agent's container has the handbook, the `ward` CLI and the OpenCode runtime. The simulator, seed and scorer are in the `hospital` sidecar. Leave the live run going and switch to the saved trial. Quote that trial's measured runtime.
