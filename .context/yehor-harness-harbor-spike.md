@@ -1,31 +1,26 @@
 # Branch: yehor/harness-harbor-spike
 
 - **Issue:** #21
-- **Owner:** yehor
-- **Agent:** lead
+- **Agent:** yehor-codex-1
 - **Parent branch:** main
-- **Created:** Sat 16:11
 
 ## Goal
-One or two lines: what this branch delivers and how we'll know it works.
+
+Run OpenCode against a stub hospital MCP server in Harbor and record the transport, reward, and log locations for #22, #5, and #11.
 
 ## Files and folders I own
-- 
+
+- `docs/HARBOR-NOTES.md`
+- `.context/yehor-harness-harbor-spike.md`
 
 ## Don't touch
-- 
+
+- ED-72 task packaging (#22), tool server and CLI (#5), and verifier implementation (#11).
 
 ## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
 
-## Status
-- [ ] 
-
-## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 
+- Testing the existing streamable HTTP endpoint and separate-verifier artifact contract with temporary fixtures.
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- 
+
+Docker Desktop is running. The temporary fixture defines one MCP ping tool with a sidecar-owned count. The verifier checks the collected report for exactly one ping. Oracle scored 1 and nop scored 0 using Harbor 0.25.0 in separate mode. See `docs/HARBOR-NOTES.md`. Run one Gemini-backed OpenCode trial once `GEMINI_API_KEY` is available in the ignored worktree `.env`.
