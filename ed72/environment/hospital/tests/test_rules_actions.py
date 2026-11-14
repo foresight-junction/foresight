@@ -121,4 +121,7 @@ def test_waiting_for_ct_flag_and_stall_while_the_scanner_is_down() -> None:
     assert bed(sim, "R1")["treated_ticks"] == 3
     sim.step([REPAIR])
     advance(sim, 3)
-    assert bed(sim, "R1")["patient"] is None or bed(sim, "R1")["treated_ticks"] > 3
+    assert sim.observe()["ct"]["working"] is True
+    assert bed(sim, "R1")["treated_ticks"] == 4
+    advance(sim, 2)
+    assert bed(sim, "R1")["patient"] is None
