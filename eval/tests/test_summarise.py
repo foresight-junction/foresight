@@ -201,7 +201,11 @@ def _write_task(root: Path, name: str, seed: int, instruction: str, config: str)
     task = root / name
     (task / "environment" / "hospital" / "config").mkdir(parents=True)
     (task / "environment" / "docker-compose.yaml").write_text(
-        'services:\n  hospital:\n    environment:\n      ED72_SEED: "%d"\n' % seed
+        'services:
+  hospital:
+    environment:
+      ED72_SEED: "' + str(seed) + '"
+'
     )
     (task / "environment" / "hospital" / "config" / "default.json").write_text(config)
     (task / "instruction.md").write_text(instruction)
