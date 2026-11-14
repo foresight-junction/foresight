@@ -18,9 +18,9 @@ def _warnings_by_tick(sim: Simulation, until: int) -> dict[int, list[dict]]:
 def test_event_table_matches_the_rulebook() -> None:
     assert {k: (v["window"], v["duration"], v["warning"]) for k, v in c.EVENTS.items()} == {
         "staff_sickness": ((28, 35), 20, 0),
-        "flu_wave": ((50, 61), 6, 10),
+        "flu_wave": ((50, 61), 10, 10),
         "ct_breakdown": ((66, 75), 16, 0),
-        "bus_crash": ((96, 109), 2, 8),
+        "bus_crash": ((96, 109), 3, 8),
     }
 
 

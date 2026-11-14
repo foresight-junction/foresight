@@ -38,7 +38,7 @@ CT_SHARE: Final = 0.5
 
 # Arrivals (§4, SPEC §12): Poisson per tick, mean ARRIVAL_MEAN * (1 + AMPLITUDE * cos(2*pi*(h - PEAK)/24)).
 ARRIVAL_MEAN: Final = 3.0  # TUNE
-ARRIVAL_AMPLITUDE: Final = 0.5  # TUNE
+ARRIVAL_AMPLITUDE: Final = 0.9  # TUNE
 ARRIVAL_PEAK_HOUR: Final = 15.0  # TUNE
 
 # Staff (§5)
@@ -68,14 +68,14 @@ P_DEATH_FATIGUE: Final = 0.015  # ESI 1-2 on a covered bed in a zone with mean o
 # Events (§7). warning = ticks of notice before start (0 = unannounced).
 EVENTS: Final = {
     "staff_sickness": {"window": (28, 35), "duration": 20, "warning": 0},
-    "flu_wave": {"window": (50, 61), "duration": 6, "warning": 10},
+    "flu_wave": {"window": (50, 61), "duration": 10, "warning": 10},
     "ct_breakdown": {"window": (66, 75), "duration": 16, "warning": 0},
-    "bus_crash": {"window": (96, 109), "duration": 2, "warning": 8},
+    "bus_crash": {"window": (96, 109), "duration": 3, "warning": 8},
 }
-SICK_NURSES: Final = 2
+SICK_NURSES: Final = 3  # TUNE
 FLU_EXTRA_PER_TICK: Final = 2
 FLU_MIX: Final = {3: 0.40, 4: 0.35, 5: 0.25}  # TUNE
-BUS_EXTRA_PER_TICK: Final = 5
+BUS_EXTRA_PER_TICK: Final = 6  # TUNE
 BUS_MIX: Final = {1: 0.20, 2: 0.30, 3: 0.50}
 
 # Actions and budget (§8)

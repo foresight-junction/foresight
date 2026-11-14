@@ -85,7 +85,7 @@ def test_daily_arrival_curve() -> None:
 def test_golden_seed_1() -> None:
     # Pinned so any silent change to draw order or stream names fails loudly.
     world = generate_world(1)
-    assert len(world.patients) == 429
+    assert len(world.patients) == 444
     first = [(p.id, p.arrival_tick, p.esi, p.needs_ct, p.source) for p in world.patients[:3]]
     assert first == [
         ("P001", 1, 4, False, "base"),
@@ -94,8 +94,8 @@ def test_golden_seed_1() -> None:
     ]
     assert {e.kind: e.start_tick for e in world.events} == {
         "staff_sickness": 32,
-        "flu_wave": 60,
-        "ct_breakdown": 72,
-        "bus_crash": 104,
+        "flu_wave": 57,
+        "ct_breakdown": 71,
+        "bus_crash": 105,
     }
-    assert world.events[0].staff == ("N4", "N9")
+    assert world.events[0].staff == ("N2", "N4", "N9")

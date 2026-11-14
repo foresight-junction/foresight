@@ -84,16 +84,16 @@ A patient admitted in the current tick does not face its waiting hazard that tic
 
 ## 5. Arrivals, events, and warnings
 
-Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 3.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `3.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
+Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 3.0 arrivals per tick, varying by ±90%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `3.0 * (1 + 0.9 * cos(2*pi*(h - 15)/24))`: about 5.7 per tick at 15:00 and 0.3 at 03:00. The ordinary severity mix is in section 2.
 
 Each episode contains all four events below. Their exact start ticks are selected within the stated windows. Public windows and distributions describe possibilities, not a forecast of the current episode.
 
 | Event | Start-tick window | Warning | Effect |
 |---|---|---|---|
-| Staff sickness | 28–35 | None | Two nurses are unavailable for 20 ticks. Any who are on shift leave their posts immediately; both return to `rest` with their previous fatigue. |
-| Flu wave | 50–61 | 10 ticks ahead | Two extra patients per tick for 6 ticks. |
+| Staff sickness | 28–35 | None | Three nurses are unavailable for 20 ticks. Any who are on shift leave their posts immediately; all three return to `rest` with their previous fatigue. |
+| Flu wave | 50–61 | 10 ticks ahead | Two extra patients per tick for 10 ticks. |
 | CT breakdown | 66–75 | None | CT stops working for 16 ticks unless repaired sooner. |
-| Bus crash | 96–109 | 8 ticks ahead | Five extra patients per tick for 2 ticks; mix ESI 1: 20%, ESI 2: 30%, ESI 3: 50%. |
+| Bus crash | 96–109 | 8 ticks ahead | Six extra patients per tick for 3 ticks; mix ESI 1: 20%, ESI 2: 30%, ESI 3: 50%. |
 
 The flu wave's current provisional tuning mix is ESI 3: 40%, ESI 4: 35%, ESI 5: 25%. Warnings show the event type and exact start tick, and stay visible until the event ends. CT status shows remaining downtime.
 

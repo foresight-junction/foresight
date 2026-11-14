@@ -63,10 +63,10 @@ These are hypotheses for the failure analysis (C4). If the agent fails for an un
 
 | Event | Start window (tick) | Warning | Effect |
 |---|---|---|---|
-| Staff sickness | 28–35 | none | 2 nurses (chosen by the seed) off sick for 20 ticks; a nurse on shift leaves at once and returns to rest with the fatigue she left with |
-| Flu wave | 50–61 | 10 ticks ahead | +2 arrivals per tick for 6 ticks, mostly ESI 3–5 |
+| Staff sickness | 28–35 | none | 3 nurses (chosen by the seed) off sick for 20 ticks; a nurse on shift leaves at once and returns to rest with the fatigue she left with |
+| Flu wave | 50–61 | 10 ticks ahead | +2 arrivals per tick for 10 ticks, mostly ESI 3–5 |
 | CT breakdown | 66–75 | none | scanner down for 16 ticks unless repaired |
-| Bus crash | 96–109 | 8 ticks ahead | 10 extra patients over 2 ticks (5 per tick): ESI 1 20%, ESI 2 30%, ESI 3 50% |
+| Bus crash | 96–109 | 8 ticks ahead | 18 extra patients over 3 ticks (6 per tick): ESI 1 20%, ESI 2 30%, ESI 3 50% |
 
   A warning shows the event type and its exact start tick and stays visible until the event ends. While the CT is down the observation shows the remaining down ticks.
 - **Budget:** €12 000. Spending above it is allowed up to a hard limit of €24 000 but lowers the budget score.
@@ -114,7 +114,9 @@ W and B are multiplied by O so that treating nobody (fresh staff, no spending) c
 The score is a pure function of the hospital's append-only event log (CONTRACTS "Event log"); rule numbers come from the simulator's constants. No LLM judge. `score_full.json` also carries per-patient outcomes, deaths, faints, spend and counts per failure code F1–F10 for the analysis; those do not change the reward.
 
 ## 7. Difficulty knobs (one config file, hospital side, via `ED72_CONFIG`)
-Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.
+Arrival rate and daily cycle, flu-wave severity mix, event windows, durations and sizes, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.
+
+Current defaults (`docs/TUNING.md`, gap tuning): daily-cycle amplitude ±90% (was ±50%), staff sickness takes 3 nurses (was 2), the flu wave lasts 10 ticks (was 6), and the bus crash brings 6 patients per tick for 3 ticks (was 5 for 2). Mean arrivals, windows, warnings, severity mixes and budget are unchanged. The afternoon peak and the announced surges are larger: a policy that hires and staffs ahead of a warning absorbs them, and one that reacts after the queue grows does not. Every value is in `HANDBOOK.md`.
 
 ## 8. Fairness rules (30 points depend on these)
 - Every rule the scorer uses and every rate table is written in the agent-visible `HANDBOOK.md` (served by `rules`). A scorer rule or rate without a handbook line is a bug.
@@ -175,7 +177,7 @@ Recorded for issue #41. "Adopted" means build it; `TUNE` values are tuned in A6 
 
 | Rulebook §14 item | Decision |
 |---|---|
-| Arrival rate and daily cycle | `TUNE`: mean 3.0 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 432 patients before events) |
+| Arrival rate and daily cycle | `TUNE`: mean 3.0 arrivals per tick, sinusoidal ±90% with the peak at 15:00 and the low at 03:00 (about 432 patients before events) |
 | Flu-wave severity mix | `TUNE`: ESI 3 40%, ESI 4 35%, ESI 5 25% |
 | W penalty weights and what "staff time" means | `TUNE`: a = 1.0 per unit share of on-shift staff-ticks above fatigue 60; b = 0.05 per faint; only on-shift ticks count |
 | Budget curve above €12 000 | Adopted: straight line to 0 at €24 000 |

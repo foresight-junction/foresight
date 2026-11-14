@@ -34,7 +34,7 @@ def test_default_config_world_is_unchanged(seed: int) -> None:
 
 def test_partial_override_keeps_other_defaults(tmp_path: Path) -> None:
     config = load_config(write(tmp_path, {"events": {"flu_wave": {"warning": 3}}}))
-    assert config.events["flu_wave"] == {"window": (50, 61), "duration": 6, "warning": 3}
+    assert config.events["flu_wave"] == {"window": (50, 61), "duration": 10, "warning": 3}
     assert config.events["bus_crash"] == Config().events["bus_crash"]
 
 
