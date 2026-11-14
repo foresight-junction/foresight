@@ -31,7 +31,7 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 | Run | Command | Expected score |
 |---|---|---|
 | Reference | `harbor run -p ed72 -a oracle` | Clearly the highest of all runs |
-| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> -k 3` | To be measured. Gap = reference minus agent mean |
+| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> --api-key-name <KEY> --ae '<OPENCODE_KEY>=${<KEY>}' --ak version=1.19.5 -k 3` (key table in README "Run it") | To be measured. Gap = reference minus agent mean |
 | Do-nothing | `harbor run -p ed72 -a nop` | 0 |
 | Stop-early | Scripted baseline in `eval/`: plays the reactive proxy for 12 ticks, then stops | Low. Below the reactive proxy |
 
