@@ -133,7 +133,8 @@ export type FurnitureKind =
   | "sink"
   | "bench"
   | "ambulance"
-  | "lamp";
+  | "wheelchair"
+  | "lamp"; // street lamp
 
 export interface Furniture extends Rect {
   kind: FurnitureKind;
@@ -158,11 +159,11 @@ function furniture(): Furniture[] {
   // Resus: monitor at each bed head, crash cart in the corner, sink by the door.
   for (const c of [8, 12, 16]) add("monitor", c - 1, 2);
   add("cart", 6, 7);
-  add("sink", 17, 8);
+  add("sink", 17, 7);
   // Acute: folded curtains between bays, sink.
   for (let i = 0; i < 8; i++) add("curtain", 29 + 2 * i - 1, 1, 29 + 2 * i - 1, 1, false);
-  add("sink", 46, 8);
-  add("plant", 27, 8);
+  add("sink", 46, 7);
+  add("plant", 27, 7);
   // CT: operator console.
   add("console", 19, 7, 20, 7);
   // Fast-track: plants.
@@ -175,9 +176,12 @@ function furniture(): Furniture[] {
   add("table", 40, 16, 43, 16, false);
   // Morgue drawers.
   add("cabinet", 46, 21, 46, 23);
-  // Corridor plants and benches.
+  // Corridor plants, spare wheelchairs.
   add("plant", 6, 10);
   add("plant", 46, 10);
+  add("wheelchair", 44, 10);
+  add("wheelchair", 17, 14);
+  add("wheelchair", 39, 22);
   // Outside.
   add("ambulance", 1, 1, 2, 3);
   add("lamp", 0, 12, 0, 12);
@@ -192,6 +196,42 @@ const SEAT_COLS = [8, 9, 10, 11, 12, 14, 15, 16, 17, 18];
 const STAND_ROWS = [16, 18, 20, 22];
 
 export const FURNITURE: Furniture[] = furniture();
+
+// Ceiling lamps and street lamps (centre pixel, light radius in px). The renderer cuts light pools
+// out of the ambient darkness here; "cold" is the morgue's blue strip light.
+export interface Light {
+  x: number;
+  y: number;
+  r: number;
+  tone: "warm" | "cool" | "cold";
+  outdoor: boolean;
+}
+
+function lights(): Light[] {
+  const at = (c: number, r: number, radius: number, tone: Light["tone"] = "cool", outdoor = false): Light => ({
+    x: c * TILE + 8,
+    y: r * TILE + 8,
+    r: radius,
+    tone,
+    outdoor,
+  });
+  return [
+    at(9, 4, 60), at(15, 4, 60), // Resus
+    at(22, 5, 52), // CT
+    at(31, 4, 56), at(37, 4, 56), at(43, 4, 56), // Acute
+    ...[9, 17, 25, 33, 41].map((c) => at(c, 10, 46)), // corridor
+    at(10, 17, 64, "warm"), at(15, 20, 60, "warm"), // Waiting
+    at(24, 17, 58), at(29, 17, 58), // Fast-track
+    at(41, 16, 60, "warm"), // staff room
+    at(35, 16, 34), at(37, 22, 40), // hall, lobby
+    at(44, 22, 34, "cold"), // morgue
+    // Outside: street lamps, the entrance canopy and the ambulance bay flood light.
+    at(0, 12, 54, "warm", true), at(12, 25, 58, "warm", true), at(28, 25, 58, "warm", true),
+    at(44, 25, 58, "warm", true), at(3, 18, 50, "warm", true), at(2, 5, 56, "cool", true),
+  ];
+}
+
+export const LIGHTS: Light[] = lights();
 
 export const ZONE_LABEL: Record<Zone, string> = { resus: "RESUS", acute: "ACUTE", fast_track: "FAST TRACK" };
 
@@ -310,15 +350,16 @@ export function buildLayout(): Layout {
     // Just past the right edge of the street: staff walk out of the exit and off the map.
     offstage: { x: MAP_COLS * TILE + 8, y: (STREET_ROW + 1) * TILE },
     labels: [
-      { text: "RESUS", at: { x: 9 * TILE, y: 8 } },
-      { text: "CT", at: { x: 22 * TILE + 8, y: 8 } },
-      { text: "ACUTE", at: { x: 33 * TILE, y: 8 } },
+      // Zone signs hang on the corridor-facing wall, next to each door.
+      { text: "RESUS", at: { x: 7 * TILE + 8, y: 9 * TILE + 8 } },
+      { text: "CT", at: { x: 24 * TILE + 8, y: 9 * TILE + 8 } },
+      { text: "ACUTE", at: { x: 31 * TILE, y: 9 * TILE + 8 } },
       { text: "WAITING", at: { x: 9 * TILE + 8, y: 12 * TILE + 8 } },
       { text: "FAST TRACK", at: { x: 22 * TILE + 8, y: 12 * TILE + 8 } },
       { text: "STAFF ROOM", at: { x: 41 * TILE + 8, y: 12 * TILE + 8 } },
       { text: "MORGUE", at: { x: 44 * TILE + 8, y: 20 * TILE + 8 } },
       { text: "EXIT", at: { x: 40 * TILE + 8, y: 24 * TILE + 8 } },
-      { text: "ENTRANCE", at: { x: 2 * TILE + 8, y: 16 * TILE + 8 } },
+      { text: "EMERGENCY", at: { x: 2 * TILE + 8, y: 16 * TILE + 8 } },
       { text: "AMBULANCE", at: { x: 2 * TILE + 8, y: 9 * TILE + 8 } },
     ],
   };

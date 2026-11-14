@@ -1,0 +1,33 @@
+// Fit the map into the stage: largest integer zoom in *device* pixels, so every map pixel is an exact
+// square on screen at any devicePixelRatio. Below 1x (tiny screens) it falls back to a fractional zoom.
+
+export interface Fit {
+  zoom: number; // device pixels per map pixel
+  pxW: number; // canvas backing size, device pixels
+  pxH: number;
+  cssW: number; // canvas CSS size
+  cssH: number;
+}
+
+export function fitZoom(availCssW: number, availCssH: number, mapW: number, mapH: number, dpr: number): Fit {
+  const ratio = dpr > 0 ? dpr : 1;
+  const fit = Math.min((availCssW * ratio) / mapW, (availCssH * ratio) / mapH);
+  const zoom = fit >= 1 ? Math.floor(fit) : Math.max(0.25, fit);
+  const pxW = Math.round(mapW * zoom);
+  const pxH = Math.round(mapH * zoom);
+  return { zoom, pxW, pxH, cssW: pxW / ratio, cssH: pxH / ratio };
+}
+
+// Clock for a tick: tick 0 is Day 1 08:00 and each tick is 30 minutes. Returns hours since midnight.
+export function hourOfDay(tick: number, phase = 0): number {
+  return (8 + (tick + phase) * 0.5) % 24;
+}
+
+// 0 in full daylight .. 1 in the dead of night, with dawn 05:00-07:30 and dusk 18:00-21:00.
+export function darkness(hour: number): number {
+  if (hour < 5) return 1;
+  if (hour < 7.5) return 1 - (hour - 5) / 2.5;
+  if (hour < 18) return 0;
+  if (hour < 21) return (hour - 18) / 3;
+  return 1;
+}
