@@ -20,10 +20,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="ward")
     parser.add_argument("--url", default="http://hospital:8000/mcp")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("rules")
-    sub.add_parser("observe")
     for name in ("rules", "observe"):
-        sub.add_parser(name).add_argument("--json", default="{}", help="ignored; these tools take no arguments")
+        sub.add_parser(name).add_argument("--json", default="{}", help="must be {}; these tools take no arguments")
     step = sub.add_parser("step")
     step.add_argument("--json", default="[]", help='JSON list of actions, or {"actions": [...]}')
     args = parser.parse_args()
