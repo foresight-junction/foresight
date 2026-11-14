@@ -30,9 +30,9 @@ The agent has three MCP tools, served by the `hospital` sidecar at `http://hospi
 | `observe` | Returns the current state: time, budget, waiting patients, beds, staff, CT, warnings, diversion, running totals, last tick's rejected actions |
 | `step(actions)` | Applies up to 50 actions (`admit`, `assign`, `agency`, `repair`, `divert`), runs the tick and returns per-action results plus the next observation. `step([])` passes a tick |
 
-OpenCode lists them as `hospital_rules`, `hospital_observe` and `hospital_step` (seen in the #21 smoke run, `docs/HARBOR-NOTES.md`). Every call counts toward a 500-call cap; a full episode needs 144 `step` calls. A fallback CLI, `ward <tool> --json '<args>'`, calls the same functions from the agent container (lands with #57).
+OpenCode lists them as `hospital_rules`, `hospital_observe` and `hospital_step` (seen in the #21 smoke run, `docs/HARBOR-NOTES.md`). Every call counts toward a 500-call cap; a full episode needs 144 `step` calls. A fallback CLI, `ward <tool> --json '<args>'`, calls the same functions from the agent container.
 
-The observation shows the whole current state and nothing of the future. There is no reset, no undo and no seed endpoint.
+The observation shows current operating conditions and announced event warnings. There is no reset, no undo and no seed endpoint.
 
 ## Why it is hard
 
@@ -50,27 +50,32 @@ Prerequisites:
 
 - Docker, running.
 - [uv](https://docs.astral.sh/uv/). Harbor 0.25.0 runs through `uvx`, no separate install.
-- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below; `make eval` also reads it from `.env` (copy `.env.example`).
+- For agent runs only: one model key, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`. Export it in the shell for the `harbor run` commands below and set `ED72_MODEL` to the provider/model ID and `ED72_KEY_NAME` to the matching key variable name (for example, `GEMINI_API_KEY`). For `make eval`, you can set both in `.env` using `.env.example`.
 
 From the repo root:
 
 ```bash
 alias harbor='uvx --python 3.12 --from harbor==0.25.0 harbor'
 
-harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/, lands with #16)
+harbor run -p ed72 -a oracle                            # reference policy (ed72/solution/)
 harbor run -p ed72 -a nop                               # do-nothing baseline, scores 0
-harbor run -p ed72 -a opencode -m <provider/model> -k 3 # three agent runs
+harbor run -p ed72 -a opencode -m "$ED72_MODEL" --api-key-name "$ED72_KEY_NAME" \
+  --ak version=1.19.5 --agent-setup-timeout-multiplier 4 -k 3
 ```
 
-Everything the judges rerun, in one command:
+Run the evaluation from the repository root:
 
 ```bash
-ED72_MODEL=gemini/gemini-3.8-flash make eval   # reference, do-nothing, stop-early, 3 agent runs
-make eval-baselines                            # reference, do-nothing, stop-early only, no key needed
-make eval-summary                              # rebuild eval/results/summary.md from the latest run
+make eval                # reference, do-nothing, and three OpenCode runs on seed 42
+make eval-baselines      # reference and do-nothing, with no API key required
+make eval-summary        # rebuild eval/results/summary.md from the latest run
 ```
 
-`make eval` calls `eval/run_all.sh`, which also pins OpenCode 1.19.5 (`--ak version=1.19.5`), passes the matching `--api-key-name`, and writes each job under `eval/results/jobs/<run id>/`. The stop-early baseline runs as a Harbor custom agent from `eval/baselines/` (#12); until that file lands, `run_all.sh` skips it and says so.
+`make eval` pins OpenCode 1.19.5 and writes each job under `eval/results/jobs/<run id>/`. The frozen build skips the Harbor stop-early adapter. [Harbor stop-early adapter (#83)](https://github.com/xand1ex999/guinness/issues/83). To rerun the scripted baselines in process, including stop-early, run:
+
+```bash
+(cd eval/baselines && PYTHONPATH=../../ed72/environment/hospital uv run python -m ed72_baselines.table 1 2 3 4 5)
+```
 
 **What a run produces.** Each trial directory holds:
 
@@ -99,42 +104,43 @@ W and B are multiplied by O, so a department that treats nobody cannot collect t
 
 The score is a pure function of the hospital's append-only event log (`/var/lib/ed72/events.jsonl` inside `hospital`). After the agent stops, `collect.py` rebuilds the world from the seed, replays the agent's `step` calls from the log, runs any remaining ticks with no actions, scores, and writes `/evidence/report.json` (`ed72/environment/hospital/collect.py`). The scorer is in `ed72/environment/hospital/ed72_sim/scoring/`. There is no LLM judge. The full rules are in SPEC §6 and CONTRACTS "Score object".
 
-## Why you can't cheat it
+## Reward integrity
 
-- **The answer is not in the agent's container.** The `main` image holds `HANDBOOK.md` and the `ward` CLI only (`ed72/environment/Dockerfile`, lands with #58). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`, lands with #58) and the scorer live in the `hospital` sidecar.
-- **The verifier cannot read agent-written files.** `ed72/task.toml` (lands with #58) sets `environment_mode = "separate"` and a `[[verifier.collect]]` hook that runs `collect.py` inside `hospital`. `tests/test.sh` reads only `/evidence/report.json` from there. Shared mode is not used because a spike showed a root agent could forge the reward in it.
+- **The answer is not in the agent's container.** The `main` image holds `HANDBOOK.md` and the `ward` CLI only (`ed72/environment/Dockerfile`). The simulator, the seed (`ED72_SEED`, set only on the `hospital` service in `ed72/environment/docker-compose.yaml`) and the scorer live in the `hospital` sidecar.
+- **The verifier cannot read agent-written files.** `ed72/task.toml` sets `environment_mode = "separate"` and a `[[verifier.collect]]` hook that runs `collect.py` inside `hospital`. `tests/test.sh` reads only `/evidence/report.json` from there. Shared mode is not used because a spike showed a root agent could forge the reward in it.
 - **No admin back door.** The only HTTP endpoint besides MCP is `GET /health`. There is no finalise, reset, undo, seed or ground-truth endpoint.
-- **Tool outputs are tested for leaks** (#31, `ed72/environment/hospital/tests/test_firewall.py`). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer (it runs once the image files from #58 are on `main`; until then it skips, as do the three MCP-server tests waiting on #57).
-- **Shortcuts are played as baselines and must lose** (#12, `eval/baselines/` and `ed72/environment/hospital/ed72_sim/scoring/tests/test_baselines.py`). Scripted policies try one shortcut each through the same tools: divert all the time, rest everyone in quiet periods, admit only ESI 4-5, admit without staff, fill every bed at the last tick, spend to the limit, and random play. A CI test checks that do-nothing scores exactly 0, that stop-early scores below the reactive proxy and the reactive proxy below the reference, that every exploit scores below the reference (the reference checks run once #16 lands), and that the same seed and actions give the same score.
-- **Stopping does not end the episode.** If the agent stops, hits the call cap or times out, the remaining ticks run with no actions while patients keep arriving and dying. The score object's `ended` field records whether the agent played to `tick_143`, stopped (`agent_stopped`) or hit the call cap (`call_cap`).
+- **Tool outputs are tested for leaks** (#31, `ed72/environment/hospital/tests/test_firewall.py`). Every tool result in a scripted episode is checked for future arrivals, unannounced events, the seed, dice values and score values, against exact CONTRACTS shapes, and against what the event log so far can explain. A test also checks that the `main` image copies no sim code, seed, config or scorer.
+- **Shortcuts are played as baselines and must lose** (#12, `eval/baselines/` and `ed72/environment/hospital/ed72_sim/scoring/tests/test_baselines.py`). Scripted policies try one shortcut each through the same tools: divert all the time, rest everyone in quiet periods, admit only ESI 4-5, admit without staff, fill every bed at the last tick, spend to the limit, and random play. A CI test checks that do-nothing scores exactly 0, that stop-early scores below the reactive proxy and the reactive proxy below the reference, that every exploit scores below the reference, and that the same seed and actions give the same score.
+- **Stopping does not end the episode.** If the agent stops, hits the call cap or times out, the remaining ticks run with no actions while patients keep arriving and dying. The score object's `ended` field records whether the agent played to `tick_143`, left ticks unplayed (`agent_stopped`) or hit the call cap (`call_cap`).
 - **Rejected actions do nothing.** Invalid actions return a reason and have no effect, so spamming them gains nothing.
 
 The shortcuts we expect judges to try first, and the rule that stops each, are listed in SPEC §11.
 
-TODO(redteam): link `docs/REDTEAM.md` (round 1 lands with #13, round 2 with #14) and list each finding with its regression test.
+[Round 1 red-team report](docs/REDTEAM.md) records the probes, their outcomes and the regression tests. Its pending checks are tracked in [#14](https://github.com/xand1ex999/guinness/issues/14).
 
 ## Results
 
-TODO(results): filled from `make eval` after #18. Copy the main table from `eval/results/summary.md`, written by `eval/summarise.py`.
+The shipped Harbor task uses seed 42 and an arrival mean of 3.0 patients per tick. The calibration runs used Harbor 0.26.0 on commit `ca9031c`. [Run details and job paths](https://github.com/xand1ex999/guinness/issues/17).
 
-| Policy | Model | Seed | Runs | Errors | Mean reward | Min | Max | O | T | W | B | Deaths | Faints |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| | | | | | | | | | | | | | |
+| Policy | Harbor command | Seed | Reward |
+|---|---|---:|---:|
+| Reference (oracle) | `harbor run -p ed72 -a oracle` | 42 | 0.989617 |
+| Do-nothing (nop) | `harbor run -p ed72 -a nop` | 42 | 0.000000 |
+| OpenCode model | `harbor run -p ed72 -a opencode -m "$ED72_MODEL"` | 42 | Pending [#17](https://github.com/xand1ex999/guinness/issues/17) |
 
-TODO(results): link one Harbor run log with its score (an agent trial directory: `agent/trajectory.json` plus `verifier/reward.txt`).
+The reference scored exactly 0.989617 on seed 42 both in process and through Harbor. Across seeds 1–5, the reference averaged 98.4 points out of 100 (range 96.78–99.69). Stop-early scored below the reactive proxy on all five seeds, and the proxy averaged 61.8. Do-nothing scored zero on every seed, divert-all peaked at 47.93 points, and the highest-scoring shortcut peaked at 72.72. Every tested shortcut scored below the reference on every seed. [Per-seed tuning table](docs/TUNING.md).
 
-<!-- HUMAN: write 2-4 sentences on the results once the table is filled. Points to cover:
-- Reference mean against the agent mean per model, and whether the gap holds on every seed (rubric: "consistently below", "reproducible").
-- Held-out seeds (EVAL §4), so the gap is not an artefact of the shipped seeds.
-- Run-to-run spread (Min and Max columns) for the agent runs.
+<!-- HUMAN: interpret the model results once #18 posts per-seed means and ranges.
+Include the held-out seeds when results are available. Link the model's Harbor
+trajectory and reward for the submission.
 -->
 
-## What agents get wrong
+## Model decisions
 
-TODO(findings): waits on the failure analysis in `docs/FINDINGS.md` (#19).
+[Failure analysis (#19)](https://github.com/xand1ex999/guinness/issues/19) is pending model trajectories.
 
 <!-- HUMAN: write this paragraph after #19. Points to cover:
-- The two or three failure codes that cost the most points, from the `failures` counts in score_full.json. SPEC §2 lists the hypotheses F1-F10, for example F1 (light patients block Resus), F2 (no rest rotation), F3 (warnings ignored).
+- The two or three most consequential decisions, supported by the trajectory and score report. SPEC §2 lists the hypotheses F1-F10, for example F1 (light patients block Resus), F2 (no rest rotation), F3 (warnings ignored).
 - One concrete moment from a trajectory: the tick, what the agent did, what the reference did instead, and what it cost.
 - For each mistake, where the agent could have seen the information it needed (handbook section or observation field), which is the fairness check in #20.
 -->
@@ -144,16 +150,16 @@ TODO(findings): waits on the failure analysis in `docs/FINDINGS.md` (#19).
 | Path | What is there |
 |---|---|
 | `ed72/` | The Harbor task. `harbor run -p ed72` points here |
-| `ed72/task.toml` | Timeouts, separate verifier mode, the collect hook, the MCP server (lands with #58) |
-| `ed72/instruction.md`, `ed72/environment/workspace/HANDBOOK.md` | What the agent is told and the agent-visible rules (lands with #7) |
-| `ed72/environment/Dockerfile`, `ed72/environment/docker-compose.yaml` | The `main` agent image and the `hospital` sidecar service (lands with #58) |
+| `ed72/task.toml` | Timeouts, separate verifier mode, the collect hook, the MCP server |
+| `ed72/instruction.md`, `ed72/environment/workspace/HANDBOOK.md` | What the agent is told and the agent-visible rules |
+| `ed72/environment/Dockerfile`, `ed72/environment/docker-compose.yaml` | The `main` agent image and the `hospital` sidecar service |
 | `ed72/environment/hospital/ed72_sim/` | Seeded world (`world.py`), tick engine (`engine.py`), actions, observation, random streams |
 | `ed72/environment/hospital/ed72_sim/scoring/` | The scorer and the baseline ordering test |
-| `ed72/environment/hospital/server.py`, `ed72/environment/ward` | MCP tool server and the `ward` fallback CLI (lands with #57) |
+| `ed72/environment/hospital/server.py`, `ed72/environment/ward` | MCP tool server and the `ward` fallback CLI |
 | `ed72/environment/hospital/collect.py` | Finishes the episode and writes `/evidence/report.json` |
 | `ed72/environment/hospital/tests/` | Simulator, scorer, verifier and firewall tests |
 | `ed72/tests/` | `test.sh` and `verify.py`: read the report, write `reward.txt` |
-| `ed72/solution/` | The reference policy, public tools only (lands with #16) |
+| `ed72/solution/` | The reference policy, public tools only |
 | `eval/` | `run_all.sh`, `summarise.py`, `results/`, and the scripted baselines in `baselines/` |
 | `docs/` | Rulebook, SPEC, CONTRACTS, EVAL, PLAN, CHALLENGE, Harbor notes, and the demo script `DEMO.md` |
 | `scripts/` | Team tooling: `wt.sh` for worktrees, board scripts |

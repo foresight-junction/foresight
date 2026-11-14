@@ -24,7 +24,8 @@ A factual README skeleton ordered for a judge, and a 10-minute demo script with 
 - [x] README skeleton: task, how to run, scoring, why you can't cheat, results table (empty), repo map, HUMAN slots
 - [x] docs/DEMO.md: timed segments, recording checklist, submission checklist
 - [ ] Human fills the HUMAN slots (README: opening, why it is hard, results reading, what agents get wrong; DEMO: hook, close)
-- [ ] Fill TODO(results) after #18, TODO(findings) after #19, TODO(redteam) after #13/#14, TODO(demo) event-log decision
+- [x] Verified calibration and baseline results, current run commands and artifact-based demo walkthrough
+- [ ] Add the model trajectory link and the model results and findings as #17–#19 land
 
 ## Decisions and notes
 - Sat 17:30: merged main after #45, #47, #52, #53, #56, #60, #63 merged; their markers removed. Still open: #57 (server.py, ward), #58 (task.toml, Dockerfiles, compose), #16 (solution/), #7 (HANDBOOK, instruction.md).
@@ -35,6 +36,6 @@ A factual README skeleton ordered for a judge, and a 10-minute demo script with 
 - Sat: docs/CHALLENGE.md "Starting points" still describes the old game (15 beds, `assess`, 8+13 tools, M1-M4 harm). README follows SPEC and the rulebook.
 
 ## Handoff
-- Done: README.md skeleton and docs/DEMO.md, every number taken from SPEC/CONTRACTS/EVAL, no results numbers. Draft PR #70 (Refs #25); Kostiantyn merges once the HUMAN slots are written.
-- Next: human writes the `<!-- HUMAN: ... -->` slots; replace every `TODO(` once #18/#19/#14 land; drop "(lands with #N)" as PRs merge.
-- Test: `grep -n -e 'HUMAN:' -e 'TODO(' README.md docs/DEMO.md` lists what is left. The DEMO segment 2 command runs on main: `cd ed72/environment/hospital && uv run python -c "..."`.
+- Draft PR #70 is synced with frozen main (474829a). The README links the verified oracle/nop calibration and the five-seed tuning table. The demo uses the trajectory and verifier report collected by Harbor.
+- Yehor writes the hand-authored slots, then times and records the playthrough and submits it. Model results, a Harbor model-log link and failure analysis are pending #17–#19. #83 tracks the missing Harbor stop-early adapter.
+- Verify the calibration with `make eval-baselines`. Check the remaining author slots with `rg -n 'HUMAN:|TODO\(' README.md docs/DEMO.md`.

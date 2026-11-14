@@ -1,6 +1,6 @@
 # ED-72 demo script (10 minutes)
 
-For the live demo to the judges and for the demo video. Status: draft (#25). The hook and the close are for a human to write. Segments marked `TODO(results)` wait on the run matrix (#18), the failure analysis (#19) and red-team round 2 (#14).
+For the live demo to the judges and for the demo video. Status: draft (#25). The hook and the close are for a human to write. The model walkthrough and gap discussion need the run matrix (#18) and failure analysis (#19).
 
 The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficulty (30), reward integrity (25), craft (15). Each segment below says which criterion it is for.
 
@@ -10,7 +10,7 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 |---|---|---|---|
 | 0:00 | 0:40 | 1. Hook (human) | |
 | 0:40 | 1:10 | 2. Setup: the department and the tools | Difficulty |
-| 1:50 | 1:10 | 3. A `harbor run`, live start then recorded | Craft |
+| 1:50 | 1:10 | 3. A `harbor run`, live start then saved trial | Craft |
 | 3:00 | 2:00 | 4. One agent episode, through its log | Difficulty |
 | 5:00 | 1:00 | 5. The score breakdown | Integrity |
 | 6:00 | 1:15 | 6. A cheat attempt that fails | Integrity |
@@ -22,7 +22,7 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 - [ ] `make eval` has finished on the final code and `eval/results/summary.md` is current.
 - [ ] One agent trial is picked for segment 4: the same trial the README links as its run log. Write its path here: `TODO(results)`.
-- [ ] TODO(demo): segment 4 needs that trial's event log. `ed72/task.toml` (lands with #58) collects only `/evidence/report.json`, and the log stays inside `hospital` at `/var/lib/ed72/events.jsonl`. Either the task owner (#22) adds the log as a second artifact, or segment 4 uses `agent/trajectory.json` plus the `patients` list in `verifier/score_full.json`. Decide before recording.
+- [ ] Open the chosen trial’s `agent/trajectory.json`, `verifier/reward.txt` and `verifier/score_full.json`. These files cover the walkthrough. The frozen task collects the report while the raw simulator log stays in the hospital container.
 - [ ] Terminal open in the repo root, font at least 18 pt, with these files ready in editor tabs: `docs/SPEC.md` §3, the trial's `verifier/score_full.json`, `eval/results/summary.md`.
 - [ ] `.env` is closed and never shown. Don't run `env` or `cat .env` on screen.
 
@@ -58,28 +58,18 @@ Point at `waiting`, `beds` (every bed `null`), `staff` (everyone in `rest` at fa
 
 ## 3. A `harbor run` (1:50, 1:10)
 
-Start a run live so the judges see the command they will rerun:
+Export the selected provider key, and set `ED72_MODEL` and `ED72_KEY_NAME` as shown in the README. Start a run live:
 
 ```bash
-uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m <provider/model>   # key exported in the shell
+uvx --python 3.12 --from harbor==0.25.0 harbor run -p ed72 -a opencode -m "$ED72_MODEL" \
+  --api-key-name "$ED72_KEY_NAME" --ak version=1.19.5 --agent-setup-timeout-multiplier 4
 ```
 
-Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". TODO(results): add how long a full agent run took, from #37 or #18.
+Say: the agent's container holds only the handbook and the `ward` CLI. The simulator, the seed and the scorer are in the `hospital` sidecar. A full episode is 144 `step` calls, so leave it running and switch to the trial picked under "Before the demo". Once a complete OpenCode run is available, use its measured runtime.
 
 ## 4. One agent episode (3:00, 2:00)
 
-Use the trial picked under "Before the demo". Every event-log line has a tick `t` and a `src` (CONTRACTS "Event log"). Agent lines (`"src": "agent"`) record one tool call: `tool`, `args` (the actions) and `result`. Simulator lines (`"src": "sim"`) carry an `event`: `arrival`, `admitted`, `covered`, `discharged`, `death` (with `cause`: `waiting`, `uncovered_bed`, `fatigue`), `upgrade`, `left`, `faint`, `spend`, `event_start`, `event_end`.
-
-Useful filters on a log file:
-
-```bash
-LOG=<path to events.jsonl>
-grep '"event_start"' "$LOG"          # when the four events hit
-grep '"death"' "$LOG" | head         # who died, when, and why
-grep '"faint"' "$LOG"                # staff who fainted
-```
-
-Walk through two or three moments, each as: the tick, what the agent did (its `step` line), what happened next (the sim lines after it), and what the reference does instead. TODO(findings): pick the moments from `docs/FINDINGS.md` (#19). SPEC §2 lists the failures we expect, F1 to F10, for example a light patient in Resus when an ESI 1 arrives (F1), or no rest rotation before the bus crash (F2, F3).
+Open the saved trial’s `agent/trajectory.json` and identify two or three decisions from #19. For each, show the tick, the latest observation the agent had, and its next actions. In `verifier/score_full.json`, match affected patients by ID and show their final outcomes or first covered ticks. Use the corresponding handbook rule to explain the available action. Compare with the reference at the same seed when the evidence supports it.
 
 ## 5. Score breakdown (5:00, 1:00)
 
@@ -111,13 +101,13 @@ Backup if time allows: the leak tests, which check every tool result for future 
 (cd ed72/environment/hospital && uv run --with pytest pytest -q tests/test_firewall.py)
 ```
 
-TODO(redteam): add the strongest attempt from red-team rounds 1 and 2 (`docs/REDTEAM.md`, #13, #14) and the test that now blocks it.
+The [round 1 report](REDTEAM.md) links each tested probe to its regression check. Round 2 is tracked in #14.
 
 ## 7. Results (7:15, 1:15)
 
-Open `eval/results/summary.md`. Show the main table (mean, min and max reward per policy and model) and the "Gap (reference minus agent mean)" section.
+Show the seed-42 calibration first: reference reward 0.989617 and do-nothing reward 0.000000. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
 
-TODO(results): after #18, write here the two sentences to say: the reference mean, each model's mean and range, and whether the gap holds on every seed including held-out seeds.
+Once #18 is available, show the per-seed model means and ranges and compare each with the matching reference. Keep the confirmed baselines on screen if the matrix is still pending.
 
 ## 8. Close (8:30, 0:45)
 
@@ -150,9 +140,9 @@ Must be in the submission (CHALLENGE "Must be in the submission"):
 
 Required stack (CHALLENGE "Required stack"):
 - [ ] Harbor task with `instruction.md`, `task.toml`, `environment/Dockerfile`, `tests/`, `solution/`. Check: `ls ed72/instruction.md ed72/task.toml ed72/environment/Dockerfile ed72/tests ed72/solution`.
-- [ ] OpenCode harness: `harbor run -p ./ed72 -a opencode -m <provider/model>` finishes with a reward.
+- [ ] OpenCode harness: `harbor run -p ./ed72 -a opencode -m "$ED72_MODEL"` finishes with a reward.
 - [ ] The verifier writes one number in [0, 1] to `/logs/verifier/reward.txt`.
 
 What judges rerun (CHALLENGE "How judges run it"):
-- [ ] Reference run, three agent runs, do-nothing and stop-early all run from `make eval` on a fresh clone on a second laptop (PLAN, 01:00 milestone).
+- [ ] On a fresh clone, `make eval` runs the reference, do-nothing and three OpenCode trials. The Harbor stop-early adapter is tracked in #83. The in-process stop-early row is in the [tuning table](TUNING.md).
 - [ ] The CI baseline checks pass on `main`: do-nothing 0, stop-early below the reactive proxy below the reference, every exploit baseline below the reference (EVAL §5).
