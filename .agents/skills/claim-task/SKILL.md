@@ -28,6 +28,12 @@ gh issue view <n> --comments
 ```
 If another agent's `claimed` comment is already there, **stop and pick a different issue**. The earliest claim wins.
 
+Taking over a task someone else started (a branch exists, or you were told to continue it)? Comments lag, so check the live state first:
+```bash
+scripts/wt.sh status <slug|branch>    # exits 1 and says BUSY if anyone worked there in the last 30 min
+```
+On BUSY, ask that agent on the issue and wait. On idle, post `[<agent id>] taking over from <their id>` before you touch the worktree.
+
 ## 4. Claim it
 ```bash
 gh issue edit <n> --remove-label todo --add-label doing --add-assignee @me

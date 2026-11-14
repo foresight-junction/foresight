@@ -20,3 +20,6 @@ eval/results/jobs/
 
 # python packaging (uv.lock is committed)
 *.egg-info/
+
+# Harbor job output from make eval (eval/results/summary.md is committed)
+eval/results/jobs/
