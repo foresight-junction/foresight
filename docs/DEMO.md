@@ -30,7 +30,7 @@ The judges' rubric is in `docs/CHALLENGE.md`: the gap (30), meaningful difficult
 
 Say:
 
-> An emergency department with 17 beds and only enough staff to cover some of them, for 72 hours. Every 30 minutes the agent decides who gets a bed, who gets a doctor and who goes to rest. It sees everything about the present and nothing about the future. On seed 42, a short scripted reference policy scored 0.99 and Gemini 3.8 Flash scored 0.81. Thirteen of Gemini's patients died; the reference lost none.
+> An emergency department with 17 beds and only enough staff to cover some of them, for 72 hours. Every 30 minutes the agent decides who gets a bed, who gets a doctor and who goes to rest. It sees everything about the present and nothing about the future. On seed 42, at the original load of 3 arrivals per tick, a short scripted reference policy scored 0.99 and Gemini 3.8 Flash scored 0.81. Thirteen of Gemini's patients died; the reference lost none.
 
 ## 2. Setup (0:40, 1:10)
 
@@ -109,7 +109,7 @@ The [round 1 report](REDTEAM.md) links each tested probe to its regression check
 
 ## 7. Results (7:15, 1:15)
 
-Show the README Results table. Reference reward 0.989617, Gemini reward 0.811712, and do-nothing reward 0.000000, all on seed 42. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
+Show the README Results table. Reference reward 0.989617, Gemini reward 0.811712, and do-nothing reward 0.000000, all on seed 42 at arrival mean 3.0. The in-process reference gives the same seed-42 reward. On seeds 1–5, the reference averages 98.4 points and the reactive proxy averages 61.8.
 
 Say where the 17.8-point gap comes from: Gemini's W and B are both 1 (rested staff, €8 800 spent), so the whole gap is O and T. 13 ESI 1 deaths against none for the reference; 3 of 20 ESI 1 patients covered on time against 16.
 
