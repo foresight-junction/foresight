@@ -290,6 +290,21 @@ Reference implementation of the same idea (a different world model; port the pat
 BODY
 mk A9 env crn p0 1 "Action-independent randomness (common random numbers) for fair model comparison" "$B"
 
+read -r -d '' B <<'BODY' || true
+**Objective:** choose the difficulty values (SPEC §7 knobs) so the game has a measurable gap before the **Sat 22:00 rules freeze**. Today a naive greedy policy scores 99.4 (red team #62), severity-first 97–99 and `spend_to_limit` 88.9 (#8, #12), so there is no gap between models.
+
+**Rules:** rulebook §3 to §7 (arrivals, events, budget), §11 score, §12 baselines; SPEC §7 (knobs) and §12 (TUNE values); EVAL §5 gate; AGENTS.md §10 rules 3, 5 and 9 (raise difficulty only through the knobs: no trick wording, no impossible deadlines, no broken tools).
+
+**Files you own:** `ed72/environment/hospital/config/default.json` (values only; the loader stays with #8 / PR #64), the SPEC §12 TUNE rows through `contract-change`, and a tuning log in `docs/TUNING.md`.
+
+**Depends on:** #8 (knob file, PR #64), #12 (baselines, PR #52), #16 (reference policy). Start now with the baselines and a severity-first stand-in; re-check once #16 lands.
+
+**Rules for this task:** deterministic (seeded, no wall clock); every chosen value is written in HANDBOOK.md (#7) in the same PR, because no rule may be hidden; nothing that reveals the answer goes into the agent container; Kostiantyn decides the final values, and Denys confirms them against his prototype (#35) if it arrives by 20:00.
+
+**Done when:** on seeds 1 to 3, `do_nothing` = 0; `stop_early` < `reactive_proxy` < reference; every exploit baseline (`spend_to_limit`, `rest_in_quiet_periods`, `divert_all`, …) is clearly below the reference; a severity-first player is well below 95, leaving room for models; the table is in the PR and on #8; and the values are merged before 22:00.
+BODY
+mk A10 env tuning p0 5 "Tune difficulty values before the 22:00 rules freeze" "$B"
+
 # ---------- Lane B: reward and integrity ----------
 read -r -d '' B <<'BODY' || true
 > Realigned to docs/ED_Management_Simulator_RU.md by #41 / PR #43. Read docs/SPEC.md and docs/CONTRACTS.md on branch kostiantyn/docs-rules-realign until PR #43 merges.
