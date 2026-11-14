@@ -2,7 +2,7 @@
 
 - **Issue:** #41
 - **Owner:** kostiantyn
-- **Agent:** lead
+- **Agent:** kostiantyn-claude-3 (lead)
 - **Parent branch:** main
 - **Created:** Sat 15:19
 
