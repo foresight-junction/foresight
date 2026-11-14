@@ -1,0 +1,22 @@
+services:
+  main:
+    depends_on:
+      hospital:
+        condition: service_healthy
+
+  hospital:
+    build:
+      context: ./hospital
+    expose:
+      - "8000"
+    environment:
+      ED72_SEED: "42"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)
+      interval: 2s
+      timeout: 5s
+      retries: 30
