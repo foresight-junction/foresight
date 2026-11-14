@@ -1,11 +1,12 @@
 """Failure-mode counts F1-F10 for the analysis; they never change the reward.
 
-Computed here: F1, F2, F6, F7, F8, F10. F3, F4, F5 and F9 are reported as 0 for now (C4 owns them).
+Computed here: F1, F2, F6, F7, F8, F10. F3, F4, F5 and F9 need analysis beyond the log and are
+omitted rather than reported as 0, which would claim they never happened (C4, issue #19, owns them).
 """
 
 from ed72_sim import constants as c
 
-CODES = tuple(f"F{i}" for i in range(1, 11))
+CODES = ("F1", "F2", "F6", "F7", "F8", "F10")
 
 
 def failure_analysis(events: list[dict]) -> tuple[dict[str, int], dict[str, list[str]]]:

@@ -233,9 +233,9 @@ def test_f7_uncovered_bed_deaths() -> None:
     assert r["patients"][0]["outcome"] == "died"
 
 
-def test_unreported_failure_codes_are_zero_and_object_shape() -> None:
+def test_only_log_derivable_failure_codes_and_object_shape() -> None:
     r = score(Log().end())
-    assert set(r["failures"]) == {f"F{i}" for i in range(1, 11)}
+    assert set(r["failures"]) == {"F1", "F2", "F6", "F7", "F8", "F10"}
     assert list(r) == [
         "reward", "score", "O", "T", "W", "B", "spend", "totals", "patients", "failures",
         "ticks_with_actions", "tool_calls", "ended",

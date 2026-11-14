@@ -11,6 +11,7 @@ _LOSS = {
     "never_admitted": c.LOSS_FAILED,
 }
 _TOTAL_KEYS = ("discharged", "in_bed_end", "diverted", "died", "left", "never_admitted")
+_PATIENT_KEYS = ("id", "esi", "outcome", "arrived_tick", "admitted_tick", "first_covered_tick", "on_time")
 
 
 def score(events: list[dict]) -> dict:
@@ -38,9 +39,9 @@ def score(events: list[dict]) -> dict:
 
     total = 60 * o + 20 * t + o * (10 * w + 10 * b)
     counts, codes = failure_analysis(events)
-    out_patients = []
-    for p in patients:
-        out_patients.append({k: p[k] for k in _PATIENT_KEYS} | {"failure_codes": codes.get(p["id"], [])})
+    out_patients = [
+        {k: p[k] for k in _PATIENT_KEYS} | {"failure_codes": codes.get(p["id"], [])} for p in patients
+    ]
     agent = [e for e in events if e["src"] == "agent"]
     steps = [e for e in agent if e.get("tool") == "step"]
     totals = {"arrived": len(patients)} | {k: sum(p["outcome"] == k for p in patients) for k in _TOTAL_KEYS}
@@ -59,9 +60,6 @@ def score(events: list[dict]) -> dict:
         "tool_calls": len(agent),
         "ended": "tick_143" if any(e["t"] == c.TICKS - 1 for e in steps) else "agent_stopped",
     }
-
-
-_PATIENT_KEYS = ("id", "esi", "outcome", "arrived_tick", "admitted_tick", "first_covered_tick", "on_time")
 
 
 def _patients(sim: list[dict]) -> list[dict]:
