@@ -151,8 +151,10 @@ print("\n5. PR #29 terms in open issue bodies (each match needs a reason)")
 pat = re.compile(r"advance\(|H_anchor|H_floor|wrong triage|\bassess\b|15-min|\bM[1-4]\b|handover tail")
 for n in sorted(tasks):
     body = tasks[n]["body"] or ""
-    for m in pat.finditer(body):
+    hits = list(pat.finditer(body))
+    for m in hits:
         print(f"  #{n}: ...{body[max(0, m.start() - 60): m.end() + 40]}...".replace("\n", " "))
+    report(not hits, f"#{n} body has no PR #29 terms" + (f" ({len(hits)} match(es) above)" if hits else ""))
 
 print("\n6. Scored rules appear in an issue and in the agent-visible rules task (A5)")
 a5 = next((i for i in tasks.values() if code_of(i["title"]) == "A5"), None)
