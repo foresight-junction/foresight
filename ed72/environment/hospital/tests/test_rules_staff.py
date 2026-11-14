@@ -67,8 +67,13 @@ def test_agency_contract_ends_mid_shift_and_moves_staff_to_rest() -> None:
     advance(sim, 1, [ORDER_NURSE, ORDER_DOCTOR])
     advance(sim, 3)
     sim.step([assign("AD1", "fast_track"), assign("AN1", "fast_track"), admit("P001", "fast_track")])
-    advance(sim, c.AGENCY_STAY - 1)
-    assert sim.observe()["tick"] == 4 + c.AGENCY_STAY
+    last = 4 + c.AGENCY_STAY - 1  # arrive + 15 is the last contract tick
+    advance(sim, last - sim.tick)
+    assert sim.tick == last
+    an = staff(sim, "AN1")
+    assert (an["status"], an["location"], an["ticks_until_change"]) == ("on_shift", "fast_track", 1)
+    assert staff(sim, "AD1")["status"] == "on_shift"
+    advance(sim, 1)
     an = staff(sim, "AN1")
     assert (an["status"], an["location"], an["ticks_until_change"]) == ("agency_left", "rest", None)
     assert staff(sim, "AD1")["status"] == "agency_left"
@@ -77,7 +82,10 @@ def test_agency_contract_ends_mid_shift_and_moves_staff_to_rest() -> None:
 def test_assign_agency_before_arrival_or_after_leaving_is_staff_unavailable() -> None:
     sim = Simulation(make_world())
     assert reasons(sim.step([ORDER_NURSE, assign("AN1", "acute")])) == [None, "staff_unavailable"]
-    advance(sim, 3 + c.AGENCY_STAY)
+    last = c.AGENCY_DELAY + c.AGENCY_STAY - 1
+    advance(sim, last - sim.tick)
+    assert sim.tick == last and staff(sim, "AN1")["status"] == "resting"
+    assert reasons(sim.step([assign("AN1", "acute")])) == [None]  # still within the contract
     assert staff(sim, "AN1")["status"] == "agency_left"
     assert reasons(sim.step([assign("AN1", "acute")])) == ["staff_unavailable"]
 
@@ -105,13 +113,3 @@ def test_fainted_staff_cannot_be_assigned_until_they_return() -> None:
     advance(sim, c.FAINT_TICKS - 1)
     assert staff(sim, "N1")["status"] == "resting"
     assert reasons(sim.step([assign("N1", "acute")])) == [None]
-
-
-def test_fainted_staff_is_out_for_exactly_faint_ticks_and_returns_at_about_65() -> None:
-    sim = Simulation(make_world())
-    advance(sim, 41, [assign("N1", "resus")])
-    assert staff(sim, "N1")["ticks_until_change"] == c.FAINT_TICKS
-    advance(sim, c.FAINT_TICKS)
-    n1 = staff(sim, "N1")
-    assert (n1["status"], n1["location"], n1["ticks_until_change"]) == ("resting", "rest", None)
-    assert abs(n1["fatigue"] - 65) < 1

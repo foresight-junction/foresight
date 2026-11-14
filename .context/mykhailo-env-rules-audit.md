@@ -36,5 +36,7 @@ Most A4 rules already live in the sim core (#4, PR #48). This branch checks each
 
 ## Handoff
 - Done: 37 rule tests in `tests/test_rules_{events,staff,actions}.py`; full suite 94 passed; no engine mismatch.
-- Next: step 4 once #16 posts a reference score; open the PR after #48 merges (this branch is stacked on it), then rebase onto main.
-- How to test: `cd ed72/environment/hospital && uv run --python 3.12 --with pytest pytest -q tests`
+- #48 merged; main is merged into this branch, so the diff against main is only these tests and this file.
+- In progress: code-review round 1 found tests that couldn't fail (flu, hard-limit repair, diversion length, agency leave tick); subagent mykhailo-claude-1i is strengthening them, each checked against a deliberately broken engine.
+- Next: commit those fixes, open the PR (`Closes #6`), then step 4 once #16 posts a reference score.
+- How to test: `cd ed72/environment/hospital && uv run --no-project --python 3.12 --with pytest pytest -q tests`

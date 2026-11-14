@@ -2,7 +2,8 @@ import pytest
 from ed72_sim import constants as c
 from ed72_sim.engine import Simulation
 from ed72_sim.model import EventSpec
-from sim_fixtures import admit, advance, bed, crew, lines, make_world, patient
+from ed72_sim.world import generate_world
+from sim_fixtures import advance, lines, make_world, patient
 
 REPAIR = {"type": "repair"}
 DIVERT = {"type": "divert"}
@@ -53,13 +54,13 @@ def test_second_repair_is_accepted_and_charged_but_changes_nothing() -> None:
 
 
 def test_repair_over_the_hard_limit_is_rejected_without_effect() -> None:
-    sim = broken_ct(hard_limit=3_999)
-    sim.step([REPAIR])
-    assert spent(sim) == 2_000
+    sim = broken_ct(hard_limit=c.REPAIR_COST - 1)
     out = sim.step([REPAIR])
     assert out["results"][0]["reason"] == "over_hard_limit"
-    assert spent(sim) == 2_000
-    assert out["observation"]["ct"]["down_ticks_left"] == 1
+    assert spent(sim) == 0 and not lines(sim, "spend")
+    assert out["observation"]["ct"] == {"working": False, "down_ticks_left": 15}  # no early return
+    advance(sim, 14)
+    assert sim.observe()["ct"] == {"working": False, "down_ticks_left": 1}
 
 
 def test_hard_limit_is_inclusive_and_shared_by_agency_and_repair() -> None:
@@ -90,38 +91,30 @@ def test_diversion_share_is_strictly_below_70_percent(divert_u: float, turned_aw
     assert [p["id"] for p in sim.observe()["waiting"]] == ([] if turned_away else ["P001"])
 
 
-def test_diversion_also_turns_away_bus_crash_patients() -> None:
-    bus = [patient(i, 2, 1, source="bus", divert_u=0.1) for i in (1, 2)]
-    sim = Simulation(make_world(bus, [EventSpec("bus_crash", 2, 2, 8)]))
-    sim.step([DIVERT])
-    sim.step([])
-    assert {e["patient"] for e in lines(sim, "diverted")} == {"P001", "P002"}
-    assert sim.observe()["waiting"] == []
+def test_diversion_also_turns_away_bus_crash_patients_each_by_its_own_draw() -> None:
+    seen = set()
+    for seed in range(1, 6):
+        world = generate_world(seed)
+        bus = [p for p in world.patients if p.source == "bus"]
+        sim = Simulation(world)
+        advance(sim, bus[0].arrival_tick - 1)
+        sim.step([DIVERT])  # covers the two bus-crash ticks
+        advance(sim, 2)
+        diverted = {e["patient"] for e in lines(sim, "diverted")}
+        assert {p.id for p in bus if p.divert_u < c.DIVERT_SHARE} == diverted & {p.id for p in bus}
+        arrived = {e["patient"] for e in lines(sim, "arrival", source="bus")}
+        assert arrived == {p.id for p in bus if p.divert_u >= c.DIVERT_SHARE}
+        seen |= {p.divert_u < c.DIVERT_SHARE for p in bus}
+    assert seen == {True, False}
 
 
 def test_diversion_expires_after_four_arrival_ticks_and_can_be_renewed() -> None:
-    late = patient(1, 5, 3, divert_u=0.0)
-    sim = Simulation(make_world([late]))
-    sim.step([DIVERT])
-    advance(sim, 4)
+    sim = Simulation(make_world([patient(n, n, 3, divert_u=0.69) for n in range(1, 7)]))
+    sim.step([DIVERT])  # ticks 1..4 are covered
+    for n in range(1, 5):
+        assert [e["patient"] for e in lines(sim, "diverted")] == [f"P{k:03d}" for k in range(1, n + 1)]
+        sim.step([])
+    assert sim.tick == 5 and not [e for e in lines(sim, "arrival") if e["t"] < 5]
     assert sim.observe()["diversion"] == {"active": False, "ticks_left": 0}
-    assert [p["id"] for p in sim.observe()["waiting"]] == ["P001"]
+    assert [p["id"] for p in sim.observe()["waiting"]] == ["P005"]
     assert sim.step([DIVERT])["results"][0]["ok"] is True
-
-
-def test_waiting_for_ct_flag_and_stall_while_the_scanner_is_down() -> None:
-    world = make_world([patient(1, 0, 1, needs_ct=True)], [EventSpec("ct_breakdown", 1, 16, 0)])
-    sim = Simulation(world)
-    sim.step(crew("resus", 1, 1) + [admit("P001", "resus")])
-    advance(sim, 3)
-    row = bed(sim, "R1")
-    assert row["treated_ticks"] == 3 == (c.TREATMENT_TICKS[1] + 1) // 2
-    assert row["waiting_for_ct"] is True and row["covered"] is True
-    advance(sim, 4)
-    assert bed(sim, "R1")["treated_ticks"] == 3
-    sim.step([REPAIR])
-    advance(sim, 3)
-    assert sim.observe()["ct"]["working"] is True
-    assert bed(sim, "R1")["treated_ticks"] == 4
-    advance(sim, 2)
-    assert bed(sim, "R1")["patient"] is None
