@@ -1,10 +1,8 @@
 # Difficulty screening (issue #67)
 
-## Status
+## Decision
 
-This is a deterministic offline screen, not a final difficulty decision. It does not change `config/default.json`, SPEC §12, or HANDBOOK.md. Kostiantyn owns the final values. Any accepted value must be recorded in SPEC §12 through the contract-change process and in the agent-visible handbook before merge.
-
-The `arrival_mean` sweep found a candidate at **3.0** that passes the current five-seed reference and baseline comparisons. It doubles the default mean arrival rate, so it needs an explicit fairness decision; the result does not establish held-out-seed or model performance. Values 2.45 and 2.475 are milder, but miss the “divert-all about 47 or less” target on at least one of five seeds.
+Kostiantyn selected **3.0 arrivals per tick** for the default, with the remaining knobs unchanged. The scores below compare candidate configurations on seeds 1–5. Held-out seeds and model performance still need their separate evaluation.
 
 ## Method and source pins
 
@@ -81,6 +79,6 @@ Reference beats every listed baseline on all five seeds; severity-first is below
 
 At 3.0, do-nothing is 0, stop-early is below reactive proxy, the reference beats reactive and every exploit on all five seeds, and divert-all's worst score is **47.93**. Severity-first is at most 60.77. This candidate passes the tested score ordering, though severity-first falls below reactive proxy on four of five seeds; the #69 aspiration that reactive remain below severity-first is not met. Idle-then-fill remains below 0.05 reward (max 2.46 points).
 
-## Disposition
+## Why 3.0
 
-`arrival_mean = 3.0` is the strongest screening candidate among these values, not an adopted rule. It achieves the broadest margin while meeting the measured divert-all target. It also roughly doubles the starting mean and has not been checked on held-out seeds or model runs. Ask Kostiantyn to approve or reject this candidate, and coordinate with #69 on any further one-knob screen. No default, SPEC, or handbook value changes in this document-only stage.
+The selected configuration produced the strongest separation between the reference and the tested baselines while keeping divert-all near 47 points. The reference outscored the reactive proxy and every exploit on all five seeds. The original red-team greedy comparison remains pinned to its 1.5-arrival setup. The tables above cover the new default.

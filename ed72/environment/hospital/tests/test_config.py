@@ -39,7 +39,7 @@ def test_partial_override_keeps_other_defaults(tmp_path: Path) -> None:
 
 
 def test_higher_arrival_mean_adds_base_patients(tmp_path: Path) -> None:
-    busy = generate_world(1, load_config(write(tmp_path, {"arrival_mean": 3.0})))
+    busy = generate_world(1, load_config(write(tmp_path, {"arrival_mean": c.ARRIVAL_MEAN + 1.5})))
     base = lambda w: sum(p.source == "base" for p in w.patients)
     assert base(busy) > base(generate_world(1))
 
@@ -85,7 +85,7 @@ def test_collect_uses_config(tmp_path: Path) -> None:
     log = tmp_path / "absent.jsonl"
     default = collect_module.collect(1, log, tmp_path / "a.json")
     busy = collect_module.collect(
-        1, log, tmp_path / "b.json", load_config(write(tmp_path, {"arrival_mean": 3.0}))
+        1, log, tmp_path / "b.json", load_config(write(tmp_path, {"arrival_mean": c.ARRIVAL_MEAN + 1.5}))
     )
     assert busy["totals"]["arrived"] > default["totals"]["arrived"]
 

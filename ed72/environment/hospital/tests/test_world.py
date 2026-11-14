@@ -69,7 +69,8 @@ def test_base_rate_and_ct_share() -> None:
         base = [p for p in generate_world(seed).patients if p.source == "base"]
         base_counts.append(len(base))
         high += [p for p in base if p.esi in c.CT_ESI]
-    assert 0.85 * 1.5 * 144 < sum(base_counts) / len(SEEDS) < 1.15 * 1.5 * 144
+    expected = c.ARRIVAL_MEAN * c.TICKS
+    assert 0.85 * expected < sum(base_counts) / len(SEEDS) < 1.15 * expected
     assert 0.4 < sum(p.needs_ct for p in high) / len(high) < 0.6
 
 
@@ -84,7 +85,7 @@ def test_daily_arrival_curve() -> None:
 def test_golden_seed_1() -> None:
     # Pinned so any silent change to draw order or stream names fails loudly.
     world = generate_world(1)
-    assert len(world.patients) == 232
+    assert len(world.patients) == 429
     first = [(p.id, p.arrival_tick, p.esi, p.needs_ct, p.source) for p in world.patients[:3]]
     assert first == [
         ("P001", 1, 4, False, "base"),

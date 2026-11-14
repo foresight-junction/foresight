@@ -33,5 +33,5 @@ Screen the `arrival_mean` difficulty knob offline against the merged baselines a
 - Numeric runs use base main `d1986f054adc9ca4c06ed3863a4e04c7ecac80c9` and reference policy source `cc53151a31fb6db8557b1a9c65274f63580c922a`. PR #73's failure-code attribution change is outside the base and does not affect numeric rewards.
 
 ## Handoff
-Done: offline arrival-mean sweep and per-seed baseline comparison, documented in `docs/TUNING.md`. Next: get Kostiantyn's decision and coordinate with #69 on any follow-up knob. Reproduce by archiving the pinned base, overlaying `ed72/solution/policy.py` from `cc53151`, then running the configured baseline driver described in `docs/TUNING.md`; no paid model run is needed.
-- 
+
+Kostiantyn selected 3.0 arrivals per tick on #67. The runtime constant, default JSON, SPEC and handbook use the selected rate. The red-team round-one ordering still exercises its original 1.5-arrival configuration. The new default was evaluated with the reference and baselines on seeds 1–5, as recorded in docs/TUNING.md.
