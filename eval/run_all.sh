@@ -53,7 +53,7 @@ command -v "${HARBOR_CMD[0]}" >/dev/null 2>&1 || die "'${HARBOR_CMD[0]}' not fou
 [ -f "$TASK_DIR/task.toml" ] || die "$TASK_DIR/task.toml not found. The Harbor task is built by #22."
 
 # KEY_NAME is the key the user sets; OPENCODE_KEY_NAME is the variable OpenCode's provider reads.
-# They differ only for Google (README "How to run it" has the same table).
+# They differ only for Google (README "Run it" has the same table).
 KEY_NAME=""
 OPENCODE_KEY_NAME=""
 if [ "$MODE" = all ]; then
