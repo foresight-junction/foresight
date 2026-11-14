@@ -8,7 +8,7 @@
 #   scripts/wt.sh board                                       open GitHub issues (the team task board)
 #   scripts/wt.sh done <slug> [-f]                            remove a worktree (keeps the branch)
 #
-# Set SKIP_INSTALL=1 to skip uv sync in new worktrees.
+# Set SKIP_INSTALL=1 to skip uv sync / pnpm install in new worktrees.
 
 set -euo pipefail
 
@@ -97,7 +97,11 @@ cmd_new() {
   git worktree add --quiet --no-track -b "$branch" "$path" "$base"
 
   # Local env files are gitignored, so copy them in
-  if [ -f "$MAIN_ROOT/.env" ]; then cp "$MAIN_ROOT/.env" "$path/.env"; fi
+  for f in .env backend/.env frontend/.env; do
+    if [ -f "$MAIN_ROOT/$f" ]; then
+      mkdir -p "$(dirname "$path/$f")"; cp "$MAIN_ROOT/$f" "$path/$f"
+    fi
+  done
 
   # Branch context file, committed straight away
   local tmpl="$path/.context/TEMPLATE.md" ctx="$path/.context/$slug.md"
@@ -117,11 +121,15 @@ cmd_new() {
 
   if [ "${SKIP_INSTALL:-0}" != "1" ]; then
     local d
-    for d in . ed72/environment/hospital eval analysis training; do
+    for d in . backend ed72/environment/hospital eval analysis training; do
       if [ -f "$path/$d/pyproject.toml" ]; then
         (cd "$path/$d" && uv sync --quiet) || echo "warning: uv sync failed in $d (is uv installed?)" >&2
       fi
     done
+    if [ -f "$path/frontend/package.json" ]; then
+      (cd "$path/frontend" && pnpm install --frozen-lockfile --silent) \
+        || echo "warning: pnpm install failed in frontend (is pnpm installed?)" >&2
+    fi
   fi
 
   echo

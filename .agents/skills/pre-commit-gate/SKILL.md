@@ -25,25 +25,23 @@ Any match → **stop**. Move the value to `.env`, add the name to `.env.example`
 ## 3. noslop
 Run the `noslop` skill on the staged changes.
 
-## 4. Format and lint
-From the repo root:
-```bash
-uvx ruff format . && uvx ruff check --fix .
-```
+## 4. Format and lint (only for the parts you changed)
+- Python, from the repo root (settings in `ruff.toml` and each project's `pyproject.toml`):
+  `uvx ruff format . && uvx ruff check --fix .`
+- Frontend: `cd frontend && pnpm prettier --write src && pnpm lint`
 
 Re-stage after formatting: `git add -A`.
 
 ## 5. It still runs
-- If `ed72/environment/hospital/pyproject.toml` exists:
-  `uv run --project ed72/environment/hospital --with pytest pytest -q ed72/environment/hospital`
-  (exit code 5 means no tests were collected, which is fine).
-- For any other folder you changed that has its own `pyproject.toml` (`eval/`, `analysis/`, `training/`), run the same pattern with that folder.
+- For every folder you changed that has its own `pyproject.toml` (today `backend/`; later `ed72/environment/hospital/`, `eval/`, `analysis/`, `training/`):
+  `cd <folder> && uv run --with pytest pytest -q` (exit code 5 means no tests were collected, which is fine).
+- Frontend: `cd frontend && pnpm build && pnpm test`
 - For every changed `.sh` file: `bash -n <file>`.
 
 ## 6. Contracts
 If you changed a tool name or its args/result shape, the score object, an event-log line, an env var or a port: `docs/CONTRACTS.md` must be updated **in this same commit**, and you must have followed the `contract-change` skill. If not, stop and do that first.
 
-If you changed a rule the scorer applies or a sim rate, `ed72/environment/workspace/HANDBOOK.md` must be updated in the same PR (AGENTS.md rule 10.3).
+If you changed a rule the scorer applies or a sim rate, the agent-visible rules (`HANDBOOK.md` or the rules tool) and `docs/ED_Management_Simulator_RU.md` must be updated in the same PR (AGENTS.md rule 10.3).
 
 ## 7. Context file
 Update `.context/<branch-slug>.md` (Status, and any new decisions) and stage it.

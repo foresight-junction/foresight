@@ -12,8 +12,47 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+
+      - name: ruff format + lint
+        run: |
+          set -euo pipefail
+          uvx ruff format --check .
+          uvx ruff check .
+
+      # Projects are discovered (backend/, ed72/environment/hospital/, eval/ ...), so a new
+      # pyproject.toml is tested without editing this file.
+      - name: pytest per uv project
+        run: |
+          set -euo pipefail
+          root="$PWD"
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            dir="$(dirname "$f")"
+            echo "::group::pytest in $dir"
+            cd "$root/$dir"
+            rc=0
+            uv run --with pytest pytest -q || rc=$?
+            cd "$root"
+            echo "::endgroup::"
+            # exit code 5 means no tests collected, which is fine until tests land
+            if [ "$rc" -ne 0 ] && [ "$rc" -ne 5 ]; then
+              echo "pytest failed in $dir (exit $rc)"
+              exit "$rc"
+            fi
+          done < <(git ls-files 'pyproject.toml' '*/pyproject.toml' | grep -vE '^(spikes|harbor/unfindable)/' || true)
+
+      - name: shell syntax
+        run: |
+          set -euo pipefail
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "bash -n $f"
+            bash -n "$f"
+          done < <(git ls-files '*.sh')
 
       # Frontend (skipped until frontend/ exists)
       - if: hashFiles('frontend/package.json') != ''
@@ -26,22 +65,12 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-      - name: frontend lint + build
+      - name: frontend lint + build + test
         if: hashFiles('frontend/package.json') != ''
         working-directory: frontend
         run: |
+          set -euo pipefail
           pnpm install --frozen-lockfile
           pnpm lint
           pnpm build
-
-      # Backend (skipped until backend/ exists)
-      - if: hashFiles('backend/pyproject.toml') != ''
-        uses: astral-sh/setup-uv@v6
-      - name: backend lint + import + tests
-        if: hashFiles('backend/pyproject.toml') != ''
-        working-directory: backend
-        run: |
-          uv sync
-          uvx ruff check .
-          uv run python -c "import app.main"
-          if [ -d tests ]; then uv run pytest -q; fi
+          pnpm run --if-present test

@@ -21,8 +21,8 @@ For a **breaking** change, wait for a human (or the owners of the affected areas
 ## 3. Make it a tiny separate PR
 Do it on its own branch (`scripts/wt.sh new <owner> <area> contract-<name> -i 1`), changing only:
 - `docs/CONTRACTS.md`
-- the Python types in `ed72/environment/hospital/ed72_sim/` that implement the shape (wherever the owning lane put them)
-- `ed72/environment/workspace/HANDBOOK.md`, if the agent can see the change
+- the code that implements the shape: today `backend/app/schemas.py` (Pydantic) and `frontend/src/types.ts` (TypeScript); in the `ed72/` layout, the types in `ed72/environment/hospital/ed72_sim/`
+- the agent-visible rules (`HANDBOOK.md` or the rules tool), if the agent can see the change
 - a stub tool or fixture returning the new shape, so other lanes can build against it straight away
 
 Open the PR with `ship-pr`, labelled `contract`, and ask your human to merge it quickly.

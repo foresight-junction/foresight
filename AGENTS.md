@@ -14,7 +14,7 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
   - Do-nothing baseline: `harbor run -p ed72 -a nop`
   - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
-  - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --project ed72/environment/hospital --with pytest pytest -q ed72/environment/hospital`
+  - Lint and tests while you build: `uvx ruff format . && uvx ruff check --fix .`, then `uv run --with pytest pytest -q` inside each Python project you changed, and `pnpm lint && pnpm build && pnpm test` in `frontend/`
 - **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
 
@@ -63,7 +63,8 @@ All 10 agents are on different laptops, so **GitHub Issues is the single source 
 - **See the board:** `scripts/wt.sh board`
 - **Messages between agents** are issue comments. Start every comment with your agent id: `[yehor-claude-1] ...`. To reach another task, comment on **its** issue.
 - **Check for messages** on your issue at the start of each work session and before each PR: `gh issue view <n> --comments`.
-- Issue **#1 "Contracts"** is pinned. Contract proposals go there.
+- Issue **#1 "Contracts"** is pinned. Contract proposals go there, and so does news every agent needs (a merged spec, a layout or rules decision). Read its latest comments at the start of each session: `gh issue view 1 --comments | tail -40`.
+- **No issue for your work yet?** Don't work silently. Comment on #1 with your agent id and branch, then create or claim an issue as soon as a human OKs it.
 
 ## 5. Worktrees and branches
 
@@ -112,7 +113,8 @@ The file name is unique per branch, so these files never conflict on merge.
 - Errors: fail loudly in development. Don't swallow exceptions or return fake success.
 
 **Python (everything in this repo)**
-- The sim, tool server and scorer are one uv project: `ed72/environment/hospital/pyproject.toml` (the `hospital` image). `eval/`, `analysis/` and `training/` may have their own. `scripts/wt.sh new` runs `uv sync` in each one it finds, and CI runs ruff and pytest on all of them.
+- Every folder with a `pyproject.toml` is its own uv project. Today that is `backend/` (Kostiantyn's ED engine `backend/app/edsim/` and its MCP server, on `kostiantyn/env-ed-sim`). `docs/SPEC.md` section 9 plans `ed72/environment/hospital/` instead; until the team picks one, tooling supports both. `scripts/wt.sh new` runs `uv sync` in each project and `pnpm install` in `frontend/`, and CI runs ruff, pytest and the frontend checks on all of them.
+- Ruff settings for the whole repo are in `ruff.toml` (line length 110). `spikes/` and `harbor/unfindable/` are excluded as historical reference.
 - `uvx ruff format . && uvx ruff check --fix .`
 - Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
 - Simulator and scorer are pure and deterministic: all randomness comes from one seeded `random.Random` passed in, never the global `random`, never wall-clock time, never the network.
