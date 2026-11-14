@@ -82,3 +82,83 @@ At 3.0, do-nothing is 0, stop-early is below reactive proxy, the reference beats
 ## Why 3.0
 
 The selected configuration produced the strongest separation between the reference and the tested baselines while keeping divert-all near 47 points. The reference outscored the reactive proxy and every exploit on all five seeds. The original red-team greedy comparison remains pinned to its 1.5-arrival setup. The tables above cover the new default.
+
+## Update, Sat 14 Nov 22:40: proposal to move the default to 4.0 (issue #69)
+
+Status: proposed on `yehor/ref-gap-planner`. The difficulty value is Kostiantyn's decision.
+
+### Why reopen it
+
+A local run of OpenCode with Kimi K3.1 Pro on seed 42 at 3.0 scored **0.9876**; the oracle scored 0.9896. The model made 144 `step` calls with no exploit, no deaths and no faints. Gemini 3.8 Flash scored 0.8117 on the same seed. At 3.0 a strong model has no gap.
+
+At 3.0 the two slow resources never bind. In the reference run on seed 42 the most tired person peaks at fatigue 31 (tired starts at 60) and spend is €7 000 of €12 000, so W and B are a free 20 points and turn-by-turn severity-first play is enough.
+
+Doctor time is the limit. With full zones a patient needs about 1.05 doctor-ticks (0.04·6 + 0.14·2 + 0.34·1 + 0.30·0.5 + 0.18·0.25). A doctor who stays fresh works 2.5 / (2.5 + 1.6) = 61% of ticks, so six doctors supply about 3.66 doctor-ticks per tick. The permanent team saturates near 3.5 arrivals per tick. Above that, the score depends on buying agency cover in time (4 ticks of delay, 16 of stay), on deciding when leaving the budget pays, and on keeping staff under the tired threshold. All of these follow from handbook numbers.
+
+### What changes
+
+- `arrival_mean` 3.0 → 4.0. No other knob, rule, tool or score change.
+- The reference plans for scarcity (`ed72/solution/policy.py`): it keeps permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered, and orders agency staff whenever four or more patients go uncovered and no fresh person of that role is left. It stays within the budget until eight or more are uncovered, then spends up to €16 000. It reads only the observation.
+
+### Scores at 4.0 (out of 100, local sim, no model)
+
+| Policy | Seed 42 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference (this branch) | 94.02 | 93.37 | 88.59 | 94.01 | 92.67 | 94.05 |
+| Previous reference (main) | 57.29 | 71.55 | 64.16 | 67.46 | 57.14 | 64.36 |
+| Severity-first | 29.28 | 30.58 | 26.06 | 29.83 | 37.45 | 32.44 |
+| Reactive proxy | 48.05 | 47.33 | 44.69 | 50.12 | 49.66 | 47.43 |
+| Stop-early | 5.83 | 4.23 | 5.37 | 5.01 | 4.73 | 5.11 |
+| Do-nothing | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| Divert-all | 44.75 | 48.75 | 48.99 | 44.35 | 46.02 | 43.20 |
+| Rest-in-quiet-periods | 29.28 | 29.81 | 26.06 | 40.23 | 34.55 | 33.66 |
+| Admit-light-only | 14.68 | 11.81 | 11.66 | 11.07 | 12.86 | 12.13 |
+| Admit-without-coverage | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| Fill-beds-at-last-tick | 1.98 | 1.77 | 1.69 | 1.68 | 1.71 | 1.69 |
+| Spend-to-limit | 39.61 | 46.78 | 34.31 | 43.12 | 46.15 | 35.64 |
+| Random | 5.15 | 4.71 | 4.81 | 6.50 | 5.35 | 4.74 |
+
+Do-nothing is 0, stop-early is below the reactive proxy, and the reference beats the reactive proxy and every exploit on all six seeds. Divert-all's worst score is 48.99. The same seed and actions give the same score.
+
+Reference mean and range on twelve seeds (42, 1–11), by arrival mean:
+
+| Arrival mean | Reference (this branch) | Previous reference (main) |
+|---|---|---|
+| 3.0 | 98.4 (96–100) | 96.6 (86–100) |
+| 3.6 | 95.3 (90–98) | 79.0 (58–98) |
+| 3.8 | 92.6 (82–96) | 68.7 (52–94) |
+| 4.0 | 92.0 (84–95) | 60.6 (49–72) |
+
+The previous reference plays about as well as Kimi did at 3.0 (98.96 against 98.76 on seed 42), so its row is the nearest scripted estimate of a strong model that keeps playing turn by turn. A stronger stand-in, the previous reference plus hiring two doctors and a nurse whenever ten patients wait, averages 72.7 (58–86) at 4.0. Neither is a model run.
+
+### Not measured yet
+
+No model has been run at 4.0. The Kimi and Gemini scores above are at 3.0. The gap at 4.0 needs one agent run per model before the README table is updated.
+
+## Adopted, Sat 14 Nov: 4.0 arrivals plus a 75% diversion share
+
+Kostiantyn adopted #98 (`arrival_mean` 4.0 and the scarcity-planning reference) for `kostiantyn/final`. At 4.0, divert-all scored 48.75 on seed 1 and 48.99 on seed 2, above the "about 47" bar in AGENTS 10.5. One knob fixes that. A diversion now turns away **75%** of arrivals (was 70%; `DIVERT_SHARE`, HANDBOOK section 6). Only a policy that diverts sees the change. The reference, the reactive proxy, the exploits and the Gemini proxy below never divert, so their scores are identical to the 4.0 table above.
+
+The Gemini proxy is the Python controller Gemini 3.8 Flash wrote in its seed-42 run (`eval/results/2026-11-14-gemini-seed42/trajectory.json`), with only the MCP transport replaced by direct sim calls. At 3.0 it scores 81.17 on seed 42, the same as the real run. It shows the direction of a change but does not predict a model run.
+
+### Scores at 4.0 with the 75% diversion share (out of 100, local sim, no model)
+
+| Policy | Seed 42 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | Mean |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Reference | 94.0 | 93.4 | 88.6 | 94.0 | 92.7 | 94.1 | 92.8 |
+| Gemini proxy | 58.9 | 50.2 | 42.9 | 59.3 | 53.6 | 54.7 | 53.3 |
+| Severity-first | 29.3 | 30.6 | 26.1 | 29.8 | 37.4 | 32.4 | 30.9 |
+| Reactive proxy | 48.1 | 47.3 | 44.7 | 50.1 | 49.7 | 47.4 | 47.9 |
+| Rest-in-quiet-periods | 29.3 | 29.8 | 26.1 | 40.2 | 34.6 | 33.7 | 32.3 |
+| Spend-to-limit | 39.6 | 46.8 | 34.3 | 43.1 | 46.1 | 35.6 | 40.9 |
+| Divert-all | 41.4 | 45.2 | 43.2 | 41.3 | 40.8 | 40.2 | 42.0 |
+| Stop-early | 5.8 | 4.2 | 5.4 | 5.0 | 4.7 | 5.1 | 5.0 |
+| Do-nothing | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Admit-light-only | 14.7 | 11.8 | 11.7 | 11.1 | 12.9 | 12.1 | 12.4 |
+| Admit-without-coverage | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Fill-beds-at-last-tick | 2.0 | 1.8 | 1.7 | 1.7 | 1.7 | 1.7 | 1.8 |
+| Random | 4.9 | 4.2 | 5.0 | 6.5 | 5.1 | 5.2 | 5.1 |
+
+All of AGENTS 10.5 holds on these seeds: do-nothing is 0; stop-early < reactive proxy < reference; divert-all is at most 45.2; every exploit is below the reference. On seed 42 the reference beats the Gemini proxy by 35.1 points, up from 17.8 at 3.0. On seeds 6–10 and the held-out seeds 11–20, divert-all is at most 45.0, and the reference (mean 92.7 over 1–10 and 42; mean 92.0 and minimum 84.4 over 11–20) beats every baseline on every seed. The Gemini proxy averages 52.5 over 1–10 and 42 and 52.8 over 11–20.
+
+Tests moved with the value: the diversion boundary test in `tests/test_rules_actions.py` now checks 0.74 against 0.75.

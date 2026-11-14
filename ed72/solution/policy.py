@@ -1,10 +1,30 @@
-"""ED-72 reference decisions from the public observation only."""
+"""ED-72 reference decisions from the public observation only.
+
+Doctor time is the scarce resource: a patient needs about one doctor-tick on average, and a doctor
+who rests enough to stay fresh works about 61% of ticks (handbook section 3). Near the default
+arrival rate the department is at that limit, so the plan protects fresh staff and buys agency cover
+as soon as a backlog shows that the permanent team cannot keep up.
+"""
 
 from dataclasses import dataclass, field
 from itertools import count
 
 # Public rates: rulebook sections 5 and 8. The cutoff avoids a faint on the next Resus tick.
 MAX_SAFE_FATIGUE = 90 - 2.2
+# Planning cap: permanent staff normally rest before the 60-point tired threshold, which keeps them
+# at full coverage and leaves a reserve for patients who cannot wait.
+FRESH_FATIGUE = 50
+URGENT_ESI = 2
+# Uncovered patients that justify an agency order, and how many orders may be in transit at once.
+BACKLOG_TO_HIRE = 4
+MAX_ORDERS_IN_TRANSIT = 2
+# A backlog this large is worth leaving the budget for. One doctor past the budget costs 0.75
+# budget points (section 8) and adds 48 covered acute bed-ticks. OVERSPEND_LIMIT bounds the loss.
+BACKLOG_TO_OVERSPEND = 8
+OVERSPEND_LIMIT = 16000
+# An order arrives 4 ticks later (section 3), so a late one has too few ticks left to pay for itself.
+LAST_HIRE_TICK = 135
+LAST_CT_BREAKDOWN_START = 75
 REPAIR_COST = 2000
 AGENCY_PRICES = (("doctor", 900), ("nurse", 350))
 ZONES = ("resus", "acute", "fast_track")
@@ -23,15 +43,15 @@ PREFERENCES = {
 }
 
 
-def staff_plan(patients: dict[str, list[dict]], staff: list[dict]) -> tuple[dict, dict]:
+def staff_plan(
+    patients: dict[str, list[dict]], staff: list[dict], max_fatigue: float = MAX_SAFE_FATIGUE
+) -> tuple[dict, dict]:
     pools = {
         role: sorted(
             (
                 s
                 for s in staff
-                if s["role"] == role
-                and s["status"] in ("resting", "on_shift")
-                and s["fatigue"] < MAX_SAFE_FATIGUE
+                if s["role"] == role and s["status"] in ("resting", "on_shift") and s["fatigue"] < max_fatigue
             ),
             key=lambda s: (s["fatigue"], s["id"]),
         )
@@ -127,7 +147,14 @@ class ReferencePolicy:
                     patients[zone].append(patient)
                     admissions.append({"type": "admit", "patient": patient["id"], "zone": zone})
                     break
-        locations, covered = staff_plan(patients, observation["staff"])
+        unplaced = len(observation["waiting"]) - len(admissions)
+        locations, covered = staff_plan(patients, observation["staff"], FRESH_FATIGUE)
+        uncovered = _uncovered(patients, covered)
+        if any(p["esi"] <= URGENT_ESI for p in uncovered):
+            # Tired staff count for less and cost wellbeing, but a waiting ESI 1-2 can die this tick.
+            locations, covered = staff_plan(patients, observation["staff"])
+            uncovered = _uncovered(patients, covered)
+        actions.extend(self._backlog_hires(observation, locations, len(uncovered) + unplaced, spent))
         covered_ids = {
             p["id"] if "id" in p else p["patient"]
             for zone, rows in patients.items()
@@ -144,3 +171,36 @@ class ReferencePolicy:
         return actions
 
     act = actions
+
+    def _backlog_hires(self, observation: dict, locations: dict, backlog: int, spent: int) -> list[dict]:
+        """Order the role that has no fresh person left when patients are going uncovered."""
+        staff = observation["staff"]
+        tick = observation["tick"]
+        in_transit = sum(s["status"] == "agency_ordered" for s in staff)
+        if backlog < BACKLOG_TO_HIRE or in_transit >= MAX_ORDERS_IN_TRANSIT or tick > LAST_HIRE_TICK:
+            return []
+        budget = observation["budget"]
+        limit = budget["budget"]
+        if backlog >= BACKLOG_TO_OVERSPEND:
+            limit = max(limit, min(OVERSPEND_LIMIT, budget["hard_limit"]))
+        # Keep one repair affordable until the breakdown window (section 5) has passed.
+        reserve = REPAIR_COST if tick <= LAST_CT_BREAKDOWN_START and self.repair_tick is None else 0
+        hires = []
+        for role, price in AGENCY_PRICES:
+            spare = any(
+                s["role"] == role
+                and s["status"] in ("resting", "on_shift")
+                and s["fatigue"] < FRESH_FATIGUE
+                and s["id"] not in locations
+                for s in staff
+            )
+            if not spare and spent + price + reserve <= limit:
+                hires.append({"type": "agency", "role": role})
+                spent += price
+        return hires
+
+
+def _uncovered(patients: dict[str, list[dict]], covered: dict[str, int]) -> list[dict]:
+    return [
+        p for zone, rows in patients.items() for p in sorted(rows, key=lambda p: p["esi"])[covered[zone] :]
+    ]
