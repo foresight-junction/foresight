@@ -41,10 +41,81 @@ One added habit, listed apart because it is not a skill ablation:
 | `no_panic_divert` | F6 | never divert | divert whenever more than 3 patients are waiting (issue #36 variant 6: it adds a harmful behaviour) |
 
 Each lever changes only the action types it owns, checked in lockstep on the same observations
-(`test_each_lever_changes_only_what_it_owns`). The levers share the soft budget, checked in the
+(`test_each_lever_changes_only_what_it_owns`). Known limit: F1 is allowed to differ in admit, assign and
+agency types (admit zones feed staffing and the shortfall count), so that check stays at the action-type
+level. F3 is checked at decision level: it differs only while a warning is visible, and ESI 1-2 admits
+stay identical. The levers share the soft budget, checked in the
 order repair, surge agency, shortfall agency.
 
-## Results, seeds 1-3
+## Results at the shipped config (arrival_mean 4.0), seeds 42, 1, 2, 3
+
+Run on main at `4b51656` (PR #104), no config file (the built-in defaults equal `config/default.json`:
+arrival_mean 4.0, soft budget 12000). Command:
+`python -m ed72_ablations.run --seeds 42 1 2 3 --policy reference --json out.json`. No `ed72-s*` seed
+folders exist; the shipped seeds are 42 (the task default) plus 1-3.
+
+**Which policy each row ablates.** Rows `full` to `adds panic divert (F6)` are the STAND-IN
+(`standin.py`) with one lever switched off. The last row is the CURRENT #98 reference
+(`ed72/solution/ed72_reference.py`), played unablated: it has no lever switches, so it is a yardstick,
+not an ablation.
+
+| variant | mean score | O | T | W | B | delta vs full | seed 42 | seed 1 | seed 2 | seed 3 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| full | 87.81 | 0.911 | 0.813 | 0.854 | 1.000 |  | 89.08 | 94.27 | 78.34 | 89.54 |
+| no resus_reservation (F1) | 48.24 | 0.518 | 0.435 | 0.627 | 1.000 | -39.57 | 46.94 | 56.52 | 40.92 | 48.57 |
+| no rest_rotation (F2) | 43.46 | 0.498 | 0.430 | 0.000 | 1.000 | -44.36 | 41.78 | 40.67 | 45.44 | 45.94 |
+| no warnings (F3) | 82.15 | 0.864 | 0.736 | 0.804 | 1.000 | -5.66 | 83.72 | 90.56 | 72.14 | 82.17 |
+| no ct_repair (F4) | 87.18 | 0.903 | 0.809 | 0.861 | 1.000 | -0.64 | 73.70 | 94.95 | 87.36 | 92.70 |
+| no agency (F5) | 43.63 | 0.478 | 0.373 | 0.565 | 1.000 | -44.18 | 39.04 | 52.31 | 40.14 | 43.06 |
+| adds panic divert (F6) | 59.70 | 0.628 | 0.472 | 1.000 | 1.000 | -28.11 | 57.02 | 62.63 | 56.46 | 62.70 |
+| reference (unablated, #98) | 92.50 | 0.976 | 0.870 | 0.989 | 0.705 | +4.69 | 94.02 | 93.37 | 88.59 | 94.01 |
+
+Per-seed delta vs full (seed 42, 1, 2, 3), in points:
+
+| variant | seed 42 | seed 1 | seed 2 | seed 3 |
+|---|---|---|---|---|
+| no resus_reservation (F1) | -42.1 | -37.7 | -37.4 | -41.0 |
+| no rest_rotation (F2) | -47.3 | -53.6 | -32.9 | -43.6 |
+| no warnings (F3) | -5.4 | -3.7 | -6.2 | -7.4 |
+| no ct_repair (F4) | -15.4 | +0.7 | +9.0 | +3.2 |
+| no agency (F5) | -50.0 | -42.0 | -38.2 | -46.5 |
+| adds panic divert (F6) | -32.1 | -31.6 | -21.9 | -26.8 |
+| reference (#98), for scale | +4.9 | -0.9 | +10.3 | +4.5 |
+
+**Stand-in vs reference.** The stand-in (87.8 mean) is 4.7 below the current reference (92.5): behind on
+three seeds out of four, ahead by 0.9 on seed 1, and with O 0.911 against 0.976. It is still a strong policy
+(severity-first alone scores about 31 on seed 1), so ablating it says something real, but the deltas are
+those of a policy about 5 points short of the reference, not of the reference. The stand-in keeps B at
+1.000 by staying under the soft budget (spend 11.2-11.9k), while the reference overspends (15.5-15.8k,
+B 0.705) and buys 4.7 points of O and T with it. It was tuned for 1.5-3.0 and not retuned here.
+
+**Reading per lever.**
+
+- **F5 agency (-44.2):** now the largest lever, together with F2 and F1. At 4.0 the 6 doctors and 9
+  nurses cannot cover the beds alone; without agency 47-92 patients die per seed (spend falls to the 4850
+  of base salaries).
+- **F2 rest rotation (-44.4):** W falls to 0 and 53-79 patients die; 60 faints per seed.
+- **F1 resus reservation (-39.6):** low-acuity patients take resus beds and each ties up a doctor; deaths
+  42-76 per seed.
+- **F6 panic divert (-28.1):** an added habit, not a skill. 269-365 diversions per seed (of 561-635 arrivals) at loss 0.75.
+  It shows that diverting hurts.
+- **F3 warnings (-5.7):** small but consistent on all four seeds (-3.7 to -7.4), the first nonzero delta
+  for warnings. It shows up as T and O (0.864 vs 0.911): holding acute free and ordering surge agency
+  ahead of the bus crash saves ESI 2-3 patients. At 3.0 it was exactly 0.
+- **F4 CT repair (-0.6, noisy):** per-seed deltas range from -15.4 (seed 42, 12 deaths) to +9.0 (seed 2).
+  The mean is inside the noise. The 2000 repair competes with agency for the same soft budget, so on some
+  seeds skipping the repair frees money that is worth more as agency. On the mean, F4 is inert; the
+  seed-42 loss shows it can matter when the breakdown overlaps a rush. Four seeds do not separate these.
+
+For #8 and #19: F1, F2, F5 carry the score at 4.0, F3 carries a few points, F4 does not carry the mean.
+No rules were added to force a nonzero delta.
+
+## Earlier results (superseded): lower arrival means
+
+Kept for the history of #36. These used the same stand-in at `arrival_mean` 1.5 and 3.0, seeds 1-3, with
+the #16 reference at 5264305 (not the current one). They are NOT the shipped difficulty.
+
+### Defaults of that time (1.5) and 3.0
 
 Default config (the constants; `arrival_mean` 1.5). Reference: `origin/kostiantyn/ref-policy` at 5264305.
 
@@ -75,7 +146,7 @@ Default config (the constants; `arrival_mean` 1.5). Reference: `origin/kostianty
 The stand-in matches the #16 reference exactly on every seed at the default and within 0.1 per seed
 at 3.0, so the deltas are a fair estimate of what each skill is worth to a player of reference strength.
 
-## What the deltas mean
+## What the deltas meant at 1.5 and 3.0
 
 - **F1:** -0.8 at the default (only T: ESI 1 patients covered a tick late, nobody dies), -20.5 at 3.0,
   where low-acuity patients in resus block ESI 1 beds and use a whole doctor each.
