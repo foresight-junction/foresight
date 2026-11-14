@@ -158,7 +158,7 @@ The `[[verifier.collect]]` hook runs `collect.py` inside `hospital` after the ag
 | Shortcut | Defence |
 |---|---|
 | Put a patient in a bed with no staff | Timeliness counts only from the first covered tick; uncovered ESI 1–2 beds carry a 10% / 3% death risk per tick |
-| Fill every bed in the last tick | The 0.3 end loss applies only to patients with at least one covered tick; otherwise the loss is 1 |
+| Fill every bed in the last tick | The 0.3 end loss applies only to patients with at least one covered tick; otherwise the loss is 1. Admitting to a covered bed at tick 143 does earn 0.3, as honest play would; the gain is capped by free covered beds (at most 17), and patients held back to fill late keep facing the waiting hazards and count late in T. CI checks that the `fill-beds-at-the-last-tick` baseline scores below the reference (#12) |
 | Divert all the time | Each diverted patient loses 0.7 of its weight and is late; permanent diversion caps around 47 points, so the reference must clearly beat 47 |
 | Spend up to €24 000 | B falls to 0 (up to 10 points); spending that saves more patients than it costs is good play, not an exploit |
 | Everyone rests in quiet periods | W is worth at most 10 × O; uncovered beds stall and ESI 1 patients face 10–15% death risk per tick |
