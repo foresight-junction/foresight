@@ -5,7 +5,6 @@ the main container calls the same tools. There is deliberately no reset, seed,
 ground-truth or finalise endpoint: collect.py finishes the episode from the log.
 """
 
-import json
 import os
 import threading
 from pathlib import Path
@@ -17,37 +16,31 @@ from starlette.responses import JSONResponse
 
 CALL_CAP = 500
 MAX_ACTIONS = 50
-LOG_PATH = Path("/var/lib/ed72/events.jsonl")
 HANDBOOK_PATH = Path(__file__).with_name("HANDBOOK.md")
 
 
 class Sim(Protocol):
-    events: list[dict]
+    """The ed72_sim.engine.Simulation surface the server uses. The sim owns the event log."""
 
     def observe(self) -> dict: ...
 
     def step(self, actions: list[dict]) -> dict: ...
 
+    def record_call(self, tool: str, args: dict, result: dict) -> None: ...
+
 
 class ToolHost:
-    """Counts calls, enforces the cap and episode end, and writes the event log."""
+    """Counts calls and enforces the cap; logs every call the sim does not log itself."""
 
-    def __init__(self, sim: Sim, handbook: str, log_path: Path) -> None:
+    def __init__(self, sim: Sim, handbook: str) -> None:
         self.sim = sim
         self.handbook = handbook
-        self.log_path = log_path
         self.calls = 0
-        self.seq = 0
-        self.sim_events_logged = 0
         self.lock = threading.Lock()
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.write_text("")
-        self._flush_sim_events()
 
     def call(self, tool: str, args: dict[str, Any]) -> dict:
         with self.lock:
             self.calls += 1
-            tick = self.sim.observe()["tick"]
             if self.calls > CALL_CAP:
                 result = {"error": "call_cap_reached"}
             elif tool == "rules":
@@ -56,37 +49,19 @@ class ToolHost:
                 result = self.sim.observe()
             else:
                 result = self._step(args["actions"])
-            self._write(
-                {"t": tick, "src": "agent", "tool": tool, "args": args, "result": _log_result(result)}
-            )
-            self._flush_sim_events()
+                if "error" not in result:
+                    return result
+            # The observation follows from the log, so only errors are worth storing.
+            self.sim.record_call(tool, args, result if "error" in result else {"ok": True})
             return result
 
     def _step(self, actions: list[dict]) -> dict:
-        if self.sim.observe()["finished"]:
-            return {"error": "episode_over"}
+        # Only what the sim applied reaches its log, so collect.py's replay stays exact.
         out = self.sim.step(actions[:MAX_ACTIONS])
+        if "error" in out:
+            return out
         extra = [{"index": i, "ok": False, "reason": "bad_action"} for i in range(MAX_ACTIONS, len(actions))]
         return {"results": out["results"] + extra, "observation": out["observation"]}
-
-    def _flush_sim_events(self) -> None:
-        for event in self.sim.events[self.sim_events_logged :]:
-            self._write(event)
-        self.sim_events_logged = len(self.sim.events)
-
-    def _write(self, line: dict) -> None:
-        self.seq += 1
-        with self.log_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"seq": self.seq, **line}, separators=(",", ":")) + "\n")
-
-
-def _log_result(result: dict) -> dict:
-    # The observation is a pure function of the log, so only the decision-relevant part is stored.
-    if "results" in result:
-        return {"results": result["results"]}
-    if "error" in result:
-        return result
-    return {"ok": True}
 
 
 def build_server(host: ToolHost) -> FastMCP:
@@ -122,17 +97,26 @@ def build_server(host: ToolHost) -> FastMCP:
     return mcp
 
 
-def _make_sim(seed: int) -> Sim:
+def _make_sim(seed: int, log_path: Path) -> Sim:
     if os.environ.get("USE_MOCKS") == "1":
-        from mock_sim import MockSimulation  # MOCK: until #4 lands
+        from mock_sim import MockSimulation  # MOCK: until #3/#4 land on main
 
-        return MockSimulation(seed)
-    raise SystemExit("The real ed72_sim is not wired yet (waiting on #4). Run with USE_MOCKS=1.")
+        return MockSimulation(seed, log_path)
+    from ed72_sim.engine import Simulation
+    from ed72_sim.world import generate_world
+
+    return Simulation(generate_world(seed), log_path)
 
 
 def main() -> None:
-    sim = _make_sim(int(os.environ["ED72_SEED"]))
-    host = ToolHost(sim, HANDBOOK_PATH.read_text(encoding="utf-8"), LOG_PATH)
+    from ed72_sim.constants import EVENT_LOG_PATH
+
+    log_path = Path(EVENT_LOG_PATH)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    # A restarted server restarts the sim at tick 0, so the old log would no longer replay.
+    log_path.write_text("", encoding="utf-8")
+    sim = _make_sim(int(os.environ["ED72_SEED"]), log_path)
+    host = ToolHost(sim, HANDBOOK_PATH.read_text(encoding="utf-8"))
     build_server(host).run(transport="streamable-http", host="0.0.0.0", port=8000, path="/mcp")
 
 

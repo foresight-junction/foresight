@@ -1,18 +1,22 @@
-"""MOCK: a stand-in for ed72_sim.Simulation until #4 lands.
+"""MOCK: a stand-in for ed72_sim.engine.Simulation until #3/#4 land on main.
 
-It implements only the CONTRACTS v1 surface the tool server needs: observe(),
-step(actions) and an `events` list of sim-written log lines. Used only when
-USE_MOCKS=1 and in the server tests; it is not copied into the hospital image.
+It mirrors the real class's surface the tool server uses (kostiantyn/env-sim-core):
+observe(), step(actions) returning `episode_over` after the last tick, `finished`,
+an `events` list whose `seq` is the list index, a JSONL log file, and the
+`record_call` method requested on #4. Used only with USE_MOCKS=1 and in the server
+tests; it is not copied into the hospital image.
 """
 
+import json
 import random
+from pathlib import Path
 
-LAST_TICK = 143
+TICKS = 144
 BEDS = {"resus": ["R1", "R2", "R3"], "acute": [f"A{i}" for i in range(1, 9)], "fast_track": ["F1", "F2"]}
 
 
 class MockSimulation:
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, log_path: Path | None = None) -> None:
         self.rng = random.Random(seed)
         self.tick = 0
         self.finished = False
@@ -21,19 +25,30 @@ class MockSimulation:
         self.beds: dict[str, str | None] = {bed: None for beds in BEDS.values() for bed in beds}
         self.events: list[dict] = []
         self.last_rejected: list[dict] = []
+        self.log_path = log_path
         self._arrive()
+
+    def _write(self, fields: dict) -> None:
+        line = {"seq": len(self.events), "t": self.tick, **fields}
+        self.events.append(line)
+        if self.log_path is not None:
+            with self.log_path.open("a", encoding="utf-8", newline="\n") as f:
+                f.write(json.dumps(line, separators=(",", ":")) + "\n")
+
+    def record_call(self, tool: str, args: dict, result: dict) -> None:
+        self._write({"src": "agent", "tool": tool, "args": args, "result": result})
 
     def _arrive(self) -> None:
         for _ in range(self.rng.randint(0, 2)):
             patient = {"id": f"P{self.next_id:03d}", "esi": self.rng.randint(1, 5), "arrived_tick": self.tick}
             self.next_id += 1
             self.waiting.append(patient)
-            self.events.append({"t": self.tick, "src": "sim", "event": "arrival", "patient": patient["id"]})
+            self._write({"src": "sim", "event": "arrival", "patient": patient["id"]})
 
     def observe(self) -> dict:
         return {
             "tick": self.tick,
-            "ticks_left": LAST_TICK - self.tick,
+            "ticks_left": TICKS - 1 - self.tick,
             "finished": self.finished,
             "waiting": [dict(p, waited_ticks=self.tick - p["arrived_tick"]) for p in self.waiting],
             "beds": [
@@ -56,12 +71,12 @@ class MockSimulation:
             return "no_free_bed"
         self.beds[free[0]] = patient["id"]
         self.waiting.remove(patient)
-        self.events.append(
-            {"t": self.tick, "src": "sim", "event": "admitted", "patient": patient["id"], "bed": free[0]}
-        )
+        self._write({"src": "sim", "event": "admitted", "patient": patient["id"], "bed": free[0]})
         return None
 
     def step(self, actions: list[dict]) -> dict:
+        if self.finished:
+            return {"error": "episode_over"}
         results = []
         self.last_rejected = []
         for index, action in enumerate(actions):
@@ -71,7 +86,8 @@ class MockSimulation:
             else:
                 results.append({"index": index, "ok": False, "reason": reason})
                 self.last_rejected.append({"index": index, "action": action, "reason": reason})
-        if self.tick == LAST_TICK:
+        self.record_call("step", {"actions": actions}, {"results": results})
+        if self.tick == TICKS - 1:
             self.finished = True
         else:
             self.tick += 1

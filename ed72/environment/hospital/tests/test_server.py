@@ -14,11 +14,11 @@ from mock_sim import MockSimulation
 
 
 def make_host(tmp_path: Path, seed: int = 7, name: str = "events.jsonl") -> server.ToolHost:
-    return server.ToolHost(MockSimulation(seed), "HANDBOOK TEXT", tmp_path / name)
+    return server.ToolHost(MockSimulation(seed, tmp_path / name), "HANDBOOK TEXT")
 
 
 def read_log(host: server.ToolHost) -> list[dict]:
-    return [json.loads(line) for line in host.log_path.read_text().splitlines()]
+    return [json.loads(line) for line in host.sim.log_path.read_text().splitlines()]
 
 
 def mcp_call(host: server.ToolHost, tool: str, args: dict, raise_on_error: bool = True):
@@ -91,13 +91,33 @@ def test_event_log_format(tmp_path):
         host.call("step", {"actions": []})
     host.call("rules", {})
     lines = read_log(host)
-    assert [line["seq"] for line in lines] == list(range(1, len(lines) + 1))
+    assert [line["seq"] for line in lines] == list(range(len(lines)))
     agent = [line for line in lines if line["src"] == "agent"]
     assert [line["tool"] for line in agent] == ["observe", "step", "step", "step", "rules"]
     assert [line["t"] for line in agent] == [0, 0, 1, 2, 3]
     assert agent[1]["args"] == {"actions": []}
     sim = [line for line in lines if line["src"] == "sim"]
     assert sim and all(line["event"] in {"arrival", "admitted"} for line in sim)
+
+
+def test_refused_calls_are_logged_with_their_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "CALL_CAP", 145)
+    host = make_host(tmp_path)
+    for _ in range(144):
+        host.call("step", {"actions": []})
+    host.call("step", {"actions": [{"type": "repair"}]})
+    host.call("step", {"actions": [{"type": "repair"}]})
+    steps = [line for line in read_log(host) if line.get("tool") == "step"]
+    assert len(steps) == 146
+    assert [s["result"] for s in steps[-2:]] == [{"error": "episode_over"}, {"error": "call_cap_reached"}]
+    assert all("error" not in s["result"] for s in steps[:144])
+
+
+def test_more_than_50_actions_logs_only_what_the_sim_applied(tmp_path):
+    host = make_host(tmp_path)
+    host.call("step", {"actions": [{"type": "repair"}] * 53})
+    step_line = next(line for line in read_log(host) if line.get("tool") == "step")
+    assert len(step_line["args"]["actions"]) == 50
 
 
 def test_sim_admitted_event_is_logged(tmp_path):
@@ -122,7 +142,7 @@ def test_same_seed_same_actions_same_log(tmp_path):
             wait = host.sim.observe()["waiting"]
             acts = [{"type": "admit", "patient": p["id"], "zone": "acute"} for p in wait]
             host.call("step", {"actions": acts})
-        logs.append(host.log_path.read_text())
+        logs.append(host.sim.log_path.read_text())
     assert logs[0] == logs[1]
     for line in logs[0].splitlines():
         json.loads(line)

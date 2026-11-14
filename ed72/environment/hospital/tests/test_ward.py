@@ -14,7 +14,7 @@ WARD = Path(__file__).parents[2] / "ward"
 SERVER_CODE = """
 import pathlib, sys
 import mock_sim, server
-h = server.ToolHost(mock_sim.MockSimulation(1), "HANDBOOK TEXT", pathlib.Path(sys.argv[2]))
+h = server.ToolHost(mock_sim.MockSimulation(1, pathlib.Path(sys.argv[2])), "HANDBOOK TEXT")
 server.build_server(h).run(transport="streamable-http", host="127.0.0.1", port=int(sys.argv[1]), path="/mcp")
 """
 
