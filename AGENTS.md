@@ -4,14 +4,14 @@ Read this whole file before doing anything. It applies to every agent (Claude Co
 
 ## 1. Project
 
-- **Name / one-liner:** **Custodian.** An RL environment where an agent works one shift as the data custodian of a registry holding records about vulnerable people, and must decide who gets which fields.
+- **Name / one-liner:** **ED-72.** An RL environment where an agent runs a fictional hospital emergency department for 72 simulated hours: patients, staff, beds, equipment and a fixed budget.
 - **Junction challenge:** Break the Agent (AfterQuery). Deadline **Sun 15 Nov 10:00**.
 - **Read these before any task:** `docs/CHALLENGE.md` (brief, rubric, required stack), `docs/SPEC.md` (the environment), `docs/CONTRACTS.md` (tool and score shapes, who owns which folder), `docs/PLAN.md` (lanes, timeline, tasks).
-- **Stack:** a Harbor task in `custodian/`. Python 3.12 with uv. A `registry` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
+- **Stack:** a Harbor task in `ed72/`. Python 3.12 with uv. A `hospital` sidecar container holds the simulator, the scorer and the tool server (MCP). The agent harness is OpenCode. Docker is required. There is no frontend and no web backend.
 - **Run it:**
-  - Reference run: `harbor run -p custodian -a oracle`
-  - Do-nothing baseline: `harbor run -p custodian -a nop`
-  - Agent run: `harbor run -p custodian -a opencode -m <provider/model>`
+  - Reference run: `harbor run -p ed72 -a oracle`
+  - Do-nothing baseline: `harbor run -p ed72 -a nop`
+  - Agent run: `harbor run -p ed72 -a opencode -m <provider/model>`
   - Everything judges will rerun: `make eval`
 - **Integrator** (the human who merges PRs into `main`): TODO (lane D owner)
 - **Team:** one lane per person. Lanes are defined in `docs/PLAN.md`.
@@ -55,7 +55,7 @@ Tool-specific extras are in `CLAUDE.md` (Claude) and section 9 (Codex).
 
 All 10 agents are on different laptops, so **GitHub Issues is the single source of truth** for who is doing what.
 
-- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 16:00, `p1` needed to submit, `p2` only if time), plus `contract`.
+- **Labels:** status (`todo`, `doing`, `review`, `blocked`), area (`area:env`, `area:reward`, `area:ref`, `area:harness`, `area:train`, `area:docs`), priority (`p0` thin slice by Sat 18:00, `p1` needed to submit, `p2` only if time), plus `contract`.
 - **Issue titles** start with a task code from `docs/PLAN.md`, e.g. `[env] A2: Sim core`. Take `p0` before `p1`, and never start a `p2` while a `p0` in your lane is open.
 - **Create the board:** `scripts/bootstrap-board.sh` (once, by a human).
 - **See the board:** `scripts/wt.sh board`
@@ -111,7 +111,7 @@ The file name is unique per branch, so these files never conflict on merge.
 
 **Python (everything in this repo)**
 - `uvx ruff format . && uvx ruff check --fix .`
-- Type hints on every function. `snake_case`. Standard library first: the registry image should stay small and build fast.
+- Type hints on every function. `snake_case`. Standard library first: the hospital image should stay small and build fast.
 - Simulator and scorer are pure and deterministic: all randomness comes from one seeded `random.Random` passed in, never the global `random`, never wall-clock time, never the network.
 - Core logic (world, sim, scorer) gets pytest tests in the same PR. Use the `test-driven-development` skill for the scorer.
 - Shell scripts Harbor runs (`tests/test.sh`, `solution/solve.sh`) use absolute paths and `set -u`.
@@ -125,7 +125,7 @@ Refs #<issue>
 Agent: <agent id>
 ```
 
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add verify_requester tool`
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Example: `feat(env): add assess tool`
 
 ## 8. Definition of done
 
@@ -147,13 +147,13 @@ A task is done only when:
 
 Judges rerun our code and spend 15 minutes trying to cheat the reward. These rules protect the score.
 
-1. **Nothing that reveals the answer goes into the agent's container.** The `main` image holds the handbook and the `desk` CLI only. Seeds, ground truth, the event log, sim source and the scorer live in the `registry` image.
-2. **The reward is computed from the registry's event log only.** Never from files the agent can write. No LLM judge anywhere in the reward.
-3. **No hidden rules.** A rule the scorer applies must be written in `HANDBOOK.md` in the same PR. If the agent cannot find out, it is unfair, and unfair difficulty scores zero on 30 points.
-4. **The reference policy uses only the public tools.** It never reads the seed or ground truth. If it cannot decide a ticket, fix the environment.
-5. **These must hold after every merge:** reference >= 0.9, do-nothing = 0, deny-all / approve-all / escalate-all / random <= 0.05, same seed and actions give the same score. Any PR touching `scoring/`, tickets or tool behaviour pastes the baseline table in its description.
+1. **Nothing that reveals the answer goes into the agent's container.** The `main` image holds the handbook and the `ward` CLI only. Seeds, ground truth, the event log, sim source and the scorer live in the `hospital` image.
+2. **The reward is computed from the hospital's event log only.** Never from files the agent can write. No LLM judge anywhere in the reward.
+3. **No hidden rules.** A rule the scorer applies, and every sim rate table, must be written in `HANDBOOK.md` in the same PR. If the agent cannot find out, it is unfair, and unfair difficulty scores zero on 30 points.
+4. **The reference policy uses only the public tools.** It never reads the seed or ground truth. If it cannot decide what to do for a patient, fix the environment.
+5. **These must hold after every merge:** reference >= 0.9, do-nothing = 0, FCFS-by-label / discharge-all / transfer-all / divert-all / call-in-everyone / random <= 0.05, same seed and actions give the same score. Any PR touching `scoring/`, patients, events or tool behaviour pastes the baseline table in its description.
 6. **`tests/test.sh` always writes a number** to `/logs/verifier/reward.txt`, 0 on any error.
-7. **Synthetic data only.** Invented names and records. Never copy real personal data into the repo, a prompt or a test.
-8. **Rules freeze Sat 21:00.** After that: bug fixes and knob tuning only. No code changes after Sun 09:00.
+7. **Synthetic data only.** Invented patients, staff and records. Never copy real personal data into the repo, a prompt or a test.
+8. **Rules freeze Sat 22:00.** After that: bug fixes and knob tuning only. No code changes after Sun 09:00.
 9. **Don't force the gap.** If the agent does well, raise difficulty through the knobs in `docs/SPEC.md` section 7. No trick wording, no impossible deadlines, no broken tools.
 10. **Model keys** come from the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`). Agent runs cost real money: lane C runs the full matrix, others run one seed.
