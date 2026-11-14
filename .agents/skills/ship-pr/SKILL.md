@@ -6,10 +6,10 @@ description: Open a pull request for a working slice of a task, after rebasing a
 # ship-pr
 
 ## 1. Sync with the target branch
-Target is `main` for normal tasks, or the parent branch for helper branches (`--codex` / `--claude`).
+Set `assigned_base` to the PR base Yehor assigned.
 ```bash
 git fetch origin
-git rebase origin/main      # or origin/<parent branch>
+git rebase "origin/$assigned_base"
 ```
 **Resolving conflicts:**
 - Keep both sides' intent. Never delete another task's code to make a conflict go away.
@@ -24,7 +24,7 @@ git rebase origin/main      # or origin/<parent branch>
 ## 3. Push and open the PR
 ```bash
 git push --force-with-lease -u origin HEAD     # only your own branch, after rebase
-gh pr create --base main --title "<type>(<area>): <summary>" --body "$(cat <<EOF
+gh pr create --base "$assigned_base" --title "<type>(<area>): <summary>" --body "$(cat <<EOF
 Closes #<issue>
 
 ## What
@@ -40,7 +40,7 @@ Agent: <agent id>
 EOF
 )"
 ```
-For helper branches use `--base <parent branch>` and `Refs #<issue>` instead of `Closes`.
+For helper branches use `Refs #<issue>` in the PR body. The PR into `main` carries `Closes #<issue>`.
 
 ## 4. Update the board
 ```bash
@@ -48,14 +48,10 @@ gh issue edit <n> --remove-label doing --add-label review
 gh issue comment <n> --body "[<agent id>] PR ready: <pr url>"
 ```
 
-## 5. Hand it to the integrator (AGENTS.md golden rule 8)
-Only the integrator (AGENTS.md section 1) merges into `main`. When CI is green and the gates in step 2 hold:
-```bash
-gh pr checks <n> --watch        # wait for green; fix and push if red
-gh pr ready <n>
-gh pr comment <n> --body "[<agent id>] ready to merge"
-```
+## 5. Hand off to Yehor
+
+- Confirm CI is green and the gates in step 2 hold. Mark a draft ready with `gh pr ready <n>`.
 - Name stacked dependencies in the description (`Depends on #N`) so the base merges first.
-- If the integrator comments a blocker, fix it, push, and reply on the PR.
-- Helper branches: the task's lead merges them into the parent branch (`--base <parent>` PRs) with `gh pr merge <n> --merge`, never `--delete-branch` or `--admin`.
-- After the merge, comment on your issue: `[<agent id>] merged: <pr url>`. Keep going on the next slice or claim a new task.
+- Fix or respond to review findings, then comment `[<agent id>] ready to merge`.
+- Yehor directs merges in dependency order under AGENTS.md golden rule 8. This applies to helper and integration PRs as well. Any merge or auto-merge requires his explicit direction.
+- After the merge, comment on your issue with `[<agent id>] merged: <pr url>`. Ask Yehor for the next assignment.

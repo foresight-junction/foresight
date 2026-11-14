@@ -84,7 +84,7 @@ A patient admitted in the current tick does not face its waiting hazard that tic
 
 ## 5. Arrivals, events, and warnings
 
-Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 3.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `3.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
+Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 4.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `4.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
 
 Each episode contains all four events below. Their exact start ticks are selected within the stated windows. Public windows and distributions describe possibilities, not a forecast of the current episode.
 
@@ -147,7 +147,7 @@ reward = Score / 100
 |---|---|
 | Discharged after treatment | 0 |
 | Still in a bed at the end, with at least one covered tick | 0.3 |
-| Diverted on arrival | 0.7 |
+| Diverted on arrival | 0.75 |
 | Dead, left, never admitted, or still in a bed that was never covered | 1 |
 
 **T, timeliness:** the weighted fraction of all patients whose first covered bed tick is within their ESI target from section 2. Diverted patients and patients who never receive covered care are late. Admission alone does not earn timeliness credit.

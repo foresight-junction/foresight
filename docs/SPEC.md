@@ -102,7 +102,7 @@ O, T, W and B are each in [0, 1], computed once at the end over every patient wh
 | Discharged after treatment | 0 |
 | Still in a bed at the end, with at least one covered tick | 0.3 |
 | Still in a bed at the end, never covered | 1 |
-| Diverted on arrival | 0.7 |
+| Diverted on arrival | 0.75 |
 | Died, left, or never admitted | 1 |
 
 - **T, timeliness (20 points):** the weighted share of patients whose first **covered** bed tick came within their target (0/1/4/8/12 ticks after arrival for ESI 1–5). Diverted and never-admitted patients count as late.
@@ -116,11 +116,13 @@ The score is a pure function of the hospital's append-only event log (CONTRACTS 
 ## 7. Difficulty knobs (one config file, hospital side, via `ED72_CONFIG`)
 Arrival rate and daily cycle, flu-wave severity mix, event windows, warning lead times (or a window instead of an exact tick), budget size, W weights, overlapping events, and a possible hidden-deterioration mode (only if it stays inferable from the observation). The reference must stay clearly above the baselines in EVAL after every change.
 
+Current defaults (`docs/TUNING.md`): mean 4.0 arrivals per tick (#98). A diversion turns away 70% of arrivals (rulebook §8) and each diverted patient loses 0.75 of its weight (was 0.7). Raising the diversion loss is the fix rulebook §13 names for a divert-all that scores too high; it keeps permanent diversion under about 47 points at the higher load. Decided by Kostiantyn, recorded on #1.
+
 ## 8. Fairness rules (30 points depend on these)
 - Every rule the scorer uses and every rate table is written in the agent-visible `HANDBOOK.md` (served by `rules`). A scorer rule or rate without a handbook line is a bug.
 - Everything needed for a good decision is in the observation; only the future (arrivals, unannounced events, dice rolls) is hidden.
 - The reference policy uses only the public tools. It never reads the seed, the event log or the sim source.
-- Reference policy (rulebook §12): admit by severity and keep resus beds free for critical patients; send light cases to Fast-track; staff each zone from the least tired people, which rotates rest automatically; order agency staff when a warning is about 9 ticks away; repair the CT at once; keep staff on shift when a surge is near. It lives in `ed72/solution/`.
+- Reference policy (rulebook §12): admit by severity and keep resus beds free for critical patients; send light cases to Fast-track; staff each zone from the least tired people, which rotates rest automatically; keep permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered; order agency staff when a warning is about 9 ticks away, and again whenever four or more patients go uncovered with no fresh person of that role left (within the budget, or up to €16 000 once eight or more are uncovered); repair the CT at once; keep staff on shift when a surge is near. It lives in `ed72/solution/`.
 
 ## 9. Harbor layout
 ```
@@ -159,7 +161,7 @@ The `[[verifier.collect]]` hook runs `collect.py` inside `hospital` after the ag
 |---|---|
 | Put a patient in a bed with no staff | Timeliness counts only from the first covered tick; uncovered ESI 1–2 beds carry a 10% / 3% death risk per tick |
 | Fill every bed in the last tick | The 0.3 end loss applies only to patients with at least one covered tick; otherwise the loss is 1. Admitting to a covered bed at tick 143 does earn 0.3, as honest play would; the gain is capped by free covered beds (at most 17), and patients held back to fill late keep facing the waiting hazards and count late in T. CI checks that the `fill-beds-at-the-last-tick` baseline scores below the reference (#12) |
-| Divert all the time | Each diverted patient loses 0.7 of its weight and is late; permanent diversion caps around 47 points, so the reference must clearly beat 47 |
+| Divert all the time | Each diverted patient loses 0.75 of its weight and is late; permanent diversion caps around 47 points, so the reference must clearly beat 47 |
 | Spend up to €24 000 | B falls to 0 (up to 10 points); spending that saves more patients than it costs is good play, not an exploit |
 | Everyone rests in quiet periods | W is worth at most 10 × O; uncovered beds stall and ESI 1 patients face 10–15% death risk per tick |
 | Admit only light patients | ESI 1–2 carry about 51% of the outcome weight; leaving them caps O at about 0.49 |
@@ -175,7 +177,7 @@ Recorded for issue #41. "Adopted" means build it; `TUNE` values are tuned in A6 
 
 | Rulebook §14 item | Decision |
 |---|---|
-| Arrival rate and daily cycle | `TUNE`: mean 3.0 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 432 patients before events) |
+| Arrival rate and daily cycle | `TUNE`: mean 4.0 arrivals per tick, sinusoidal ±50% with the peak at 15:00 and the low at 03:00 (about 576 patients before events) |
 | Flu-wave severity mix | `TUNE`: ESI 3 40%, ESI 4 35%, ESI 5 25% |
 | W penalty weights and what "staff time" means | `TUNE`: a = 1.0 per unit share of on-shift staff-ticks above fatigue 60; b = 0.05 per faint; only on-shift ticks count |
 | Budget curve above €12 000 | Adopted: straight line to 0 at €24 000 |

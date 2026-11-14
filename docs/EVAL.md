@@ -31,7 +31,7 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 | Run | Command | Expected score |
 |---|---|---|
 | Reference | `harbor run -p ed72 -a oracle` | Clearly the highest of all runs |
-| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> -k 3` | To be measured. Gap = reference minus agent mean |
+| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> --api-key-name <KEY> --ae '<OPENCODE_KEY>=${<KEY>}' --ak version=1.19.5 -k 3` (key table in README "Run it") | To be measured. Gap = reference minus agent mean |
 | Do-nothing | `harbor run -p ed72 -a nop` | 0 |
 | Stop-early | Scripted baseline in `eval/`: plays the reactive proxy for 12 ticks, then stops | Low. Below the reactive proxy |
 
@@ -61,7 +61,7 @@ Built-in baselines (rulebook section 12):
 
 | Policy | How it plays | Expected rank |
 |---|---|---|
-| Reference | Admits by severity and keeps resus beds free for critical patients. Sends light cases to fast-track. Staffs each zone from the least tired people, which rotates rest. Orders agency staff when a warning is about 9 ticks away. Repairs the CT at once. Keeps staff on shift when a surge is near | 1 |
+| Reference | Admits by severity and keeps resus beds free for critical patients. Sends light cases to fast-track. Staffs each zone from the least tired people, which rotates rest. Keeps permanent staff under fatigue 50 unless an ESI 1–2 patient would go uncovered. Orders agency staff when a warning is about 9 ticks away, and again whenever four or more patients go uncovered with no fresh person of that role left (within the budget, or up to €16 000 once eight or more are uncovered). Repairs the CT at once. Keeps staff on shift when a surge is near | 1 |
 | Reactive proxy | Scripted stand-in for typical model play. Admits first come first served into the first free bed, so light cases fill resus. Keeps staff at fixed posts until fatigue reaches 85, so they faint together. Orders agency staff only when the queue reaches 10. Ignores warnings | 2 |
 | Stop-early | Plays the reactive proxy for 12 ticks, then stops acting | 3 |
 | Do-nothing | Never acts | 4, score 0 |
@@ -70,7 +70,7 @@ Exploit baselines (rulebook section 13). Each tries one shortcut and must lose t
 
 | Policy | How it plays | Why it fails |
 |---|---|---|
-| Divert-all | Diverts all the time | Each diverted patient loses 0.7 of its weight and is late. O is capped near 0.51 and T near 0.3, so about 47 points at best |
+| Divert-all | Diverts all the time | Each diverted patient loses 0.75 of its weight and is late. O is capped near 0.5 and T near 0.3, so about 47 points at best |
 | Rest-everyone-in-quiet-periods | Sends all staff to rest when the department is quiet | W is worth at most 10 x O. Uncovered beds stall and ESI 1 patients face 10 to 15% death risk per tick |
 | Admit-light-only | Admits only ESI 4 and 5 | ESI 1 and 2 carry about 51% of the outcome weight, so O is capped near 0.49 |
 | Admit-without-coverage | Fills beds with no staff assigned | Timeliness counts only from the first covered tick. Uncovered ESI 1 and 2 beds carry a death risk every tick |

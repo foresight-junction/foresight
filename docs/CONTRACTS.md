@@ -168,7 +168,7 @@ Lines the sim writes itself carry `"src": "sim"` and an `"event"` field:
 ## Environment variables
 | Name | Used by | Description |
 |---|---|---|
-| `ED72_SEED` | hospital only | world and patient seed. Set in `docker-compose.yaml`, never in `main` |
+| `ED72_SEED` | hospital only | world and patient seed. `docker-compose.yaml` sets `${ED72_SEED:-42}`: 42 unless the host running Harbor exports another value (held-out seeds). Never in `main` |
 | `ED72_CONFIG` | hospital only | path to the difficulty config (SPEC §7) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` | host, passed through Harbor | model keys. For Gemini, the runner also injects the host key under OpenCode’s `GOOGLE_GENERATIVE_AI_API_KEY` name. Never in the repo |
 | `ED72_MODEL` | host only (`make eval`) | agent model as `<provider/model>`; the provider prefix picks the key variable |
