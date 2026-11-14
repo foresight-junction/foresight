@@ -2,30 +2,27 @@
 
 - **Issue:** #14
 - **Owner:** mykhailo
-- **Agent:** lead
+- **Agent:** mykhailo-claude-1m
 - **Parent branch:** main
-- **Created:** Sat 20:43
 
 ## Goal
-One or two lines: what this branch delivers and how we'll know it works.
+Bound the bytes a refused tool call adds to the event log without changing replay or reward.
 
 ## Files and folders I own
-- 
+- ed72/environment/hospital/server.py, tests/test_log_bounds.py, docs/REDTEAM.md (append only)
 
 ## Don't touch
-- 
+- engine, scorer, collect.py, CONTRACTS
 
 ## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
+- Tools v1, Event log: unchanged (post-cap lines keep their shape, args is `{}`).
 
 ## Status
-- [ ] 
+- [x] Sanitise refused step args; `args: {}` past the cap
+- [x] Tests, REDTEAM note
 
 ## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 
+- Past-cap lines keep one line per call so `tool_calls` stays len(agent lines).
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- 
+Done. Test: `cd ed72/environment/hospital && uv run --python 3.12 --with pytest pytest -q`.
