@@ -6,6 +6,7 @@ import type { Observation, Replay, ReplayIndexEntry, Staff, Zone } from "../repl
 import {
   describeActions,
   describeEvents,
+  describeStaffChanges,
   describeWarnings,
   euro,
   eventName,
@@ -356,7 +357,8 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
     decisions.body.replaceChildren(dl);
 
     const hl = el("ul", "lines");
-    const evs = [...describeWarnings(obs), ...describeEvents(t)];
+    const prev = replay.ticks[t.tick - 1]?.obs;
+    const evs = [...describeWarnings(obs), ...describeEvents(t), ...describeStaffChanges(prev, obs)];
     for (const l of evs) hl.append(lineEl(l));
     if (!evs.length) hl.append(el("li", "empty", "A quiet tick."));
     happened.body.replaceChildren(hl);
@@ -378,7 +380,7 @@ export function mountHud(root: HTMLElement, replay: Replay, playback: Playback, 
 
   const onKey = (e: KeyboardEvent): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const target = e.target as HTMLElement | null;
+    const target = e.target instanceof Element ? e.target : null;
     if (target?.closest("input, select, textarea, [contenteditable]")) return;
     const onButton = !!target?.closest("button");
     switch (e.key) {

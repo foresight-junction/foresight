@@ -376,6 +376,31 @@ export function describeEvents(t: ReplayTick): Line[] {
   return out;
 }
 
+// Staff changes the event log does not name (agency arrivals and exits, returns, sick calls),
+// found by diffing the previous tick's observation. Faints have their own event.
+export function describeStaffChanges(prev: Observation | undefined, cur: Observation): Line[] {
+  if (!prev) return [];
+  const before = new Map(prev.staff.map((s) => [s.id, s.status]));
+  const out: Line[] = [];
+  for (const s of cur.staff) {
+    const was = before.get(s.id);
+    if (was === s.status) continue;
+    const who = s.agency ? `${s.id} (agency ${s.role})` : s.id;
+    if (was === "agency_ordered" || (was === undefined && s.status !== "agency_ordered")) {
+      out.push({ icon: "🧑‍⚕️", text: `${who} arrived for a 16-tick contract`, tone: "good" });
+    } else if (s.status === "agency_left") {
+      out.push({ icon: "👋", text: `Contract ended for ${who}`, tone: "muted" });
+    } else if (s.status === "sick") {
+      out.push({ icon: "🤒", text: `${who} called in sick`, tone: "warn" });
+    } else if (was === "sick") {
+      out.push({ icon: "↩", text: `${who} is back from sick leave (resting)`, tone: "good" });
+    } else if (was === "fainted") {
+      out.push({ icon: "↩", text: `${who} recovered from fainting (resting, fatigue ${Math.round(s.fatigue)})`, tone: "info" });
+    }
+  }
+  return out;
+}
+
 // Announced events that have not started yet (obs.warnings stays visible until the event ends).
 export function describeWarnings(obs: Observation): Line[] {
   return obs.warnings

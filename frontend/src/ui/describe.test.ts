@@ -4,6 +4,7 @@ import {
   clockForTick,
   describeActions,
   describeEvents,
+  describeStaffChanges,
   describeWarnings,
   euro,
   reasonText,
@@ -218,6 +219,40 @@ describe("describeEvents", () => {
     expect(describeEvents(tick({ events: [ev(10, "staff_fatigue", { on_shift_above_60: 0, on_shift: 3 })] }))).toEqual(
       [],
     );
+  });
+});
+
+describe("describeStaffChanges", () => {
+  it("reports arrivals, exits, sick calls and returns but not faints", () => {
+    const prev = obs({
+      staff: [
+        staff("AN1", { status: "agency_ordered", ticks_until_change: 1 }),
+        staff("AD1", { status: "on_shift", location: "resus" }),
+        staff("N4", { status: "on_shift", location: "acute" }),
+        staff("N5", { status: "sick" }),
+        staff("N6", { status: "fainted" }),
+        staff("N7", { status: "on_shift", location: "acute" }),
+      ],
+    });
+    const cur = obs({
+      staff: [
+        staff("AN1"),
+        staff("AD1", { status: "agency_left" }),
+        staff("N4", { status: "sick" }),
+        staff("N5"),
+        staff("N6", { fatigue: 65.2 }),
+        staff("N7", { status: "fainted" }),
+        staff("AN2", { status: "agency_ordered" }),
+      ],
+    });
+    expect(describeStaffChanges(prev, cur).map((l) => l.text)).toEqual([
+      "AN1 (agency nurse) arrived for a 16-tick contract",
+      "Contract ended for AD1 (agency doctor)",
+      "N4 called in sick",
+      "N5 is back from sick leave (resting)",
+      "N6 recovered from fainting (resting, fatigue 65)",
+    ]);
+    expect(describeStaffChanges(undefined, cur)).toEqual([]);
   });
 });
 

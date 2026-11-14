@@ -188,8 +188,10 @@ export function createScrubber(replay: Replay, onSeek: (tick: number) => void): 
     el: wrap,
     data,
     setPosition(tickFloat: number) {
+      if (Math.floor(tickFloat) !== Math.floor(pos) || drawnX < 0) {
+        canvas.setAttribute("aria-valuenow", String(Math.floor(tickFloat)));
+      }
       pos = tickFloat;
-      canvas.setAttribute("aria-valuenow", String(Math.floor(tickFloat)));
       if (width === 0 && wrap.isConnected) drawBase();
       else paint();
     },
