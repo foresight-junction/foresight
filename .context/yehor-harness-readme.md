@@ -2,30 +2,38 @@
 
 - **Issue:** #25
 - **Owner:** yehor
-- **Agent:** lead
+- **Agent:** yehor-claude-3e
 - **Parent branch:** main
 - **Created:** Sat 17:20
 
 ## Goal
-One or two lines: what this branch delivers and how we'll know it works.
+A factual README skeleton ordered for a judge, and a 10-minute demo script with recording and submission checklists (`docs/DEMO.md`). A human writes the core paragraphs (issue #25: "a human writes the core paragraphs").
 
 ## Files and folders I own
-- 
+- `README.md`
+- `docs/DEMO.md`
 
 ## Don't touch
-- 
+- `eval/`, `ed72/`, every other file in `docs/`
 
 ## Contracts used or changed
-Anything from docs/CONTRACTS.md this branch depends on or changes.
-- 
+- Uses: CONTRACTS v1 tools, score object, event-log lines; SPEC §3-§6, §11; EVAL §3-§5. Changes none.
 
 ## Status
-- [ ] 
+- [x] Claimed early at Yehor's request; deps #18, #19, #14 not done
+- [x] README skeleton: task, how to run, scoring, why you can't cheat, results table (empty), repo map, HUMAN slots
+- [x] docs/DEMO.md: timed segments, recording checklist, submission checklist
+- [ ] Human fills the HUMAN slots (README: opening, why it is hard, results reading, what agents get wrong; DEMO: hook, close)
+- [ ] Fill TODO(results) after #18, TODO(findings) after #19, TODO(redteam) after #13/#14, TODO(demo) event-log decision
 
 ## Decisions and notes
-Short and dated: why we chose X, new dependencies and why, gotchas.
-- 
+- Sat: paths that are only in open PRs are marked "(lands with #N)". Checked on these branches: #45 collect.py/tests, #47 scoring/, #52 eval/baselines, #53 Makefile/eval, #56 firewall tests, #57 server.py/ward, #58 task.toml/Dockerfiles/compose, #60 HARBOR-NOTES. `ed72/solution/` (#16) and `HANDBOOK.md`/`instruction.md` (#7) have no PR yet.
+- Sat: Harbor 0.25.0 flags `-p -a -m -k -o -n` and agents `oracle`, `nop`, `opencode` checked with `harbor run --help`. #60 used Harbor 0.26.0; README follows #53's pin.
+- Sat: `eval/run_all.sh` expects `eval/baselines/harbor_agent.py` for stop-early; #52 does not have it yet.
+- Sat: the event log is not collected as a trial artifact in #58's task.toml, so DEMO segment 4 needs a decision (TODO(demo)).
+- Sat: docs/CHALLENGE.md "Starting points" still describes the old game (15 beds, `assess`, 8+13 tools, M1-M4 harm). README follows SPEC and the rulebook.
 
 ## Handoff
-Done / not done / how to test. Keep this current: another agent may pick it up.
-- 
+- Done: README.md skeleton and docs/DEMO.md, every number taken from SPEC/CONTRACTS/EVAL, no results numbers.
+- Next: human writes the `<!-- HUMAN: ... -->` slots; replace every `TODO(` once #18/#19/#14 land; drop "(lands with #N)" as PRs merge.
+- Test: `grep -n -e 'HUMAN:' -e 'TODO(' README.md docs/DEMO.md` lists what is left. The DEMO segment 2 command runs on main: `cd ed72/environment/hospital && uv run python -c "..."`.
