@@ -13,7 +13,7 @@ Inside the agent image: `python -m eval.probes invalid-actions`, or
 `python -m eval.probes replay --script /path/to/public-script.json`.
 The package must be available to that runner; it is not part of the default agent image.
 
-Run `uv run --with pytest pytest -q` in this directory. Simulator, scorer and collector imports fail loudly. Only the reference comparison skips until #16 exists in the checkout. A fixture pass does not establish reference superiority or Harbor integration.
+Run `uv run --with pytest pytest -q` in this directory. Simulator, scorer and collector imports fail loudly. A fixture pass does not establish reference superiority or Harbor integration.
 
 The collector test times actual replay, the remaining episode, scoring and report writing on seed 42, using both one played tick and all 144 ticks with 50 rejected actions each. Its 10-second budget leaves 6x headroom against #22's 60-second hook. Record measured times rather than treating the budget as a measurement.
 

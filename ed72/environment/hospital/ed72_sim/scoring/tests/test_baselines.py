@@ -1,8 +1,7 @@
 """CI ordering test for the scripted baselines (issue #12, EVAL §5).
 
-Plays every baseline in eval/baselines/ against the real sim on each shipped seed. The sim-only
-checks need the sim core (#4) and world generator; the score checks also need the scorer (#10)
-and skip until it is importable; the reference checks skip until the reference policy (#16) is.
+Plays every baseline in eval/baselines/ against the real sim on each shipped seed and scores it.
+The reference checks import ed72/solution/ed72_reference.py and skip only if that file is missing.
 """
 
 import importlib
@@ -24,9 +23,9 @@ pytest.importorskip("ed72_sim.world")
 from ed72_baselines import BASELINES, EXPLOITS
 from ed72_baselines.sim_client import play
 
-SHIPPED_SEEDS = (1, 2, 3)  # update together with the seeds in task.toml / SPEC §12
+SHIPPED_SEEDS = (1, 2, 3)  # CI ordering seeds; a Harbor run's seed is ED72_SEED (docker-compose.yaml)
 DIVERT_ALL_CAP = 50.0  # rulebook §13 says "about 47 points" at best; seed 2 measures 48.1
-# Assumed home of the reference policy (#16): ed72/solution/ed72_reference.py, class ReferencePolicy.
+# The reference policy: ed72/solution/ed72_reference.py, class ReferencePolicy.
 REFERENCE_MODULE = "ed72_reference"
 SCRIPTED = sorted(set(BASELINES) - {"random"})
 
@@ -54,7 +53,7 @@ def reference_score(seed: int) -> float:
     try:
         module = importlib.import_module(REFERENCE_MODULE)
     except ModuleNotFoundError:
-        pytest.skip(f"reference policy module {REFERENCE_MODULE!r} not importable yet (#16)")
+        pytest.skip(f"reference policy module {REFERENCE_MODULE!r} not found in ed72/solution")
     return score(play(module.ReferencePolicy(), seed))
 
 

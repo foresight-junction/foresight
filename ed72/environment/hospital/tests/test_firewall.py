@@ -4,9 +4,9 @@ Three groups:
 - checker tests on MOCK CONTRACTS-shaped fixtures, including mutations that must be caught. They
   pin the checks independently of the sim, so a sim bug cannot hide inside the base case;
 - episode tests (a) to (e): a scripted policy plays full episodes on two seeds against the real
-  sim and every raw result is checked. The same episode through the MCP server (in-memory client),
-  the call cap and the tool list skip until the tool server (#57) merges; (f) skips until the
-  image layout (#58) exists;
+  sim and every raw result is checked. The same episode runs through the MCP server (in-memory
+  client), with the call cap and the tool list; those skip only if fastmcp is missing. (f) checks the
+  Harbor image layout and skips without ed72/environment/Dockerfile and docker-compose.yaml;
 - episode mutations: the sim's view function is monkeypatched to leak, and the suite must fail.
 """
 
@@ -188,7 +188,7 @@ def test_unknown_tool_and_non_json_are_caught() -> None:
     assert "d" in rules_of(check_result("observe", "seed=918273", fx.TRUTH, fx.TICK))
 
 
-# --- episodes on the real sim; the MCP variants skip until the tool server (#57) merges ---------
+# --- episodes on the real sim, directly and through the MCP tool server -----------------------
 
 
 @dataclasses.dataclass(frozen=True)
@@ -554,7 +554,7 @@ def test_episode_mutation_makes_the_suite_fail(
     assert rule in rules_of(violations)
 
 
-# --- (f) the agent image holds no sim code, seed, config or scorer (skip until #58) --------------
+# --- (f) the agent image holds no sim code, seed, config or scorer ------------------------------
 
 MAIN_COPY_ALLOWED = re.compile(r"(workspace/[\w./-]+|ward)")
 MAIN_NODE_COPY_ALLOWED = frozenset({"/usr/local/bin/node", "/usr/local/lib/node_modules"})

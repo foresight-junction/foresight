@@ -23,7 +23,7 @@ jobs:
           uvx ruff format --check .
           uvx ruff check .
 
-      # Projects are discovered (backend/, ed72/environment/hospital/, eval/ ...), so a new
+      # Projects are discovered (ed72/environment/hospital/, eval/baselines/, analysis/ ...), so a new
       # pyproject.toml is tested without editing this file.
       - name: pytest per uv project
         run: |
