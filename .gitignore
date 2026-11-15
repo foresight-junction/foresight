@@ -15,8 +15,10 @@ __pycache__/
 .claude/worktrees/
 .claude/settings.local.json
 
-# python packaging (uv.lock is committed)
+# python packaging (uv.lock is committed, except the hospital's: its image pins deps with pip, and
+# `uv run` in that folder recreates the lock, which marked eval runs +dirty and kept getting committed)
 *.egg-info/
+/ed72/environment/hospital/uv.lock
 
 # Generated Harbor output. /jobs/ is Harbor's default for `harbor run` from the repo root; untracked
 # files there would mark later runs +dirty in eval/manifest.py.

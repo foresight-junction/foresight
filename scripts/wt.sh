@@ -101,7 +101,7 @@ cmd_new() {
   git worktree add --quiet --no-track -b "$branch" "$path" "$base"
 
   # Local env files are gitignored, so copy them in
-  for f in .env backend/.env frontend/.env; do
+  for f in .env frontend/.env; do
     if [ -f "$MAIN_ROOT/$f" ]; then
       mkdir -p "$(dirname "$path/$f")"; cp "$MAIN_ROOT/$f" "$path/$f"
     fi
