@@ -8,4 +8,4 @@ Stdlib-only tooling for the failure analysis (issue #19). It never imports the s
 - Writes `out/report.md` (scores, failures by code, outcomes by ESI, up to 3 trajectory excerpts per run with a log) and `out/failures.svg`.
 - Codes missing from a score object show as `n/a`, never 0.
 - Tests: `cd analysis && python -m pytest -q`
-- The findings themselves are written into `docs/FINDINGS.md` by lane C after real agent runs. This tool only produces the tables.
+- This tool only produces the tables. The written findings are in the README ("Reported scores") and the [Gemini calibration run log](../eval/results/2026-11-14-gemini-seed42/README.md).

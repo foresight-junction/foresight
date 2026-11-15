@@ -1,6 +1,6 @@
-"""MOCK: a stand-in for ed72_sim.engine.Simulation until #3/#4 land on main.
+"""MOCK: a lightweight stand-in for ed72_sim.engine.Simulation for server development.
 
-It mirrors the real class's surface the tool server uses (kostiantyn/env-sim-core):
+It mirrors the real class's surface the tool server uses:
 observe(), step(actions) returning `episode_over` after the last tick, `finished`,
 an `events` list whose `seq` is the list index, a JSONL log file, and the
 `record_call` method requested on #4. Used only with USE_MOCKS=1 and in the server

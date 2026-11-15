@@ -54,7 +54,7 @@ jobs:
             bash -n "$f"
           done < <(git ls-files '*.sh')
 
-      # Frontend (skipped until frontend/ exists)
+      # Frontend replay viewer (skipped when frontend/ is absent)
       - if: hashFiles('frontend/package.json') != ''
         uses: pnpm/action-setup@v4
         with:

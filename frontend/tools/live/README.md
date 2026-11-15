@@ -23,7 +23,7 @@ PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tool
 `--with anthropic` is only needed for the Claude agent.
 
 Then run the frontend dev server (`pnpm dev` in `frontend/`, which proxies `/live` to port 8770) and open its
-URL with `?live=1`, e.g. `http://localhost:5170/?live=1`.
+URL with `?live=1`, e.g. `http://localhost:5173/?live=1` (Vite's default port).
 
 | Option | Default | |
 |---|---|---|
