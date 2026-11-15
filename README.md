@@ -4,13 +4,15 @@ An AI agent runs a fictional emergency department for three days. Every 30 minut
 
 We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
 
-[Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores)
+[Watch a replay](#run-it) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores)
 
 ![ED-72 replay showing the hospital floor, waiting room, timeline, and score breakdown](docs/ed72-replay.png)
 
 The scripted reference replay on seed 42, shown during the first night.
 
-## Watch a replay
+## Run it
+
+### Watch a replay
 
 Use **Node.js 22** and **pnpm 10**, the versions used in CI. The viewer includes saved runs for the reference policy, a reactive baseline, and a replayed Gemini policy. It runs locally without Docker or a model key.
 
@@ -21,7 +23,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the URL Vite prints, usually `http://localhost:5173/`. Pick a replay, press play, or drag the timeline to see how the department changes. You can follow the beds, waiting room, staff, budget, and score breakdown from the same screen.
+Open the URL Vite prints, usually `http://localhost:5173/`. Append `?replay=reference-seed42.json&tick=60` to open the scripted reference during the first night. Append `?replay=gemini-seed42.json&tick=59` to inspect rejected staff assignments in a replay of a generated Gemini policy. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
+
+Pick a replay, press play, or drag the timeline to see the beds, waiting room, staff, budget, and score breakdown.
 
 ### Watch a new episode live
 
@@ -33,15 +37,25 @@ PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tool
   python frontend/tools/live/serve.py --agent reference --seed 42
 ```
 
-Add `?live=1` to the Vite URL. Use **New run** to choose a seed and agent. The live server saves replays under `frontend/public/replays/runs/` so you can reopen a run by adding `?replay=runs/<filename>` to your Vite URL. On Windows, run this command in WSL. The [live viewer guide](frontend/tools/live/README.md) also covers native Windows.
+Add `?live=1` to the Vite URL. Use **New run** to choose a seed and agent. The live server saves replays under `frontend/public/replays/runs/` so you can reopen a run by adding `?replay=runs/<filename>` to your Vite URL. On Windows, run this command in WSL. See the [live viewer guide](frontend/tools/live/README.md) for runtime options.
 
-For a live model, set its key in the shell or in the repository root’s `.env`. Gemini uses `GEMINI_API_KEY`, Kimi uses `VERDA_INFERENCE_API_KEY`, and Claude uses `ANTHROPIC_API_KEY`. Add `--with anthropic` before `python` in the startup command to enable Claude. A live model calls its provider at every tick. The `reference` and `reactive` agents are free to run.
+Use **New run** or change `--agent` in the command above. Set the provider key in the shell or in the gitignored `.env` at the repository root.
+
+| Agent | What it does in the live viewer | Setup and example |
+| --- | --- | --- |
+| `reference` | Plans staffing, admissions, and spending with the scripted reference policy. | Keyless. Open `reference-seed42.json` or start `--agent reference --seed 42`. |
+| `reactive` | Makes local decisions from the current observation as a comparison policy. | Keyless. Open `reactive-seed42.json` or start `--agent reactive --seed 42`. |
+| `gemini` | Uses Gemini 3.8 Flash to choose actions each tick. | `GEMINI_API_KEY`. The bundled Gemini JSON is a replayed script. The scored OpenCode sessions are in the final archive. |
+| `kimi` | Uses Kimi K3.1 Pro through Verda to choose actions each tick. | `VERDA_INFERENCE_API_KEY`. See the scored Kimi sample below. |
+| `claude` | Uses Claude to choose actions each tick through the Anthropic SDK. | `ANTHROPIC_API_KEY`. Add `--with anthropic` before `python`. Claude is available in the live viewer and was outside the final campaign. |
+
+Each live model run calls its provider up to 144 times. The scored Harbor model runs use OpenCode and can write a policy to run through the same public tools.
 
 ## Reproduce the reported results
 
 The scored trials use Harbor with Docker Compose. Start Docker and install **Git, make, and uv**. The runner uses uv to launch Python 3.12 and Harbor 0.26.0. Set `GEMINI_API_KEY` in your shell or in the repository root’s gitignored `.env`. Copy [`.env.example`](.env.example) to `.env` if you need a template.
 
-On Windows, use Ubuntu in WSL 2. Enable Ubuntu under Docker Desktop’s **Settings → Resources → WSL Integration**. In the Ubuntu terminal, install `git`, `make`, and [uv](https://docs.astral.sh/uv/), then check `docker info` and `docker compose version` before running the benchmark.
+On Windows, use Ubuntu in WSL 2. Enable Ubuntu under Docker Desktop’s **Settings → Resources → WSL Integration** and let Docker finish restarting before running evaluations. In Ubuntu, install Git and Make with `sudo apt-get install git make`, install [uv](https://docs.astral.sh/uv/), and clone into the Linux home directory. Check `docker info` and `docker compose version` in Ubuntu.
 
 Run both commands from the repository root in a clean checkout.
 
@@ -53,6 +67,8 @@ ED72_SEED=3101 ED72_MODEL=gemini/gemini-3.8-flash make eval
 `make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/guinness/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252)
 
 For a keyless check at the pinned revision, run `ED72_SEED=3101 make eval-baselines`. The three baselines should score **95.86**, **0.00**, and **4.56** out of 100, respectively.
+
+For a single scored Gemini or Kimi trial, export the corresponding key in your shell and select the command from the [single-trial examples](#single-model-trials).
 
 The runner writes `eval/results/summary.md` and keeps trial artifacts under `eval/results/jobs/`. In a trial directory, `verifier/reward.txt` holds the normalized reward, `verifier/score_full.json` has the score breakdown and patient outcomes, and model trials include `agent/trajectory.json`. The first Docker build can take several minutes. Each model trial has a 30-minute agent timeout. Check the **Completeness** section of the summary for six completed trials and zero failures. For a failed model trial, open its `exception.txt`. If Google reports `API_KEY_INVALID`, replace the key in `.env` with an active Gemini API key and check that an older shell variable is not overriding it. [Gemini API key setup](https://ai.google.dev/gemini-api/docs/api-key)
 
@@ -79,6 +95,8 @@ Harbor reward = Score / 100
 
 Patient outcome weights the sickest patients most heavily. Timeliness measures how soon a patient got a staffed bed. Staff wellbeing accounts for fatigue and faints, and the budget score falls once spending passes €12,000. The outcome multiplier limits the credit for keeping staff rested and saving money when patients go untreated.
 
+<a id="results"></a>
+
 ## Reported scores
 
 | Policy | Seed 3101 | Seed 3102 | Seed 3103 |
@@ -92,6 +110,39 @@ Patient outcome weights the sickest patients most heavily. Timeliness measures h
 Scores are out of 100. On seed 3101, Gemini ranged from 8.19 to 80.70 over three completed trials. The final matrix shows every recorded attempt, including four Kimi timeouts with partial scores and one missing Kimi record. [Full results and logs](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252)
 
 In an earlier calibration run, Gemini kept assigning agency staff to critical beds after their contracts had expired. The simulator rejected each assignment, but the policy kept treating those beds as staffed. Two critical patients the reference discharged never received a staffed bed in Gemini’s run. [Calibration run and score report](eval/results/2026-11-14-gemini-seed42/README.md)
+
+### Inspect an example run
+
+Download the [final score table](https://github.com/xand1ex999/guinness/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) and [final trace archive](https://github.com/xand1ex999/guinness/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Logs_Final.tar.gz). The archive contains all 26 available attempts. The unrecorded Kimi attempt is marked missing in the score table.
+
+| Example | Score / 100 | Trial directory inside the archive |
+| --- | ---: | --- |
+| Scripted reference | 95.86 | `reference-3101/ed72__TYDtk3h/` |
+| Gemini’s low repeat | 8.19 | `gemini-r2-3101/ed72__Dd8UGG9/` |
+| Gemini’s best repeat on seed 3101 | 80.70 | `gemini-r3-3101/ed72__GWvZZ5D/` |
+| Kimi’s best completed repeat on seed 3101 | 88.42 | `kimi-r3-3101/ed72__zKXdnoK/` |
+
+For each sample, open `verifier/score_full.json` for outcomes, `verifier/reward.txt` for the normalized reward, and `agent/trajectory.json` for model decisions. The enclosing run folder contains `manifest.json` with the evaluated revision and configuration hashes. Do-nothing and stop-early runs are included as negative controls. The full collection is indexed on the [results release](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252).
+
+### Single model trials
+
+Run these optional paid commands from the clean checkout at `9f3bdbb` after exporting `GEMINI_API_KEY` or `VERDA_INFERENCE_API_KEY` in your shell. Each starts one trial. Use the full runner above for the three Gemini trials and matched baselines.
+
+```bash
+ED72_SEED=3101 uvx --python 3.12 --from harbor==0.26.0 harbor run \
+  -p ed72 -a opencode -m gemini/gemini-3.8-flash --ak version=1.19.5 \
+  --api-key-name GEMINI_API_KEY --ae 'GOOGLE_GENERATIVE_AI_API_KEY=${GEMINI_API_KEY}' \
+  -k 1 -n 1 --max-retries 0
+
+ED72_SEED=3101 uvx --python 3.12 --from harbor==0.26.0 harbor run \
+  -p ed72 -a opencode -m verda/kimi-k3-1-pro --ak version=1.19.5 \
+  --api-key-name VERDA_INFERENCE_API_KEY --base-url https://inference.verda.com/v1 \
+  --api-format openai_chat_completions \
+  --ak 'opencode_config={"small_model":"verda/kimi-k3-1-pro"}' \
+  -k 1 -n 1 --max-retries 0
+```
+
+Single trials write to `jobs/`. Check `result.json` for zero errors and `verifier/reward.txt` for the reward.
 
 ## Repository guide
 

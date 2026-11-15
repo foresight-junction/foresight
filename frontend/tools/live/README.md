@@ -12,10 +12,10 @@ One ED-72 episode played in real time and streamed to the browser tick by tick.
 
 ## Run
 
-From the worktree root (the PYTHONPATH separator is `;` on Windows, `:` elsewhere):
+From the repository root in Bash on macOS, Linux, or WSL:
 
 ```bash
-PYTHONPATH="ed72/environment/hospital;ed72/solution;eval/baselines;frontend/tools/live" \
+PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tools/live" \
   uv run --no-project --python 3.12 --with fastmcp==4.2.0 --with mcp==2.3.0 --with anthropic \
   python frontend/tools/live/serve.py --agent gemini --seed 42
 ```
@@ -71,11 +71,11 @@ and the agent waits out the episode with empty steps so the replay stays complet
 ## Tests
 
 ```bash
-PYTHONPATH="ed72/environment/hospital;ed72/solution;eval/baselines;frontend/tools/live" \
-  uv run --no-project --python 3.12 --with pytest --with fastmcp==4.2.0 --with mcp==2.3.0 \
+PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tools/live" \
+  uv run --no-project --python 3.12 --with pytest --with fastmcp==4.2.0 --with mcp==2.3.0 --with anthropic \
   python -m pytest -q frontend/tools/live/tests
 ```
 
-They need no network or key. The recorder test plays the reference policy through `ToolHost` and
+After uv resolves the dependencies, the tests run without a model API key. The recorder test plays the reference policy through `ToolHost` and
 checks every tick against `export_replay.export()`. Event `seq` numbers differ from the offline export
 because the live log also holds the agent's `rules` and `observe` calls.
