@@ -1,4 +1,4 @@
-# ED-72
+# Foresight · ED-72
 
 An AI agent runs a fictional emergency department for three days. Every 30 minutes, it decides who gets a bed, which staff cover each zone, and who can take a break. A bed is only useful if someone can staff it. A doctor who works through the afternoon might faint during the night shift.
 
@@ -14,16 +14,16 @@ The scripted reference replay on seed 42, shown during the first night.
 
 ### Watch a replay
 
-Use **Node.js 22** and **pnpm 10**, the versions used in CI. The viewer includes saved runs for the reference policy, a reactive baseline, and a replayed Gemini policy. It runs locally without Docker or a model key.
+Install **Node.js 22**. The commands below launch the tested pnpm 10 release through `npx`, which comes with Node.js. The viewer includes saved runs for the reference policy, a reactive baseline, and a replayed Gemini policy. It runs locally without Docker or a model key.
 
 ```bash
 git clone https://github.com/xand1ex999/foresight.git
 cd foresight/frontend
-pnpm install --frozen-lockfile
-pnpm dev
+npx --yes pnpm@10.34.9 install --frozen-lockfile
+npx --yes pnpm@10.34.9 dev
 ```
 
-Open the URL Vite prints, usually `http://localhost:5173/`. Append `?replay=reference-seed42.json&tick=60` to open the scripted reference during the first night. Append `?replay=gemini-seed42.json&tick=59` to inspect rejected staff assignments in a replay of a generated Gemini policy. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
+Open the URL Vite prints. If it uses port 5173, open [the scripted reference replay](http://localhost:5173/?replay=reference-seed42.json&tick=60) during the first night or [the Gemini policy replay](http://localhost:5173/?replay=gemini-seed42.json&tick=59) to inspect rejected staff assignments. For a different port, use that port in the same links. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
 
 Pick a replay, press play, or drag the timeline to see the beds, waiting room, staff, budget, and score breakdown.
 
@@ -154,7 +154,7 @@ Single trials write to `jobs/`. Check `result.json` for zero errors and `verifie
 | [`docs/SPEC.md`](docs/SPEC.md) | Simulation rules, setup, and scoring specification |
 | [`docs/DEMO.md`](docs/DEMO.md) | Demo walkthrough |
 
-Run `pnpm test` from `frontend/` for the viewer tests. Run the simulator tests from the repository root.
+Run `npx --yes pnpm@10.34.9 test` from `frontend/` for the viewer tests. Run the simulator tests from the repository root.
 
 ```bash
 (cd ed72/environment/hospital && uv run --with pytest pytest -q)
