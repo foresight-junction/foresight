@@ -17,6 +17,8 @@ AGENTS.md, README.md, docs/CONTRACTS.md, docs/DEMO.md, docs/ED_Management_Simula
 
 ## Status
 1. Done: `/jobs/` ignored. Harbor writes it for `harbor run` from the repo root, and `eval/manifest.py:144` counts untracked files as dirty.
+2. Done: `/ed72/environment/hospital/uv.lock` ignored (uv recreates it; the team keeps dropping it, e022180).
+3. Done: stale comments in test_firewall.py, test_baselines.py, eval/probes/README.md, ci.yml, wt.sh. A sweep agent checked HANDBOOK, instruction.md and solution/README against constants.py, default.json and server.py, and found no contradictions.
 
 ## Handoff
 Test: `mkdir -p jobs/x && touch jobs/x/a && git status --porcelain` prints nothing for jobs/. Fresh clone of main 92dec88: `ED72_SEED=3101 make eval-baselines` gives 0.959 / 0.046 / 0.000.
