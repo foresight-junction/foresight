@@ -18,6 +18,8 @@ __pycache__/
 # python packaging (uv.lock is committed)
 *.egg-info/
 
-# Generated Harbor output
+# Generated Harbor output. /jobs/ is Harbor's default for `harbor run` from the repo root; untracked
+# files there would mark later runs +dirty in eval/manifest.py.
+/jobs/
 /eval/results/jobs/
 /eval/results/summary.md
