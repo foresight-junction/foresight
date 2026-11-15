@@ -14,7 +14,7 @@ Use these tools:
 | `observe` | `{}` | Returns the current state; time does not advance. |
 | `step` | `{"actions": [...]}` | Applies up to 50 actions in order, resolves one tick, and returns action results plus the next observation. |
 
-`step` returns `{"results": [...], "observation": {...}}`. An action result contains its zero-based `index` and `ok`; rejected actions also have a `reason`. Rejected actions have no effect or extra penalty; valid actions in the same list still apply. `step` with `{"actions": []}` passes one tick.
+`step` returns `{"results": [...], "observation": {...}}`. An action result contains its zero-based `index` and `ok`; rejected actions also have a `reason`. Rejected actions have no effect or extra penalty; valid actions in the same list still apply. Actions after the 50th in one list are rejected with `bad_action`. `step` with `{"actions": []}` passes one tick.
 
 The fallback CLI calls the same tools: `ward rules --json '{}'`, `ward observe --json '{}'`, or `ward step --json '{"actions":[]}'`.
 
@@ -42,11 +42,11 @@ Targets count ticks since arrival. A target of 0 means receiving covered care in
 | `acute` | 8, A1–A8 | ESI 2: +1 tick; ESI 3–5: no extra time | 3 | 2 |
 | `fast_track` | 6, F1–F6 | ESI 3: +1 tick; ESI 4–5: no extra time | 4 | 3 |
 
-The waiting area has no capacity limit. Admit only from waiting to a free bed in an eligible zone. There are no transfers between zones and no manual discharge action. A bed frees when treatment finishes or its patient dies.
+The waiting area has no capacity limit. Admit only from waiting to a free bed in an eligible zone; the patient takes the lowest-numbered free bed in that zone. There are no transfers between zones and no manual discharge action. A bed frees when treatment finishes or its patient dies.
 
 Treatment progresses by one tick only on a covered bed. Required treatment is the base time plus any zone penalty. A patient is discharged as soon as the required treatment ticks accumulate.
 
-Half of ESI 1–2 patients need CT, independently determined and shown on arrival. Patients awaiting CT pause at half their required treatment ticks, rounded up, while the scanner is down. When it works, all patients at their scan point can be scanned that tick; there is no scanner queue.
+Half of ESI 1–2 patients need CT, independently determined and shown on arrival. Patients awaiting CT pause at half their required treatment ticks, rounded up, while the scanner is down. When it works, all patients at their scan point can be scanned that tick; there is no scanner queue. A bed paused for CT still counts as covered when staffing covers it: the pause stops treatment progress only, so it can still be the first covered tick (section 8).
 
 An ESI 3 patient can deteriorate to ESI 2 while waiting (section 4). The patient then follows all ESI 2 rules, including eligible zones and treatment time, receives a new 50% CT-need draw, and is scored at ESI 2. Score weights and targets use the most severe ESI reached, meaning the lowest numerical ESI.
 
@@ -54,7 +54,7 @@ An ESI 3 patient can deteriorate to ESI 2 while waiting (section 4). The patient
 
 Permanent staff IDs are D1–D6 and N1–N9. Assign each available person to one zone or `rest`. Assignments take effect in the current tick, are free, and persist until changed. Only staff who are on shift contribute coverage.
 
-For each role, add staff contributions in the zone and multiply by the beds-per-person value in section 2. Zone coverage is the smaller of doctor and nurse coverage, rounded down to a whole number of beds and limited by the zone's bed count. A person with fatigue at most 60 contributes 1; above 60 they contribute 0.6. If coverage is insufficient, cover occupied beds by severity first, then admission time.
+For each role, add staff contributions in the zone and multiply by the beds-per-person value in section 2. Zone coverage is the smaller of doctor and nurse coverage, rounded down to a whole number of beds and limited by the zone's bed count. A person with fatigue at most 60 contributes 1; above 60 they contribute 0.6. If coverage is insufficient, cover occupied beds by severity first, then admission tick, then bed number (lowest first).
 
 | Location | Fatigue change each tick |
 |---|---|
@@ -64,7 +64,7 @@ For each role, add staff contributions in the zone and multiply by the beds-per-
 
 The resting rate applies to resting and fainted staff. Sick staff retain their fatigue until they return. At fatigue 90 or above, a person faints and is unavailable for 10 ticks. During that absence they recover at the resting rate, return to `rest` at about 65 fatigue, and require a new assignment. Fainted, sick, not-yet-arrived, and departed agency staff cannot be assigned.
 
-Agency doctors cost €900 and agency nurses €350 each. They arrive 4 ticks after ordering, with fatigue 0 in `rest`; assign them before they can cover beds. They leave 16 ticks after arrival. Their fatigue and fainting rules are the same as permanent staff. Agency IDs are AD1, AD2, ... and AN1, AN2, ... in order of ordering.
+Agency doctors cost €900 and agency nurses €350 each. They arrive 4 ticks after ordering, with fatigue 0 in `rest`; assign them before they can cover beds. They leave 16 ticks after arrival, even if fainted at that time. An order is charged when placed, even if the person would arrive after the episode ends. Their fatigue and fainting rules are the same as permanent staff. Agency IDs are AD1, AD2, ... and AN1, AN2, ... in order of ordering.
 
 ## 4. Patient hazards
 
@@ -78,19 +78,19 @@ Each applicable hazard is rolled once per patient per tick. A stated waiting thr
 | ESI 4–5 waiting more than 16 ticks | 8% | Leaves |
 | ESI 1 in an uncovered bed | 10% | Death |
 | ESI 2 in an uncovered bed | 3% | Death |
-| ESI 1–2 in a covered bed, with mean on-shift fatigue in that zone above 60 | 1.5% | Death |
+| ESI 1–2 in a covered bed, with mean fatigue of the zone's on-shift doctors and nurses together above 60 | 1.5% | Death |
 
 A patient admitted in the current tick does not face its waiting hazard that tick. Covered and uncovered-bed hazards do not stack. ESI 3–5 on beds face no patient hazard. Hazard calculations use fatigue before the current tick's fatigue update. Patients who complete treatment are discharged before hazards resolve.
 
 ## 5. Arrivals, events, and warnings
 
-Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 4.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h, the mean is `4.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
+Ordinary arrivals follow a Poisson process with a daily cycle. The default is a mean of 4.0 arrivals per tick, varying by ±50%, with a peak at 15:00 and a low at 03:00. At clock hour h (fractional, so 8.5 at 08:30, taken at the start of the tick), the mean is `4.0 * (1 + 0.5 * cos(2*pi*(h - 15)/24))`. The ordinary severity mix is in section 2.
 
-Each episode contains all four events below. Their exact start ticks are selected within the stated windows. Public windows and distributions describe possibilities, not a forecast of the current episode.
+Each episode contains all four events below. Their exact start ticks are drawn uniformly from the stated windows. Public windows and distributions describe possibilities, not a forecast of the current episode.
 
 | Event | Start-tick window | Warning | Effect |
 |---|---|---|---|
-| Staff sickness | 28–35 | None | Two nurses are unavailable for 20 ticks. Any who are on shift leave their posts immediately; both return to `rest` with their previous fatigue. |
+| Staff sickness | 28–35 | None | Two permanent nurses (from N1–N9, chosen at random) are unavailable for 20 ticks. Any who are on shift leave their posts immediately; a nurse who has fainted becomes sick instead. Both return to `rest` with their previous fatigue. Agency nurses never fall sick. |
 | Flu wave | 50–61 | 10 ticks ahead | Two extra patients per tick for 6 ticks. |
 | CT breakdown | 66–75 | None | CT stops working for 16 ticks unless repaired sooner. |
 | Bus crash | 96–109 | 8 ticks ahead | Five extra patients per tick for 2 ticks; mix ESI 1: 20%, ESI 2: 30%, ESI 3: 50%. |

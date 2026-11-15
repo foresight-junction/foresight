@@ -1,5 +1,7 @@
 # Gemini 3.8 Flash calibration, seed 42
 
+This run used the earlier difficulty, arrival mean 3.0. The shipped default is 4.0 (`docs/TUNING.md`), and the final scores on seeds 3101–3103 are in the README ("Reported scores").
+
 | Field | Value |
 |---|---|
 | ED-72 checkout | `71739342bd2c5d7f6e2469c8f81495e384857f4d` |

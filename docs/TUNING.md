@@ -1,6 +1,8 @@
 # Difficulty screening (issue #67)
 
-## Decision
+**Current setting:** arrival mean 4.0, diversion share 70%, diversion loss 0.75 (last section, "Revised, Sat 14 Nov"). The sections above it record how the value moved from 3.0 and are kept as history. Model scores at this setting are in the README ("Reported scores").
+
+## Decision (superseded by the 4.0 update below)
 
 Kostiantyn selected **3.0 arrivals per tick** for the default, with the remaining knobs unchanged. The scores below compare candidate configurations on seeds 1–5. Held-out seeds and model performance still need their separate evaluation.
 
@@ -133,7 +135,7 @@ The previous reference plays about as well as Kimi did at 3.0 (98.96 against 98.
 
 ### Not measured yet
 
-No model has been run at 4.0. The Kimi and Gemini scores above are at 3.0. The gap at 4.0 needs one agent run per model before the README table is updated.
+At the time of this proposal no model had been run at 4.0; the Kimi and Gemini scores above are at 3.0. The final campaign later ran both models at 4.0 on seeds 3101–3103 (README "Reported scores").
 
 ## Adopted, Sat 14 Nov: 4.0 arrivals plus a 75% diversion share
 

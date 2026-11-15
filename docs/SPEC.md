@@ -140,10 +140,10 @@ ed72/                         <- judges run: harbor run -p ed72 -a <agent>
   tests/test.sh               reads only /evidence/report.json, writes /logs/verifier/reward.txt
   solution/solve.sh           reference policy, public tools only
 eval/                         run matrix, baselines, results/
-analysis/                     failure analysis, charts
-training/                     stretch goal only
+analysis/                     failure analysis, ablations
+frontend/                     replay and live viewer, outside the Harbor task
 ```
-The simulator lives in `ed72/environment/hospital/`. The earlier engine in `backend/app/edsim/` (branch `kostiantyn/env-ed-sim`) models a different game and is not used.
+The simulator lives in `ed72/environment/hospital/`. An earlier engine on the `kostiantyn/env-ed-sim` branch models a different game and is not used.
 
 The `[[verifier.collect]]` hook runs `collect.py` inside `hospital` after the agent stops: it runs any remaining ticks with no actions, scores, and writes `/evidence/report.json`, declared as a sidecar artifact. There is no finalise HTTP endpoint. Separate mode is required because a spike showed a root agent can forge the reward in shared mode. `ED72_SEED` and `ED72_CONFIG` are set in the hospital sidecar only.
 

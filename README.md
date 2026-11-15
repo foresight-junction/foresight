@@ -4,7 +4,7 @@ An AI agent runs a fictional emergency department for three days. Every 30 minut
 
 We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
 
-[Watch a replay](#run-it) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores)
+[Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores) · [Judging walkthrough](docs/DEMO.md)
 
 ![ED-72 replay showing the hospital floor, waiting room, timeline, and score breakdown](docs/ed72-replay.png)
 
@@ -23,7 +23,7 @@ npx --yes pnpm@10.34.9 install --frozen-lockfile
 npx --yes pnpm@10.34.9 dev
 ```
 
-Open the URL Vite prints. If it uses port 5173, open [the scripted reference replay](http://localhost:5173/?replay=reference-seed42.json&tick=60) during the first night or [the Gemini policy replay](http://localhost:5173/?replay=gemini-seed42.json&tick=59) to inspect rejected staff assignments. For a different port, use that port in the same links. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
+Open the URL Vite prints. If it uses port 5173, open [the scripted reference replay](http://localhost:5173/?replay=reference-seed42.json&tick=30) during the first night or [the Gemini policy replay](http://localhost:5173/?replay=gemini-seed42.json&tick=59) to inspect rejected staff assignments. For a different port, use that port in the same links. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
 
 Pick a replay, press play, or drag the timeline to see the beds, waiting room, staff, budget, and score breakdown.
 
@@ -37,9 +37,7 @@ PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tool
   python frontend/tools/live/serve.py --agent reference --seed 42
 ```
 
-Add `?live=1` to the Vite URL. Use **New run** to choose a seed and agent. The live server saves replays under `frontend/public/replays/runs/` so you can reopen a run by adding `?replay=runs/<filename>` to your Vite URL. On Windows, run this command in WSL. See the [live viewer guide](frontend/tools/live/README.md) for runtime options.
-
-Use **New run** or change `--agent` in the command above. Set the provider key in the shell or in the gitignored `.env` at the repository root.
+Add `?live=1` to the Vite URL. Use **New run** to choose a seed and agent, or change `--agent` in the command above. Model agents read their key from the shell or from the gitignored `.env` at the repository root. The live server saves replays under `frontend/public/replays/runs/` so you can reopen a run by adding `?replay=runs/<filename>` to your Vite URL. On Windows, run this command in WSL. See the [live viewer guide](frontend/tools/live/README.md) for runtime options.
 
 | Agent | What it does in the live viewer | Setup and example |
 | --- | --- | --- |
@@ -53,7 +51,7 @@ Each live model run calls its provider up to 144 times. The scored Harbor model 
 
 ## Reproduce the reported results
 
-The scored trials use Harbor with Docker Compose. Start Docker and install **Git, make, and uv**. The runner uses uv to launch Python 3.12 and Harbor 0.26.0. Set `GEMINI_API_KEY` in your shell or in the repository root’s gitignored `.env`. Copy [`.env.example`](.env.example) to `.env` if you need a template.
+The scored trials use Harbor with Docker Compose. Start Docker (with the `docker compose` plugin) and install **Git, make, and uv**. The runner uses uv to launch Python 3.12 and Harbor 0.26.0. Set `GEMINI_API_KEY` in your shell or in the repository root’s gitignored `.env`. Copy [`.env.example`](.env.example) to `.env` if you need a template.
 
 On Windows, use Ubuntu in WSL 2. Enable Ubuntu under Docker Desktop’s **Settings → Resources → WSL Integration** and let Docker finish restarting before running evaluations. In Ubuntu, install Git and Make with `sudo apt-get install git make`, install [uv](https://docs.astral.sh/uv/), and clone into the Linux home directory. Check `docker info` and `docker compose version` in Ubuntu.
 
@@ -64,13 +62,15 @@ git switch --detach 9f3bdbb9ddc24182b76b914874294fa5521c09be
 ED72_SEED=3101 ED72_MODEL=gemini/gemini-3.8-flash make eval
 ```
 
-`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/foresight/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
+`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. If any baseline fails, no paid trial starts. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/foresight/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
 
-For a keyless check at the pinned revision, run `ED72_SEED=3101 make eval-baselines`. The three baselines should score **95.86**, **0.00**, and **4.56** out of 100, respectively.
+For a keyless check at the pinned revision, run `ED72_SEED=3101 make eval-baselines`. It runs the same three baselines with no model calls. They should score **95.86** (reference), **0.00** (do-nothing), and **4.56** (stop-early) out of 100.
 
 For a single scored Gemini or Kimi trial, export the corresponding key in your shell and select the command from the [single-trial examples](#single-model-trials).
 
-The runner writes `eval/results/summary.md` and keeps trial artifacts under `eval/results/jobs/`. In a trial directory, `verifier/reward.txt` holds the normalized reward, `verifier/score_full.json` has the score breakdown and patient outcomes, and model trials include `agent/trajectory.json`. The first Docker build can take several minutes. Each model trial has a 30-minute agent timeout. Check the **Completeness** section of the summary for six completed trials and zero failures. For a failed model trial, open its `exception.txt`. If Google reports `API_KEY_INVALID`, replace the key in `.env` with an active Gemini API key and check that an older shell variable is not overriding it. [Gemini API key setup](https://ai.google.dev/gemini-api/docs/api-key)
+The runner writes `eval/results/summary.md` and keeps trial artifacts under `eval/results/jobs/`. In a trial directory, `verifier/reward.txt` holds the normalized reward, `verifier/score_full.json` has the score breakdown and patient outcomes, and model trials include `agent/trajectory.json`. The first Docker build can take several minutes. Each model trial has a 30-minute agent timeout. Check the **Completeness** section of the summary for six completed trials and zero failures.
+
+For a failed model trial, open its `exception.txt`. If Google reports `API_KEY_INVALID`, replace the key in `.env` with an active Gemini API key and check that an older shell variable is not overriding it. [Gemini API key setup](https://ai.google.dev/gemini-api/docs/api-key)
 
 ## How it works
 
@@ -84,7 +84,23 @@ The simulator is written in Python. Each seed fixes the patient arrivals and eve
 
 The TypeScript viewer draws saved replay files on a canvas. In live mode, a local Python server runs the same simulator and streams each completed tick to the browser with server-sent events. The live model agents choose actions one tick at a time. In the scored Harbor trials, OpenCode can write and run its own policy through the same public tools.
 
-In Harbor, the agent container has the handbook and the `ward` CLI. The seed, simulator, event log, and scorer stay in a separate hospital container. After a trial, the collector rebuilds the episode from the seed and the hospital’s log. If the agent stops early, the remaining ticks run with empty actions and patients keep arriving. The verifier gets its reward from that replayed episode. [Tool contract](docs/CONTRACTS.md) · [Evaluation guide](docs/EVAL.md) · [Reward integrity report](docs/REDTEAM.md)
+### Why it is hard
+
+The department is understaffed by design. Covering all 17 beds takes 8 doctors and 9 nurses at the handbook’s beds-per-person ratios, and the agent has 6 doctors and 9 nurses, so every tick it decides which beds go uncovered. Only covered beds make treatment progress. Most costs land late. Fatigue builds on shift: above 60 a person counts as 0.6, and at 90 they faint and are out for 10 ticks. An ESI 3 patient who waits more than 6 ticks can become ESI 2. Agency staff arrive 4 ticks after ordering and leave 16 ticks after arriving. Only Resus treats ESI 1 and patients never change zone, so a light patient placed in Resus can block the next critical arrival. Two events come with a warning (flu wave, bus crash) and two do not (staff sickness, CT breakdown). Every rule and rate is in the handbook. Only future arrivals, unannounced events, and random draws are hidden.
+
+In [ablations](analysis/ablations/README.md) of a strong scripted policy at the shipped difficulty, removing rest rotation, agency orders, or the Resus reservation each cost 39.6 to 44.4 points on average over seeds 42 and 1–3.
+
+### Reward integrity
+
+In Harbor, the agent container holds only the handbook, the `ward` CLI, and a preinstalled OpenCode ([`ed72/environment/Dockerfile`](ed72/environment/Dockerfile)). The seed, simulator, event log, and scorer stay in a separate `hospital` container. The verifier runs in Harbor’s separate mode (`environment_mode = "separate"` in [`ed72/task.toml`](ed72/task.toml)), so nothing the agent writes reaches the reward.
+
+- Every tool call that reaches the simulator is appended to an event log inside the hospital container. After the trial, [`collect.py`](ed72/environment/hospital/collect.py) rebuilds the world from the seed, replays the logged `step` actions, and writes the score report. [`tests/test.sh`](ed72/tests/test.sh) reads only that report and writes the reward, or 0 on any error.
+- The hospital server answers only `/mcp` and `GET /health`. There is no reset, undo, seed, or finalize endpoint.
+- Stopping, timing out, or reaching the 500-call cap does not end the episode. The remaining ticks run with no new actions while patients keep arriving.
+- Scripted shortcuts play through the same tools: do-nothing, stop-early, divert-all, rest-in-quiet-periods, admit-light-only, admit-without-coverage, fill-beds-at-the-last-tick, and spend-to-the-limit. A CI test checks on seeds 1–3 that do-nothing scores exactly 0 and every shortcut scores below the reference ([`test_baselines.py`](ed72/environment/hospital/ed72_sim/scoring/tests/test_baselines.py)).
+- Two red-team rounds found no way to raise the score, read the seed, or see future events. Each attempt is a regression test ([red-team report](docs/REDTEAM.md)).
+
+[Tool contract](docs/CONTRACTS.md) · [Evaluation guide](docs/EVAL.md)
 
 ### Scoring
 
@@ -150,9 +166,12 @@ Single trials write to `jobs/`. Check `result.json` for zero errors and `verifie
 | --- | --- |
 | [`ed72/`](ed72/) | Harbor task, simulator, MCP server, scoring, tests, and reference policy |
 | [`eval/`](eval/) | Runner, baseline policies, manifests, and result summaries |
+| [`ed72/environment/workspace/HANDBOOK.md`](ed72/environment/workspace/HANDBOOK.md) | The rules the agent reads |
 | [`frontend/`](frontend/) | Browser replay viewer and local live server |
-| [`docs/SPEC.md`](docs/SPEC.md) | Simulation rules, setup, and scoring specification |
-| [`docs/DEMO.md`](docs/DEMO.md) | Demo walkthrough |
+| [`analysis/`](analysis/) | Lever ablations and run analysis |
+| [`docs/SPEC.md`](docs/SPEC.md) | Simulation rules, setup, and scoring specification. The source rulebook, in Russian, is [`docs/ED_Management_Simulator_RU.md`](docs/ED_Management_Simulator_RU.md) |
+| [`docs/REDTEAM.md`](docs/REDTEAM.md), [`docs/TUNING.md`](docs/TUNING.md) | Exploit attempts and difficulty tuning |
+| [`docs/DEMO.md`](docs/DEMO.md) | Judging walkthrough |
 
 Run `npx --yes pnpm@10.34.9 test` from `frontend/` for the viewer tests. Run the simulator tests from the repository root.
 

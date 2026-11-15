@@ -28,12 +28,12 @@ Run the `noslop` skill on the staged changes.
 ## 4. Format and lint (only for the parts you changed)
 - Python, from the repo root (settings in `ruff.toml` and each project's `pyproject.toml`):
   `uvx ruff format . && uvx ruff check --fix .`
-- Frontend: `cd frontend && pnpm prettier --write src && pnpm lint`
+- Frontend: `cd frontend && pnpm lint`
 
 Re-stage after formatting: `git add -A`.
 
 ## 5. It still runs
-- For every folder you changed that has its own `pyproject.toml` (today `backend/`; later `ed72/environment/hospital/`, `eval/`, `analysis/`, `training/`):
+- For every folder you changed that has its own `pyproject.toml` (for example `ed72/environment/hospital/`, `eval/baselines/`, `analysis/ablations/`):
   `cd <folder> && uv run --with pytest pytest -q` (exit code 5 means no tests were collected, which is fine).
 - Frontend: `cd frontend && pnpm build && pnpm test`
 - For every changed `.sh` file: `bash -n <file>`.

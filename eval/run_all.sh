@@ -52,7 +52,7 @@ command -v docker >/dev/null 2>&1 || die "docker not found. Install Docker Deskt
 docker info >/dev/null 2>&1 || die "Docker is not running. Start Docker Desktop and retry."
 command -v uv >/dev/null 2>&1 || die "uv not found. Install it: https://docs.astral.sh/uv/"
 command -v "${HARBOR_CMD[0]}" >/dev/null 2>&1 || die "'${HARBOR_CMD[0]}' not found (HARBOR=${HARBOR_CMD[*]})"
-[ -f "$TASK_DIR/task.toml" ] || die "$TASK_DIR/task.toml not found. The Harbor task is built by #22."
+[ -f "$TASK_DIR/task.toml" ] || die "$TASK_DIR/task.toml not found. Run this from the repository root."
 for required in "$STOP_EARLY_FILE" "$STOP_EARLY_PATH/ed72_baselines/ward_driver.py" \
   "$TASK_DIR/solution/solve.sh" "$TASK_DIR/solution/reference.py" "$TASK_DIR/solution/policy.py" \
   "$TASK_DIR/environment/ward" "$REPO_ROOT/eval/manifest.py" "$REPO_ROOT/eval/summarise.py"; do

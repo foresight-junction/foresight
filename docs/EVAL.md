@@ -11,13 +11,13 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 - Verifier: `environment_mode = "separate"` plus a `[[verifier.collect]]` hook. The hook finalises inside `hospital` and writes `/evidence/report.json`, declared as a sidecar artifact.
 - `tests/test.sh` reads only that file. It always writes a number to `/logs/verifier/reward.txt`, and writes 0 on any error.
 - Why: Kostiantyn's spike showed that a root agent can forge the reward in shared mode. There is no finalise HTTP endpoint for the agent to call.
-- Risk: OpenCode installs over npm at setup. `main` needs internet, or OpenCode must be preinstalled in the image.
+- OpenCode 1.19.5 is preinstalled in the `main` image (`ed72/environment/Dockerfile`), so agent setup does not install it over npm.
 
 ## 2. Run budget
 
 | Setting | Value |
 |---|---|
-| Agent timeout | 3600 s (TUNE, to be measured by issue #37; was 1800 s) |
+| Agent timeout | 1800 s (`ed72/task.toml`) |
 | Tool-call cap | 500 (TUNE), counted by `hospital` |
 | Target per run | 144 to 250 tool calls |
 | `step` calls | 144 per episode, one per 30-minute tick, plus a few `rules` and `observe` |
@@ -31,7 +31,7 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 | Run | Command | Expected score |
 |---|---|---|
 | Reference | `harbor run -p ed72 -a oracle` | Clearly the highest of all runs |
-| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> --api-key-name <KEY> --ae '<OPENCODE_KEY>=${<KEY>}' --ak version=1.19.5 -k 3` (key table in README "Run it") | To be measured. Gap = reference minus agent mean |
+| Agent, 3 runs | `harbor run -p ed72 -a opencode -m <provider/model> --api-key-name <KEY> --ae '<OPENCODE_KEY>=${<KEY>}' --ak version=1.19.5 -k 3` (examples in README "Single model trials") | Measured on seeds 3101–3103, see README "Reported scores". Gap = reference minus agent mean |
 | Do-nothing | `harbor run -p ed72 -a nop` | 0 |
 | Stop-early | Scripted baseline in `eval/`: plays the reactive proxy for 12 ticks, then stops | Low. Below the reactive proxy |
 
@@ -41,7 +41,8 @@ Expected order: reference, then reactive proxy, then stop-early, then do-nothing
 
 ## 4. Run matrix
 
-- Lane C: 3 seeds x 3 runs x up to 3 models. One model each from Anthropic, OpenAI and Google, the strongest we have keys for.
+- Final campaign: seeds 3101–3103, 3 runs each for Gemini 3.8 Flash (OpenCode, `make eval`) and Kimi K3.1 Pro (OpenCode through Verda), plus reference, do-nothing and stop-early per seed. Scores and logs: README "Reported scores" and the [`ed72-eval-20261115-002252` release](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252).
+- The original plan was 3 seeds x 3 runs x up to 3 models, one each from Anthropic, OpenAI and Google.
 - Held-out seeds are also reported (SPEC section 12), so a result is not an artefact of the three shipped seeds.
 - Other lanes: one seed, one model.
 - Model ids are passed as `<provider/model>`. We choose them at the 18:00 checkpoint, from the keys the team has.

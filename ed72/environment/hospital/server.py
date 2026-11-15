@@ -137,7 +137,8 @@ def _fresh_log(path: str) -> Path:
 
 def _make_sim(seed: int) -> Sim:
     if os.environ.get("USE_MOCKS") == "1":
-        from mock_sim import EVENT_LOG_PATH, MockSimulation  # MOCK: until #46/#48 land on main
+        # MOCK: dev-only stand-in, never used by Harbor runs
+        from mock_sim import EVENT_LOG_PATH, MockSimulation
 
         return MockSimulation(seed, _fresh_log(EVENT_LOG_PATH))
     from ed72_sim.config import load_config
