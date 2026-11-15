@@ -17,8 +17,8 @@ The scripted reference replay on seed 42, shown during the first night.
 Use **Node.js 22** and **pnpm 10**, the versions used in CI. The viewer includes saved runs for the reference policy, a reactive baseline, and a replayed Gemini policy. It runs locally without Docker or a model key.
 
 ```bash
-git clone https://github.com/xand1ex999/guinness.git
-cd guinness/frontend
+git clone https://github.com/xand1ex999/foresight.git
+cd foresight/frontend
 pnpm install --frozen-lockfile
 pnpm dev
 ```
@@ -64,7 +64,7 @@ git switch --detach 9f3bdbb9ddc24182b76b914874294fa5521c09be
 ED72_SEED=3101 ED72_MODEL=gemini/gemini-3.8-flash make eval
 ```
 
-`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/guinness/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252)
+`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/foresight/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
 
 For a keyless check at the pinned revision, run `ED72_SEED=3101 make eval-baselines`. The three baselines should score **95.86**, **0.00**, and **4.56** out of 100, respectively.
 
@@ -107,13 +107,13 @@ Patient outcome weights the sickest patients most heavily. Timeliness measures h
 | Gemini 3.8 Flash, best completed run | 80.70 | 93.39 | 78.69 |
 | Kimi K3.1 Pro, best completed run | 88.42 | 93.69 | 74.38 |
 
-Scores are out of 100. On seed 3101, Gemini ranged from 8.19 to 80.70 over three completed trials. The final matrix shows every recorded attempt, including four Kimi timeouts with partial scores and one missing Kimi record. [Full results and logs](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252)
+Scores are out of 100. On seed 3101, Gemini ranged from 8.19 to 80.70 over three completed trials. The final matrix shows every recorded attempt, including four Kimi timeouts with partial scores and one missing Kimi record. [Full results and logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
 
 In an earlier calibration run, Gemini kept assigning agency staff to critical beds after their contracts had expired. The simulator rejected each assignment, but the policy kept treating those beds as staffed. Two critical patients the reference discharged never received a staffed bed in Gemini’s run. [Calibration run and score report](eval/results/2026-11-14-gemini-seed42/README.md)
 
 ### Inspect an example run
 
-Download the [final score table](https://github.com/xand1ex999/guinness/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) and [final trace archive](https://github.com/xand1ex999/guinness/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Logs_Final.tar.gz). The archive contains all 26 available attempts. The unrecorded Kimi attempt is marked missing in the score table.
+Download the [final score table](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) and [final trace archive](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Logs_Final.tar.gz). The archive contains all 26 available attempts. The unrecorded Kimi attempt is marked missing in the score table.
 
 | Example | Score / 100 | Trial directory inside the archive |
 | --- | ---: | --- |
@@ -122,7 +122,7 @@ Download the [final score table](https://github.com/xand1ex999/guinness/releases
 | Gemini’s best repeat on seed 3101 | 80.70 | `gemini-r3-3101/ed72__GWvZZ5D/` |
 | Kimi’s best completed repeat on seed 3101 | 88.42 | `kimi-r3-3101/ed72__zKXdnoK/` |
 
-For each sample, open `verifier/score_full.json` for outcomes, `verifier/reward.txt` for the normalized reward, and `agent/trajectory.json` for model decisions. The enclosing run folder contains `manifest.json` with the evaluated revision and configuration hashes. Do-nothing and stop-early runs are included as negative controls. The full collection is indexed on the [results release](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252).
+For each sample, open `verifier/score_full.json` for outcomes, `verifier/reward.txt` for the normalized reward, and `agent/trajectory.json` for model decisions. The enclosing run folder contains `manifest.json` with the evaluated revision and configuration hashes. Do-nothing and stop-early runs are included as negative controls. The full collection is indexed on the [results release](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252).
 
 ### Single model trials
 

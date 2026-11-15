@@ -5,7 +5,7 @@ Use the browser replay for the walkthrough and the published Harbor results for 
 ## Before you record
 
 - Start the viewer from the [README](../README.md#watch-a-replay) and open `?replay=reference-seed42.json&tick=60` on the Vite URL. Check that playback and the timeline work at the resolution you will share.
-- Open the [final results matrix and trial logs](https://github.com/xand1ex999/guinness/releases/tag/ed72-eval-20261115-002252). Unpack the final archive and open the trajectory and verifier report under `gemini-r2-3101/ed72__Dd8UGG9/` for the staffing example.
+- Open the [final results matrix and trial logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252). Unpack the final archive and open the trajectory and verifier report under `gemini-r2-3101/ed72__Dd8UGG9/` for the staffing example.
 - Open the [pinned evaluation command](../README.md#reproduce-the-reported-results) and a terminal with the clean-checkout summary if it has finished. Keep `.env` and any credentials off screen.
 - Rehearse once with a timer. Allow time at the end for questions or a slow browser.
 
