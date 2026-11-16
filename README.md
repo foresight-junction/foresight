@@ -1,5 +1,7 @@
 # Foresight · ED-72
 
+**[Open demo](https://xand1ex999.github.io/foresight/?replay=gemini-seed42.json&tick=59)** · See what happens when Gemini tries to assign staff whose contracts have ended.
+
 An AI agent runs a fictional emergency department for three days. Every 30 minutes, it decides who gets a bed, which staff cover each zone, and who can take a break. A bed is only useful if someone can staff it. A doctor who works through the afternoon might faint during the night shift.
 
 We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
