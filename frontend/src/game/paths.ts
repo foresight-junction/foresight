@@ -1,5 +1,4 @@
 // Walking paths for people in the department, behind one swappable router.
-// Owner: agent D (playback + animation).
 
 import type { Point } from "../replay/frame";
 import { route } from "../world/path";

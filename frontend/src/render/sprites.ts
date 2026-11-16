@@ -1,7 +1,6 @@
 // Pixel-art drawing for every entity, tile and effect. All art is drawn in code (no image assets):
 // pixel maps in src/render/art/ are rendered once to offscreen canvases and cached, so each call here
 // is a handful of drawImage calls.
-// Owner: agent C (sprites).
 //
 // Every function draws at map-pixel coordinates (x, y) = top-left of a 16x16 cell; the renderer has
 // already applied the integer zoom, and image smoothing is off. For a patient in bed, (p.x, p.y) is

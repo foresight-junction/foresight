@@ -1,8 +1,8 @@
 // Draws one Frame onto the canvas. Layers: a cached static map (floors, outdoor art, furniture, 3/4
 // walls, signs) -> wall monitors, beds, CT -> shadows and y-sorted people -> lighting (ambient dark
 // with light pools, alarm glows) -> particles, effects -> live overlays (zone coverage, CT down,
-// diversion) -> vignette and flash. Screen shake offsets the whole map. Owner: agent B (map + renderer).
-// Sprites come from sprites.ts (agent C); furniture, outdoor art and the 3x5 pixel font are drawn here.
+// diversion) -> vignette and flash. Screen shake offsets the whole map.
+// Sprites come from sprites.ts. The renderer draws furniture, outdoor art and signs.
 
 import type { EffectKind, Frame, PatientEntity, StaffEntity, VehicleEntity } from "../replay/frame";
 import type { Zone } from "../replay/types";
@@ -27,6 +27,7 @@ import {
   ZONE_LABEL,
   type Layout,
 } from "../world/layout";
+import { newCanvas } from "./art/pixmap";
 import { darkness, fitZoom, hourOfDay } from "./camera";
 import { type Burst, Particles } from "./particles";
 import { drawBed, drawCt, drawEffect, drawPatient, drawStaff, drawTile, drawWallFace } from "./sprites";
@@ -68,7 +69,6 @@ const COL = {
 
 const ZONE_COLOR: Record<Zone, string> = { resus: COL.red, acute: COL.teal, fast_track: COL.green };
 
-// ---------------------------------------------------------------------------------------------------
 // 3x5 pixel font: crisp at any integer zoom, unlike canvas text.
 
 // Five rows of three pixels each, top to bottom.
@@ -103,7 +103,7 @@ function drawText(ctx: CanvasRenderingContext2D, s: string, x: number, y: number
   }
 }
 
-function plaque(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: number, accent: string): Rect {
+function plaque(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: number, accent: string): void {
   const w = textWidth(text) + 8;
   const x = Math.round(cx - w / 2);
   const y = Math.round(cy - 5);
@@ -114,10 +114,8 @@ function plaque(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: num
   ctx.fillStyle = accent;
   ctx.fillRect(x, y, 2, 10);
   drawText(ctx, text, x + 5, y + 3, COL.text);
-  return { c0: x, r0: y, c1: x + w, r1: y + 10 };
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Static art: outdoor ground, wall shadows, furniture, bed bays, signs.
 
 function px(r: Rect): { x: number; y: number; w: number; h: number } {
@@ -201,11 +199,6 @@ function drawWallShadows(ctx: CanvasRenderingContext2D, layout: Layout): void {
   }
 }
 
-// 16x16 piece of a wall's front face (3/4 view): one tile row of the sprites' wall face.
-function wallFace(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  drawWallFace(ctx, x, y, TILE);
-}
-
 const CAP = 6; // how far a wall's top cap rises above its face, in px
 
 // Top cap: sprites' wall tile, darkened so it reads as the dark top of a thick wall.
@@ -236,7 +229,7 @@ function drawWalls(ctx: CanvasRenderingContext2D, layout: Layout): void {
           wallCap(ctx, x, y, TILE);
           continue;
         }
-        wallFace(ctx, x, y);
+        drawWallFace(ctx, x, y, TILE);
         if (r === 0) wallCap(ctx, x, y, 4);
         else wallCap(ctx, x, y - CAP, CAP);
         ctx.fillStyle = "#6b6390";
@@ -605,11 +598,7 @@ function emergencySign(ctx: CanvasRenderingContext2D, cx: number, cy: number): v
 }
 
 function buildStatic(layout: Layout): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = MAP_W;
-  canvas.height = MAP_H;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2D canvas not supported");
+  const [canvas, ctx] = newCanvas(MAP_W, MAP_H);
   ctx.imageSmoothingEnabled = false;
   layout.tiles.forEach((row, r) => row.forEach((kind, c) => drawTile(ctx, kind, c * TILE, r * TILE)));
   drawOutdoors(ctx, layout);
@@ -650,9 +639,6 @@ function buildStatic(layout: Layout): HTMLCanvasElement {
   }
   return canvas;
 }
-
-// ---------------------------------------------------------------------------------------------------
-
 
 function fmt(n: number): string {
   const r = Math.round(n * 10) / 10;
@@ -699,15 +685,6 @@ const EFFECT_BURST: Partial<Record<EffectKind, Burst>> = {
 
 type Person = PatientEntity | StaffEntity;
 
-function offscreen(): [HTMLCanvasElement, CanvasRenderingContext2D] {
-  const c = document.createElement("canvas");
-  c.width = MAP_W;
-  c.height = MAP_H;
-  const ctx = c.getContext("2d");
-  if (!ctx) throw new Error("2D canvas not supported");
-  return [c, ctx];
-}
-
 export class Renderer {
   /** Entity or bed id to outline (set by the HUD, e.g. from pick()). */
   selected: string | null = null;
@@ -723,7 +700,7 @@ export class Renderer {
   private particles = new Particles();
   private lastFrame: Frame | null = null;
 
-  // Juice and change tracking between frames.
+  // Transition effects and state carried between frames.
   private lastTime = -1;
   private lastTick = -1;
   private seenFx = new Set<string>();
@@ -741,8 +718,8 @@ export class Renderer {
     if (!ctx) throw new Error("2D canvas not supported");
     this.ctx = ctx;
     this.staticLayer = buildStatic(layout);
-    this.dark = offscreen();
-    this.glow = offscreen();
+    this.dark = newCanvas(MAP_W, MAP_H);
+    this.glow = newCanvas(MAP_W, MAP_H);
     const v = ctx.createRadialGradient(MAP_W / 2, MAP_H / 2, MAP_H * 0.42, MAP_W / 2, MAP_H / 2, MAP_W * 0.62);
     v.addColorStop(0, "rgba(8, 6, 20, 0)");
     v.addColorStop(1, "rgba(8, 6, 20, 0.55)");

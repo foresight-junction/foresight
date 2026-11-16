@@ -1,5 +1,5 @@
 // What one rendered frame contains. Playback (src/game) produces it, Renderer (src/render) draws it,
-// sprites draw each entity. Owner: lead. Agents propose changes, they don't edit this file.
+// sprites draw each entity.
 
 import type { Esi, Location, StaffStatus, Zone } from "./types";
 

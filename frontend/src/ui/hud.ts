@@ -1,6 +1,6 @@
 // Side panel styled as a pixel game HUD: replay picker and score meters, a pinned game bar
 // (clock, resource counters, transport), the timeline, the AI's decisions this tick, what happened,
-// department status and the episode's mistakes. Owner: agent E (HUD).
+// department status and the episode's mistakes.
 
 import type { Playback } from "../game/playback";
 import type { LiveAgent, Observation, Replay, ReplayIndexEntry, ReplayTick, Staff, Zone } from "../replay/types";

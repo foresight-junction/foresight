@@ -15,6 +15,7 @@ import json
 import statistics
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -45,8 +46,11 @@ def load_policy(directory: Path):
 def play(policy_cls, seed: int, config_path: str | None = None) -> tuple[Simulation, dict]:
     sim = Simulation(generate_world(seed, load_config(config_path)))
     policy = policy_cls()
-    while not sim.observe()["finished"]:
-        sim.step(policy.act(json.loads(json.dumps(sim.observe()))))
+    while True:
+        observation = sim.observe()
+        if observation["finished"]:
+            break
+        sim.step(policy.act(json.loads(json.dumps(observation))))
     return sim, score(sim.events)
 
 
@@ -87,21 +91,16 @@ def loss_points(s: dict) -> list[dict]:
     return out
 
 
-def breakdown(title: str, rows: list[dict], key, order=None) -> str:
-    agg = defaultdict(lambda: [0, 0.0, 0.0])
-    for r in rows:
-        k = key(r)
-        for kk in k if isinstance(k, list) else [k]:
-            a = agg[kk]
-            a[0] += 1
-            a[1] += r["o_pts"]
-            a[2] += r["t_pts"]
-    keys = order or sorted(agg)
+def breakdown(title: str, rows: list[dict], key: Callable[[dict], str | int | list[str]]) -> str:
+    totals: dict[str | int, tuple[int, float, float]] = defaultdict(lambda: (0, 0.0, 0.0))
+    for row in rows:
+        group = key(row)
+        for category in group if isinstance(group, list) else [group]:
+            count, outcome_loss, timing_loss = totals[category]
+            totals[category] = count + 1, outcome_loss + row["o_pts"], timing_loss + row["t_pts"]
     lines = [f"| {title} | patients | O pts lost | T pts lost |", "|---|---|---|---|"]
-    for k in keys:
-        n, o, t = agg.get(k, [0, 0.0, 0.0])
-        if n:
-            lines.append(f"| {k} | {n} | {o:.2f} | {t:.2f} |")
+    for category, (count, outcome_loss, timing_loss) in sorted(totals.items()):
+        lines.append(f"| {category} | {count} | {outcome_loss:.2f} | {timing_loss:.2f} |")
     return "\n".join(lines)
 
 
@@ -113,11 +112,7 @@ def bucket(tick: int) -> str:
 def detail(seed: int, sim: Simulation, s: dict) -> str:
     rows = loss_points(s)
     ev = [e for e in sim.events if e["src"] == "sim" and e["event"] == "event_start"]
-    spend = [
-        (e["t"], e["amount"], e.get("what", e.get("kind", "")))
-        for e in sim.events
-        if e.get("event") == "spend"
-    ]
+    spend_count = sum(e.get("event") == "spend" for e in sim.events)
     events = ", ".join(e["kind"] + "@" + str(e["t"]) for e in ev)
     w_pts = 10 * s["O"] * (1 - s["W"])
     b_pts = 10 * s["O"] * (1 - s["B"])
@@ -131,7 +126,7 @@ def detail(seed: int, sim: Simulation, s: dict) -> str:
             f"Points lost: O {o_pts:.2f} (patients), T {t_pts:.2f}, W {w_pts:.2f}, B {b_pts:.2f}, "
             f"total {o_pts + t_pts + w_pts + b_pts:.2f} of 100."
         ),
-        f"Spend events: {len(spend)}, total {s['spend']}.",
+        f"Spend events: {spend_count}, total {s['spend']}.",
         "",
         breakdown("outcome", rows, lambda r: r["outcome"]),
         "",

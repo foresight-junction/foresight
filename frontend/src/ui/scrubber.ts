@@ -1,5 +1,5 @@
 // Canvas timeline of the whole episode: event bands, diversion, per-tick markers, queue sparkline,
-// a playhead, and click/drag to seek. Owner: agent E (HUD).
+// a playhead, and click/drag to seek.
 
 import { buildTimeline, tickSummary, type TimelineData } from "./timeline";
 import type { Replay } from "../replay/types";

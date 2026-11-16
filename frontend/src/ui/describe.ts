@@ -1,7 +1,8 @@
 // Plain-English text for the HUD: actions, rejection reasons, sim events, warnings, score parts.
-// Pure functions only (no DOM) so they can be unit tested. Owner: agent E (HUD).
+// Pure functions only (no DOM) so they can be unit tested.
 
-import type { Action, Esi, Location, Observation, ReplayTick, ScoreSummary, SimEvent, Staff } from "../replay/types";
+import type { Action, Esi, Location, Observation, ReplayTick, ScoreSummary, SimEvent, Staff, Zone } from "../replay/types";
+import { BEDS_PER_DOCTOR, BEDS_PER_NURSE } from "../world/layout";
 
 export type Tone = "good" | "bad" | "warn" | "info" | "money" | "muted";
 
@@ -445,15 +446,9 @@ export function describeWarnings(obs: Observation): Line[] {
     });
 }
 
-const BEDS_PER: Record<"resus" | "acute" | "fast_track", { doctor: number; nurse: number }> = {
-  resus: { doctor: 1, nurse: 1 },
-  acute: { doctor: 3, nurse: 2 },
-  fast_track: { doctor: 4, nurse: 3 },
-};
-
 // How many beds the zone's on-shift team can cover (SPEC §3: the smaller of doctor and nurse
 // coverage, fractional coverage rounded down; tired staff count as 0.6).
-export function zoneCapacity(obs: Observation, zone: "resus" | "acute" | "fast_track"): number {
+export function zoneCapacity(obs: Observation, zone: Zone): number {
   let doctors = 0;
   let nurses = 0;
   for (const s of obs.staff) {
@@ -461,9 +456,9 @@ export function zoneCapacity(obs: Observation, zone: "resus" | "acute" | "fast_t
     if (s.role === "doctor") doctors += s.counts_as;
     else nurses += s.counts_as;
   }
-  const per = BEDS_PER[zone];
+  const capacity = Math.min(doctors * BEDS_PER_DOCTOR[zone], nurses * BEDS_PER_NURSE[zone]);
   // Round away float noise (0.6 * 5 = 2.9999...) before flooring.
-  return Math.floor(Math.round(Math.min(doctors * per.doctor, nurses * per.nurse) * 1000) / 1000);
+  return Math.floor(Math.round(capacity * 1000) / 1000);
 }
 
 export interface ScorePart {

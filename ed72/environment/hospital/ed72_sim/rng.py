@@ -1,10 +1,11 @@
 """Named random substreams derived from (seed, name), so luck is a property of the seed.
 
 Naming scheme:
-- stream(seed, "arrivals"): base Poisson arrivals and the ESI of every arrival
+- stream(seed, "arrivals"): base Poisson arrivals and their ESI
+- stream(seed, "flu") and stream(seed, "bus"): ESI of surge arrivals
 - stream(seed, "events"): event start ticks and which nurses fall sick
-- stream(seed, f"patient:{pid}"): every per-patient draw (CT need, diversion roll, upgrade CT roll,
-  hazard uniforms), consumed in a fixed order at world generation
+- stream(seed, f"patient:{pid}"): CT need, diversion roll, upgrade CT roll and hazard uniforms
+  in a fixed order at world generation
 
 Rule: every per-patient random quantity is drawn at world generation or from that patient's own
 substream. No draw during play may come from a stream shared across patients or from a stream whose

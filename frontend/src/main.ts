@@ -1,5 +1,5 @@
 // Boot: load the replay list and one replay (or follow a live episode with ?live=1), then run the
-// render loop. Owner: lead. Wires src/world, src/game, src/render and src/ui together.
+// render loop. Wires src/world, src/game, src/render and src/ui together.
 
 import { Playback } from "./game/playback";
 import { Renderer } from "./render/renderer";
@@ -71,15 +71,14 @@ async function start(): Promise<void> {
     const isRun = wanted !== null && /^runs\/[\w.-]+\.json$/.test(wanted);
     const file = isRun ? wanted : (index.find((r) => r.file === wanted)?.file ?? index[0].file);
     const replay = await fetchJson<Replay>(REPLAY_DIR + file);
-    const pb = new Playback(replay, layout);
-    playback = pb;
-    hud = mountHud(hudRoot, replay, pb, { replays: index, currentFile: file, onSelectReplay: openFile });
+    playback = new Playback(replay, layout);
+    hud = mountHud(hudRoot, replay, playback, { replays: index, currentFile: file, onSelectReplay: openFile });
     // ?tick=N opens the replay at that tick, e.g. to link a demo straight to the bus crash; a fraction
     // (?tick=12.45) opens part-way through the tick's animation.
     const startTick = Number(params.get("tick"));
     if (Number.isFinite(startTick) && startTick > 0) {
-      pb.seek(Math.floor(startTick));
-      pb.phase = startTick % 1;
+      playback.seek(Math.floor(startTick));
+      playback.phase = startTick % 1;
     }
   }
 

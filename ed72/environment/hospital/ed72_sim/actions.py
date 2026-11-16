@@ -76,8 +76,8 @@ def _assign(state: State, tick: int, action: dict, emit: Emit) -> str | None:
     return None
 
 
-def _spend(state: State, hard_limit: int, item: str, amount: int, emit: Emit) -> str | None:
-    if state.spent + amount > hard_limit:
+def _spend(state: State, item: str, amount: int, emit: Emit) -> str | None:
+    if state.spent + amount > state.world.hard_limit:
         return "over_hard_limit"
     state.spent += amount
     emit("spend", item=item, amount=amount)
@@ -88,7 +88,7 @@ def _agency(state: State, tick: int, action: dict, emit: Emit) -> str | None:
     role = action.get("role")
     if not isinstance(role, str) or role not in c.AGENCY_COST:
         return "bad_action"
-    reason = _spend(state, state.world.hard_limit, f"agency_{role}", c.AGENCY_COST[role], emit)
+    reason = _spend(state, f"agency_{role}", c.AGENCY_COST[role], emit)
     if reason is not None:
         return reason
     state.agency_ordered[role] += 1
@@ -109,7 +109,7 @@ def _agency(state: State, tick: int, action: dict, emit: Emit) -> str | None:
 def _repair(state: State, tick: int, action: dict, emit: Emit) -> str | None:
     if state.ct_return_tick is None:
         return "ct_not_broken"
-    reason = _spend(state, state.world.hard_limit, "repair", c.REPAIR_COST, emit)
+    reason = _spend(state, "repair", c.REPAIR_COST, emit)
     if reason is not None:
         return reason
     state.ct_return_tick = min(state.ct_return_tick, tick + c.REPAIR_TICKS)

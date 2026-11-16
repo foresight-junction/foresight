@@ -2,9 +2,9 @@
 
 The replay shape is frontend/src/replay/types.ts (Replay); index.json (rewritten
 on every run) is a list of ReplayIndexEntry for every replay in public/replays.
-Run from the repo root (PYTHONPATH separator is ';' on Windows, ':' elsewhere):
+Run from the repo root in Bash. Use semicolons between PYTHONPATH entries on Windows.
 
-    PYTHONPATH="ed72/environment/hospital;ed72/solution;eval/baselines" \
+    PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines" \
       uv run --no-project --python 3.12 python frontend/tools/export_replay.py --policy gemini --seed 42
     ... export_replay.py --all          # every shipped policy (SHIPPED) for the seed
 

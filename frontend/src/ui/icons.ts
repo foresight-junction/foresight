@@ -1,5 +1,5 @@
 // Tiny pixel-art icons drawn as inline SVG (one rect per horizontal run), so they stay crisp at
-// any scale and need no image files. Owner: agent E (HUD).
+// any scale and need no image files.
 
 const PALETTE: Record<string, string> = {
   r: "#e5484d",

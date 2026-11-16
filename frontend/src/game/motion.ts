@@ -1,6 +1,5 @@
 // Small timeline primitives the per-tick plans are made of: step keys, linear keys and walking legs,
 // plus the bits that give motion some character (overshoot, footstep bob, anticipation, spins).
-// Owner: agent D (playback + animation).
 
 import type { Facing, Point } from "../replay/frame";
 import { pathLength, pointAlong, walkPath } from "./paths";

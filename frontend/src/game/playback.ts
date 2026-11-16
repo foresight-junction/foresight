@@ -1,6 +1,6 @@
 // Timeline over a Replay: which tick is showing, how far its animation is, and the Frame to draw.
 // The whole replay is planned once at load (model.ts), so seeking is just an index and never replays
-// animations. Owner: agent D (playback + animation).
+// animations.
 
 import type { Effect, Frame, PatientEntity, StaffEntity, VehicleEntity } from "../replay/frame";
 import type { Replay, ReplayTick, Staff, Zone } from "../replay/types";

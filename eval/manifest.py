@@ -68,7 +68,7 @@ def tree_sha256(root: Path) -> str | None:
     return digest.hexdigest()
 
 
-def _read_json(path: Path) -> dict | None:
+def read_json_object(path: Path) -> dict | None:
     if not path.is_file():
         return None
     data = json.loads(path.read_text())
@@ -179,8 +179,8 @@ def runtime_facts(harbor_version: str | None) -> dict:
 
 def trial_facts(trial_dir: Path) -> dict:
     """Facts Harbor recorded for one trial: task path, task checksum, agent, model."""
-    result = _read_json(trial_dir / "result.json") or {}
-    config = _read_json(trial_dir / "config.json") or {}
+    result = read_json_object(trial_dir / "result.json") or {}
+    config = read_json_object(trial_dir / "config.json") or {}
     task_id = result.get("task_id") or {}
     task_cfg = (result.get("config") or {}).get("task") or config.get("task") or {}
     agent_cfg = (result.get("config") or {}).get("agent") or (config.get("agent") or {})
@@ -206,7 +206,7 @@ def derive(trial_dir: Path, repo_root: Path) -> dict:
 def load_manifest(trial_dir: Path) -> dict | None:
     """Trial-level, then job-level manifest. Schema 1 manifests (no `schema` key) load unchanged."""
     for path in (trial_dir / MANIFEST_NAME, trial_dir.parent / MANIFEST_NAME):
-        data = _read_json(path)
+        data = read_json_object(path)
         if data is not None:
             return data
     return None
@@ -320,7 +320,7 @@ def write_plan(
 
 
 def load_plan(job_root: Path) -> dict | None:
-    return _read_json(job_root / PLAN_NAME)
+    return read_json_object(job_root / PLAN_NAME)
 
 
 def _parse_entry(text: str, default_seed: int | None) -> list[dict]:
@@ -398,7 +398,7 @@ def main(argv: list[str] | None = None) -> int:
         budget=budget,
         exit_code=args.exit_code,
     )
-    drift = _read_json(out).get("drifted_fields")
+    drift = read_json_object(out).get("drifted_fields")
     if drift:
         print(f"manifest: IDENTITY DRIFT since plan: {', '.join(drift)}", file=sys.stderr)
     print(f"manifest: wrote {out}", file=sys.stderr)

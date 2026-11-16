@@ -59,8 +59,7 @@ task_rel="task.toml"
 # stamp <dir> <seed>: rewrite the two lines in a copy, failing unless each
 # file changes exactly one line.
 stamp() {
-  dir=$1
-  seed=$2
+  local dir=$1 seed=$2 f tmp
   f="$dir/$compose_rel"
   tmp="$f.tmp"
   awk -v seed="$seed" '
@@ -102,7 +101,7 @@ stamp() {
 
 # build <outdir>: stamp every seed folder into outdir.
 build() {
-  out=$1
+  local out=$1 s
   for s in $seeds; do
     rm -rf "${out:?}/ed72-s$s"
     cp -R "$tpl" "$out/ed72-s$s"

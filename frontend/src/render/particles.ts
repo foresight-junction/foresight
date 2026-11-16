@@ -1,5 +1,5 @@
 // Tiny pixel particle system: square particles at integer positions, simple gravity and drag.
-// Purely cosmetic, so it uses Math.random. Owner: agent B (map + renderer).
+// Purely cosmetic, so it uses Math.random.
 
 export interface Particle {
   x: number;

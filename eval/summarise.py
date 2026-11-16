@@ -13,7 +13,6 @@ Usage: python eval/summarise.py [JOBS_DIR ...] [--out PATH]
 """
 
 import argparse
-import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -49,18 +48,11 @@ class Trial:
     drift: tuple[str, ...] = ()
 
 
-def _read_json(path: Path) -> dict | None:
-    if not path.is_file():
-        return None
-    data = json.loads(path.read_text())
-    return data if isinstance(data, dict) else None
-
-
 def find_trial_dirs(roots: list[Path]) -> list[Path]:
     found: set[Path] = set()
     for root in roots:
         for config in root.rglob("config.json"):
-            data = _read_json(config)
+            data = manifest.read_json_object(config)
             if data is not None and "trial_name" in data:
                 found.add(config.parent)
     return sorted(found)
@@ -71,11 +63,11 @@ def _report(trial_dir: Path) -> dict | None:
         trial_dir / "verifier" / "score_full.json",
         trial_dir / "artifacts" / "evidence" / "report.json",
     ):
-        data = _read_json(path)
+        data = manifest.read_json_object(path)
         if data is not None:
             return data
     for path in sorted((trial_dir / "artifacts").rglob("report.json")):
-        data = _read_json(path)
+        data = manifest.read_json_object(path)
         if data is not None:
             return data
     return None
@@ -135,7 +127,7 @@ def _identity(trial_dir: Path, report: dict | None) -> dict[str, str]:
 
 def load_trial(trial_dir: Path) -> Trial | None:
     """Return None for a trial that has not finished (Harbor writes result.json at the end)."""
-    result = _read_json(trial_dir / "result.json")
+    result = manifest.read_json_object(trial_dir / "result.json")
     if result is None:
         return None
     report = _report(trial_dir)
@@ -494,7 +486,7 @@ def main(argv: list[str] | None = None) -> int:
         loaded += root_trials
         plan = manifest.load_plan(r)
         job_exit = {
-            e["job"]: (manifest._read_json(r / e["job"] / manifest.MANIFEST_NAME) or {}).get(
+            e["job"]: (manifest.read_json_object(r / e["job"] / manifest.MANIFEST_NAME) or {}).get(
                 "harbor_exit_code"
             )
             for e in _plan_entries(plan or {})

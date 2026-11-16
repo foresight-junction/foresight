@@ -23,21 +23,23 @@ def score(events: list[dict]) -> dict:
     for p in patients:
         p["loss"] = _loss(p)
     weights = {p["id"]: c.OUTCOME_WEIGHT[p["esi"]] for p in patients}
-    total_w = sum(weights.values())
-    o = 1.0 if not patients else 1 - sum(weights[p["id"]] * p["loss"] for p in patients) / total_w
-    t = 1.0 if not patients else sum(weights[p["id"]] for p in patients if p["on_time"]) / total_w
+    total_weight = sum(weights.values())
+    outcome_loss = sum(weights[p["id"]] * p["loss"] for p in patients)
+    outcome = 1.0 if not patients else 1 - outcome_loss / total_weight
+    on_time_weight = sum(weights[p["id"]] for p in patients if p["on_time"])
+    timeliness = 1.0 if not patients else on_time_weight / total_weight
 
     faints = sum(1 for e in sim if e["event"] == "faint")
     on_shift = sum(e["on_shift"] for e in sim if e["event"] == "staff_fatigue")
     tired = sum(e["on_shift_above_60"] for e in sim if e["event"] == "staff_fatigue")
     share = tired / on_shift if on_shift else 0.0
-    w = max(0.0, 1 - c.W_TIRED_WEIGHT * share - c.W_FAINT_WEIGHT * faints)
+    wellbeing = max(0.0, 1 - c.W_TIRED_WEIGHT * share - c.W_FAINT_WEIGHT * faints)
 
     spend = sum(e["amount"] for e in sim if e["event"] == "spend")
     budget, hard_limit = starts[0]["budget"], starts[0]["hard_limit"]
-    b = min(1.0, max(0.0, 1 - (spend - budget) / (hard_limit - budget)))
+    budget_score = min(1.0, max(0.0, 1 - (spend - budget) / (hard_limit - budget)))
 
-    total = 60 * o + 20 * t + o * (10 * w + 10 * b)
+    total = 60 * outcome + 20 * timeliness + outcome * (10 * wellbeing + 10 * budget_score)
     counts, codes = failure_analysis(events)
     out_patients = [
         {k: p[k] for k in _PATIENT_KEYS} | {"failure_codes": codes.get(p["id"], [])} for p in patients
@@ -49,10 +51,10 @@ def score(events: list[dict]) -> dict:
     return {
         "reward": round(total / 100, 6),
         "score": round(total, 4),
-        "O": round(o, 6),
-        "T": round(t, 6),
-        "W": round(w, 6),
-        "B": round(b, 6),
+        "O": round(outcome, 6),
+        "T": round(timeliness, 6),
+        "W": round(wellbeing, 6),
+        "B": round(budget_score, 6),
         "spend": spend,
         "totals": totals | {"faints": faints},
         "patients": out_patients,
@@ -88,7 +90,7 @@ def _patients(sim: list[dict]) -> list[dict]:
         elif kind == "covered" and p["first_covered_tick"] is None:
             p["first_covered_tick"] = e["t"]
         elif kind in ("discharged", "left"):
-            p["outcome"] = {"discharged": "discharged", "left": "left"}[kind]
+            p["outcome"] = kind
         elif kind == "death":
             p["outcome"] = "died"
     for p in by_id.values():

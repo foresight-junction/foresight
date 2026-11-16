@@ -1,5 +1,5 @@
 // A tiny hand-made 6-tick replay for tests that touches every event kind the viewer animates.
-// Invented patients and staff only. Owner: agent D (playback + animation).
+// Invented patients and staff only.
 
 import type { Action, ActionResult, Bed, Observation, Replay, SimEvent, Staff, WaitingPatient } from "../replay/types";
 

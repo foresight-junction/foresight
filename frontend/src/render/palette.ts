@@ -1,6 +1,5 @@
 // Shared colours for all pixel art. Cozy 16-bit hospital: warm light floors, soft teal/mint accents,
 // one dark warm outline on every character, 3-tone ramps (light, mid, dark) for materials.
-// Owner: agent C (sprites).
 
 import type { Esi } from "../replay/types";
 
