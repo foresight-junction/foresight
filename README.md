@@ -10,6 +10,12 @@ We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026
 
 The scripted reference replay on seed 42, shown during the first night.
 
+Each simulated hospital run gets a score from 0 to 100. **Higher is better.** The score gives the most weight to patient outcomes and also accounts for how quickly patients get care, staff wellbeing, and spending.
+
+On seed 3101, the scripted reference scored **95.86/100**. Gemini 3.8 Flash scored **8.19 to 80.70 out of 100** across three completed trials on the same seed. A single trial would miss that variability.
+
+The full matrix includes four Kimi timeouts with partial scores and one missing Kimi run. [Published evaluation results](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md)
+
 ## Run it
 
 ### Watch a replay
@@ -123,7 +129,7 @@ Patient outcome weights the sickest patients most heavily. Timeliness measures h
 | Gemini 3.8 Flash, best completed run | 80.70 | 93.39 | 78.69 |
 | Kimi K3.1 Pro, best completed run | 88.42 | 93.69 | 74.38 |
 
-Scores are out of 100. On seed 3101, Gemini ranged from 8.19 to 80.70 over three completed trials. The final matrix shows every recorded attempt, including four Kimi timeouts with partial scores and one missing Kimi record. [Full results and logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
+Scores are out of 100.
 
 In an earlier calibration run, Gemini kept assigning agency staff to critical beds after their contracts had expired. The simulator rejected each assignment, but the policy kept treating those beds as staffed. Two critical patients the reference discharged never received a staffed bed in Gemini’s run. [Calibration run and score report](eval/results/2026-11-14-gemini-seed42/README.md)
 
