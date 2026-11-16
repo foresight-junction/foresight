@@ -160,6 +160,14 @@ ED72_SEED=3101 uvx --python 3.12 --from harbor==0.26.0 harbor run \
 
 Single trials write to `jobs/`. Check `result.json` for zero errors and `verifier/reward.txt` for the reward.
 
+## Team and contributions
+
+**Yehor Mykhailov (@yehorm14)** worked on the evaluation harness.
+
+- Built the one-command `make eval` runner for baseline and model trials and the summariser that turns Harbor outputs into a Markdown score report. [Runner #53](https://github.com/xand1ex999/foresight/pull/53)
+- Fixed the summariser to report failed trials and return a nonzero exit code even when a trial writes `reward.txt`. [Failure reporting #93](https://github.com/xand1ex999/foresight/pull/93)
+- Made the simulation seed selectable from the host via `ED72_SEED`, with seed 42 as the default. [Seed configuration #112](https://github.com/xand1ex999/foresight/pull/112)
+
 ## Repository guide
 
 | Where | What is there |
