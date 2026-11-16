@@ -16,4 +16,4 @@ Document final-campaign failure analysis with verifier counts, score components,
 
 ## Handoff
 
-Recheck the cited seed-3101 cases against the published Harbor archive and follow the Markdown links. The policy, scorer, and campaign artifacts are unchanged. The full fairness mapping is a follow-up for #20.
+Recheck the cited seed-3101 cases against the published Harbor archive and follow the Markdown links. The full fairness mapping is a follow-up for #20.
