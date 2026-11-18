@@ -42,9 +42,9 @@ FROZEN_FIELDS = (
 EXIT_CODE_FILE = "harbor-exit-code.txt"
 DEFAULT_SEED = 42  # the bare `ed72` task, see environment/docker-compose.yaml
 
-_SEED_ENV = re.compile(r"""ED72_SEED["']?\s*[:=]\s*["']?(\d+)""")
+_SEED_ENV = re.compile(r"""ED72_SEED["']?\s*[:=]\s*["']?([+-]?\d+)""")
 # `${ED72_SEED:-42}` (host-overridable, PR #112)
-_SEED_INTERP = re.compile(r"""ED72_SEED["']?\s*[:=]\s*["']?\$\{ED72_SEED:?-(\d+)\}""")
+_SEED_INTERP = re.compile(r"""ED72_SEED["']?\s*[:=]\s*["']?\$\{ED72_SEED(:?)-([+-]?\d+)\}""")
 _CONFIG_ENV = re.compile(r"""ED72_CONFIG["']?\s*[:=]\s*["']?([^\s"']+)""")
 _TASK_SEED = re.compile(r"^ed72-s(\d+)$")
 _SKIP_DIRS = {"__pycache__", ".git", ".venv", "node_modules", "jobs", "logs", ".pytest_cache", ".ruff_cache"}
@@ -101,12 +101,16 @@ def resolve_seed(task_dir: Path, compose: str, env: dict | None = None) -> tuple
     literal wins and the source says so.
     """
     env = os.environ if env is None else env
-    host = env.get("ED72_SEED", "").strip()
+    host = env.get("ED72_SEED")
     interp = _SEED_INTERP.search(compose)
     if interp:
-        if host.isdigit():
+        colon, default = interp.groups()
+        if host is None or (host == "" and colon):
+            return int(default), "compose_default"
+        try:
             return int(host), "host_env"
-        return int(interp.group(1)), "compose_default"
+        except ValueError:
+            raise ValueError("ED72_SEED must be an integer") from None
     literal = _SEED_ENV.search(compose)
     if literal:
         return int(literal.group(1)), "compose_literal"
@@ -119,11 +123,16 @@ def resolve_seed(task_dir: Path, compose: str, env: dict | None = None) -> tuple
     return None, "unknown"
 
 
-def task_facts(task_dir: Path) -> dict:
+def task_facts(task_dir: Path, *, strict_seed: bool = True) -> dict:
     """Seed, config and instruction/task/reference hashes from a Harbor task dir. Missing means None."""
     compose_path = task_dir / "environment" / "docker-compose.yaml"
     compose = compose_path.read_text() if compose_path.is_file() else ""
-    seed, seed_source = resolve_seed(task_dir, compose)
+    try:
+        seed, seed_source = resolve_seed(task_dir, compose)
+    except ValueError:
+        if strict_seed:
+            raise
+        seed, seed_source = None, "unknown"
     config_match = _CONFIG_ENV.search(compose)
     config_rel = Path(config_match.group(1)) if config_match else DEFAULT_CONFIG
     config_file = config_rel if config_rel.is_absolute() else task_dir / config_rel
@@ -198,7 +207,10 @@ def derive(trial_dir: Path, repo_root: Path) -> dict:
     facts = trial_facts(trial_dir)
     task_dir = resolve_task_dir(facts["task_path"], repo_root)
     if task_dir is not None:
-        facts = {**task_facts(task_dir), **{k: v for k, v in facts.items() if v is not None}}
+        facts = {
+            **task_facts(task_dir, strict_seed=False),
+            **{k: v for k, v in facts.items() if v is not None},
+        }
         facts["task_path"] = str(task_dir)
     return {**facts, "source": "derived"}
 
@@ -238,7 +250,7 @@ def write_manifest(
     attempt's identity and never replaced; what the task dir looks like now goes under `observed`,
     and any differing field sets `identity_drift` and lists it in `drifted_fields`.
     """
-    facts = task_facts(task_dir)
+    facts = task_facts(task_dir, strict_seed=seed is None)
     if seed is not None:
         facts["seed"], facts["seed_source"] = seed, "host_env"
     current = {**facts, **source_facts(task_dir)}
@@ -374,30 +386,34 @@ def main(argv: list[str] | None = None) -> int:
         print(f"manifest: task dir not found: {args.task}", file=sys.stderr)
         return 2
     if args.cmd == "plan":
-        default_seed = task_facts(args.task)["seed"] if args.task else None
-        entries = [e for text in args.entry for e in _parse_entry(text, default_seed)]
         try:
+            default_seed = task_facts(args.task)["seed"] if args.task else None
+            entries = [e for text in args.entry for e in _parse_entry(text, default_seed)]
             out = write_plan(args.job_root, entries, force=args.force, task_dir=args.task)
         except (FileExistsError, ValueError) as exc:
             print(f"manifest: {exc}", file=sys.stderr)
             return 2
         print(f"manifest: wrote {out} ({len(entries)} planned attempts)", file=sys.stderr)
         return 0
-    budget = dict(b.split("=", 1) for b in args.budget or [])
-    out = write_manifest(
-        args.job_dir,
-        args.task,
-        harbor_version=args.harbor_version,
-        seed=args.seed,
-        model=args.model,
-        agent=args.agent,
-        repeat=args.repeat,
-        attempt=args.attempt,
-        ak=args.ak,
-        ae=args.ae,
-        budget=budget,
-        exit_code=args.exit_code,
-    )
+    try:
+        budget = dict(b.split("=", 1) for b in args.budget or [])
+        out = write_manifest(
+            args.job_dir,
+            args.task,
+            harbor_version=args.harbor_version,
+            seed=args.seed,
+            model=args.model,
+            agent=args.agent,
+            repeat=args.repeat,
+            attempt=args.attempt,
+            ak=args.ak,
+            ae=args.ae,
+            budget=budget,
+            exit_code=args.exit_code,
+        )
+    except ValueError as exc:
+        print(f"manifest: {exc}", file=sys.stderr)
+        return 2
     drift = read_json_object(out).get("drifted_fields")
     if drift:
         print(f"manifest: IDENTITY DRIFT since plan: {', '.join(drift)}", file=sys.stderr)

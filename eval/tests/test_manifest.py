@@ -60,6 +60,55 @@ def test_seed_host_override_default_and_literal(tmp_path: Path, monkeypatch: pyt
     assert _seed(_task(tmp_path / "e", "X: 1", name="other")) == (None, "unknown")
 
 
+@pytest.mark.parametrize(("value", "seed"), [("-1", -1), ("+7", 7), (" 8 ", 8), ("0", 0)])
+def test_seed_override_matches_simulator_integer_parsing(tmp_path, monkeypatch, value, seed) -> None:
+    task = _task(tmp_path, 'ED72_SEED: "${ED72_SEED:-42}"')
+    monkeypatch.setenv("ED72_SEED", value)
+    root = tmp_path / "jobs"
+
+    assert manifest.main(["plan", str(root), "--task", str(task), "--entry", "job=test,policy=nop"]) == 0
+    out = manifest.write_manifest(root / "test", task)
+
+    assert manifest.load_plan(root)["entries"][0]["seed"] == str(seed)
+    assert manifest.read_json_object(out)["seed"] == seed
+
+
+def test_compose_empty_seed_and_signed_literal(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("ED72_SEED", "")
+    assert _seed(_task(tmp_path / "fallback", 'ED72_SEED: "${ED72_SEED:--9}"')) == (-9, "compose_default")
+    assert _seed(_task(tmp_path / "literal", 'ED72_SEED: "-7"')) == (-7, "compose_literal")
+    unset_only = _task(tmp_path / "unset-only", 'ED72_SEED: "${ED72_SEED-42}"')
+    with pytest.raises(ValueError, match="ED72_SEED must be an integer"):
+        _seed(unset_only)
+    monkeypatch.delenv("ED72_SEED")
+    assert _seed(unset_only) == (42, "compose_default")
+
+
+@pytest.mark.parametrize("value", ["invalid", " "])
+def test_plan_rejects_invalid_seed_override(tmp_path, monkeypatch, capsys, value) -> None:
+    task = _task(tmp_path, 'ED72_SEED: "${ED72_SEED:-42}"')
+    monkeypatch.setenv("ED72_SEED", value)
+    root = tmp_path / "jobs"
+
+    assert manifest.main(["plan", str(root), "--task", str(task), "--entry", "job=test,policy=nop"]) == 2
+    assert "ED72_SEED must be an integer" in capsys.readouterr().err
+    assert not (root / "plan.json").exists()
+
+
+def test_historical_summary_with_invalid_ambient_seed(tmp_path, monkeypatch) -> None:
+    _task(tmp_path, 'ED72_SEED: "${ED72_SEED:-42}"')
+    monkeypatch.setattr(summarise, "REPO_ROOT", tmp_path)
+    monkeypatch.setenv("ED72_SEED", "invalid")
+    jobs = tmp_path / "jobs"
+    trial = helpers._trial(jobs, "nop", "ed72__old", "nop", reward=0.0, report=helpers._report(0.0, seed=7))
+
+    facts = manifest.derive(trial, tmp_path)
+    assert facts["seed"] is None
+    assert facts["config_sha256"]
+    assert summarise.load_trial(trial).seed == "7"
+    assert summarise.main([str(jobs), "--out", str(tmp_path / "summary.md")]) == 0
+
+
 def test_reference_hash_tracks_solution_only(tmp_path: Path) -> None:
     task = _task(tmp_path, 'ED72_SEED: "1"')
     before = manifest.task_facts(task)
