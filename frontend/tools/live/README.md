@@ -48,7 +48,7 @@ The server keeps serving the finished replay after the episode; Ctrl+C stops it.
 
 Every run is saved by default as `frontend/public/replays/runs/live-<agent>-seed<seed>-<date>-<time>.json`, a normal
 replay file rewritten after each tick, so a crash or Ctrl+C keeps everything up to that tick. The folder is
-gitignored. Open a saved run in the viewer with `?replay=runs/<file>` (serve.py prints the URL at start).
+gitignored. To reopen a saved run, replace the viewer URL's query with the printed `?replay=runs/<file>`.
 Any other MCP client (OpenCode, Claude Code) can connect to `http://127.0.0.1:8000/mcp` too, but every
 `step` from any client advances the same episode.
 

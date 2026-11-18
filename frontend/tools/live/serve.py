@@ -299,7 +299,7 @@ def new_episode(seed: int, agent: str, args: argparse.Namespace) -> tuple[Simula
     if save_path is not None:
         print(f"save  {save_path}", flush=True)
         if save_path.parent.resolve() == RUNS_DIR.resolve():
-            print(f"      replay later: http://localhost:5170/?replay=runs/{save_path.name}", flush=True)
+            print(f"      viewer query: ?replay=runs/{save_path.name}", flush=True)
     return sim, meta, save_path
 
 
