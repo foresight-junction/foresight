@@ -116,6 +116,31 @@ def test_esi_table_loss_share() -> None:
     assert next(line for line in lines if line.startswith("| ESI 4")).rstrip(" |").endswith("0%")
 
 
+@pytest.mark.parametrize(
+    ("outcome", "esi2_share", "esi3_share"),
+    [(0.178571, "65%", "35%"), (0.214286, "64%", "36%"), (0.5, "n/a", "n/a"), (None, "n/a", "n/a")],
+)
+def test_esi_table_matches_diversion_rule(outcome, esi2_share, esi3_share) -> None:
+    report = _score({}, [_patient("P1", 2, "diverted"), _patient("P2", 3, "died")])
+    if outcome is None:
+        del report["O"]
+    else:
+        report["O"] = outcome
+    table = tables.esi_table(Run("diversion", report))
+    assert f"| ESI 2 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | {esi2_share} |" in table
+    assert f"| ESI 3 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | {esi3_share} |" in table
+    assert ("Loss shares are unavailable" in table) == (esi2_share == "n/a")
+
+
+def test_esi_table_accepts_outcome_at_rounding_midpoint() -> None:
+    outcomes = ["diverted"] * 6 + ["in_bed_end"] * 13 + ["died"] + ["discharged"] * 44
+    patients = [_patient(f"P{i}", 4, outcome, covered=1) for i, outcome in enumerate(outcomes)]
+    score = _score({}, patients)
+    score["O"] = 0.857812  # Legacy scorer's rounded O for these 64 patients.
+    table = tables.esi_table(Run("legacy midpoint", score))
+    assert "| ESI 4 | 64 | 44 | 13 | 6 | 1 | 0 | 0 | 100% |" in table
+
+
 def test_esi_share_is_na_without_loss() -> None:
     run = Run("x", _score({}, [_patient("P1", 3, "discharged")]))
     assert tables.esi_table(run).splitlines()[2].rstrip(" |").endswith("n/a")
