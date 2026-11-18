@@ -67,6 +67,15 @@ class Simulation:
             self._flush()
         return results
 
+    def advance_without_actions(self) -> None:
+        """Advance and flush one tick without logging an agent call."""
+        if self.finished:
+            return
+        try:
+            self._finish_tick()
+        finally:
+            self._flush()
+
     def run_to_end(self) -> None:
         """Run the remaining ticks with no actions. Writes no agent lines: the agent made no calls,
         and the scorer reads `ended`, `tool_calls` and F10 from the agent lines."""
