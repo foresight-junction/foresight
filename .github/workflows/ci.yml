@@ -45,6 +45,12 @@ jobs:
             fi
           done < <(git ls-files 'pyproject.toml' '*/pyproject.toml' | grep -vE '^(spikes|harbor/unfindable)/' || true)
 
+      - name: Python replay and live tests
+        run: |
+          PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tools/live" \
+            uv run --project ed72/environment/hospital --python 3.12 --with pytest --with anthropic \
+            python -m pytest -q frontend/tools
+
       - name: shell syntax
         run: |
           set -euo pipefail
