@@ -72,8 +72,8 @@ and the agent waits out the episode with empty steps so the replay stays complet
 
 ```bash
 PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines:frontend/tools/live" \
-  uv run --no-project --python 3.12 --with pytest --with fastmcp==4.2.0 --with mcp==2.3.0 --with anthropic \
-  python -m pytest -q frontend/tools/live/tests
+  uv run --project ed72/environment/hospital --python 3.12 --with pytest --with anthropic \
+  python -m pytest -q frontend/tools
 ```
 
 After uv resolves the dependencies, the tests run without a model API key. The recorder test plays the reference policy through `ToolHost` and
