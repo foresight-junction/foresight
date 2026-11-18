@@ -166,7 +166,7 @@ class LiveRecorder:
         # ReplayTick per sim tick. Like run_to_end it writes no agent lines, so the score is unchanged.
         while not self.sim.finished:
             obs = self.sim.observe()
-            self.sim._finish_tick()
+            self.sim.advance_without_actions()
             self._add_tick(obs, [], [], None)
         self.final_obs = self.sim.observe()
         s = score(self.sim.events)
