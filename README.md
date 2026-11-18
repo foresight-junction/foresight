@@ -4,7 +4,7 @@ An AI agent runs a fictional emergency department for three days. Every 30 minut
 
 We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
 
-[Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores) · [Judging walkthrough](docs/DEMO.md)
+[Interactive walkthrough](#interactive-walkthrough) · [Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores) · [Judging walkthrough](docs/DEMO.md)
 
 ![ED-72 replay showing the hospital floor, waiting room, timeline, and score breakdown](docs/ed72-replay.png)
 
@@ -32,6 +32,10 @@ npx --yes pnpm@10.34.9 dev
 Open the URL Vite prints. If it uses port 5173, open [the scripted reference replay](http://localhost:5173/?replay=reference-seed42.json&tick=30) during the first night or [the Gemini policy replay](http://localhost:5173/?replay=gemini-seed42.json&tick=59) to inspect rejected staff assignments. For a different port, use that port in the same links. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
 
 Pick a replay, press play, or drag the timeline to see the beds, waiting room, staff, budget, and score breakdown.
+
+### Interactive walkthrough
+
+With Vite running, open [the walkthrough](http://localhost:5173/walkthrough.html). If Vite chose another port, add `/walkthrough.html` to the address it prints. The page explains ED-72, shows three moments from seed-42 replays, and opens each moment in the full viewer.
 
 ### Watch a new episode live
 
