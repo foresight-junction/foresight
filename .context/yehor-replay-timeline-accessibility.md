@@ -19,6 +19,6 @@ The walkthrough viewer, replay fixtures, and simulator contracts.
 
 ## Handoff
 
-The native range uses the latest loaded tick as its maximum. Live updates refresh the canvas and range in place so focus stays on the same input.
+The native range uses the latest loaded tick as its maximum. Live updates refresh the canvas and range in place so focus stays on the same input. The focused timeline also supports Space, +/- and Shift+Left/Right.
 
 Run `pnpm lint`, `pnpm build`, and `pnpm test` in `frontend/` (108 passed, 1 skipped). Chrome verified Tab focus, arrow and endpoint keys, accessible tick text, saved deep links, mouse and touch seeking, and focus retention during live growth. The live browser check streamed saved fixture ticks through the viewer's SSE route.

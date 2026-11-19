@@ -671,7 +671,11 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
   const onKey = (e: KeyboardEvent): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const target = e.target instanceof Element ? e.target : null;
-    if (target?.closest("input, select, textarea, [contenteditable]")) return;
+    if (target?.closest("input, select, textarea, [contenteditable]")) {
+      if (!scrubber.el.contains(target)) return;
+      const jump = e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowRight");
+      if (!jump && ![" ", "+", "=", "-", "_"].includes(e.key)) return;
+    }
     const onButton = !!target?.closest("button");
     switch (e.key) {
       case " ":
