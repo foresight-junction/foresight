@@ -188,6 +188,83 @@ def test_reward_txt_and_artifact_report_fallbacks(tmp_path: Path) -> None:
     assert trial.report is not None and trial.report["O"] == pytest.approx(0.75)
 
 
+@pytest.mark.parametrize("reward_txt_only", [False, True])
+@pytest.mark.parametrize(("raw", "expected"), [("0", 0.0), ("0.625", 0.625), ("1", 1.0)])
+def test_reward_accepts_numeric_strings_and_bounds(
+    tmp_path: Path, reward_txt_only: bool, raw: str, expected: float
+) -> None:
+    d = _trial(tmp_path, "job", "trial", "oracle", reward=expected, reward_txt_only=reward_txt_only)
+    (d / "verifier" / "reward.txt").write_text(raw)
+    if not reward_txt_only:
+        result_path = d / "result.json"
+        result = json.loads(result_path.read_text())
+        result["verifier_result"]["rewards"]["reward"] = raw
+        result_path.write_text(json.dumps(result))
+    trial = summarise.load_trial(d)
+    assert trial is not None and trial.reward == expected and trial.error is None
+
+
+@pytest.mark.parametrize("reward_txt_only", [False, True])
+@pytest.mark.parametrize("raw", ["broken", "", -0.01, 1.01, float("nan"), float("inf"), float("-inf")])
+def test_invalid_reward_is_reported_and_other_trials_survive(
+    tmp_path: Path, reward_txt_only: bool, raw: str | float
+) -> None:
+    d = _trial(tmp_path, "job", "bad", "oracle", reward=0.5, reward_txt_only=reward_txt_only)
+    _trial(tmp_path, "job", "good", "oracle", reward=1.0)
+    if reward_txt_only:
+        (d / "verifier" / "reward.txt").write_text(str(raw))
+        source = "verifier/reward.txt"
+    else:
+        result_path = d / "result.json"
+        result = json.loads(result_path.read_text())
+        result["verifier_result"]["rewards"]["reward"] = raw
+        result_path.write_text(json.dumps(result))
+        source = "result.json"
+    out = tmp_path / "summary.md"
+    assert summarise.main([str(tmp_path), "--out", str(out)]) == 3
+    text = out.read_text()
+    assert f"| job | bad | reference (oracle) | - | - | - | invalid reward in {source}" in text
+    assert "| job | good | reference (oracle) | - | 1.000 | - | - |" in text
+
+
+@pytest.mark.parametrize(
+    "verifier", [[], {"rewards": []}, {"rewards": {"reward": None}}, {"rewards": {"reward": True}}]
+)
+def test_malformed_verifier_data_preserves_original_exception(tmp_path: Path, verifier: object) -> None:
+    d = _trial(tmp_path, "job", "trial", "oracle", reward=0.5, exception="VerifierError")
+    result_path = d / "result.json"
+    result = json.loads(result_path.read_text())
+    result["verifier_result"] = verifier
+    result_path.write_text(json.dumps(result))
+    trial = summarise.load_trial(d)
+    assert trial is not None and trial.reward is None
+    assert trial.error is not None and trial.error.startswith("VerifierError: invalid")
+
+
+@pytest.mark.parametrize("with_plan", [False, True])
+def test_partial_timeout_retains_reward_but_requires_allow_incomplete(
+    tmp_path: Path, with_plan: bool, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _trial(tmp_path, "job", "trial", "oracle", reward=0.4, report=_report(0.4, ended="timeout"))
+    if with_plan:
+        _manifest(tmp_path / "job")
+        summarise.manifest.write_plan(tmp_path, [{"job": "job", "policy": "oracle", "seed": 42}])
+    out = tmp_path / "summary.md"
+    assert summarise.main([str(tmp_path), "--out", str(out)]) == (4 if with_plan else 3)
+    text = out.read_text()
+    assert "| job | trial | reference (oracle) | - | 0.400 | timeout | - |" in text
+    if with_plan:
+        assert "timed out 1" in text and "INCOMPLETE." in text
+    else:
+        assert "job/trial: ended timeout" in capsys.readouterr().err
+    assert summarise.main([str(tmp_path), "--out", str(out), "--allow-incomplete"]) == 0
+
+
+def test_agent_stopped_is_a_completed_trial(tmp_path: Path) -> None:
+    _trial(tmp_path, "job", "trial", "nop", reward=0.0, report=_report(0.0, ended="agent_stopped"))
+    assert summarise.main([str(tmp_path), "--out", str(tmp_path / "summary.md")]) == 0
+
+
 def test_main_fails_loudly_without_trials(tmp_path: Path) -> None:
     empty = tmp_path / "jobs"
     empty.mkdir()
