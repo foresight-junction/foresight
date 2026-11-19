@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproduce the reported ED-72 results (docs/EVAL.md section 3) and write eval/results/summary.md.
+# Reproduce the reported ED-72 results (docs/EVAL.md section 3) and write a report for each run.
 #
 #   eval/run_all.sh            three baselines, then 3 agent runs on $ED72_MODEL
 #   eval/run_all.sh baselines  reference, do-nothing and stop-early (no API key needed)
@@ -11,9 +11,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TASK_DIR="$REPO_ROOT/ed72"
 ENV_FILE="$REPO_ROOT/.env"
-RUN_ID="$(date +%Y%m%d-%H%M%S)"
-JOBS_DIR="$REPO_ROOT/eval/results/jobs/$RUN_ID"
-SUMMARY="$REPO_ROOT/eval/results/summary.md"
+RESULTS_DIR="$REPO_ROOT/eval/results"
+LATEST_SUMMARY="$RESULTS_DIR/summary.md"
 OPENCODE_VERSION="1.19.5"
 AGENT_RUNS=3
 PYTHON_CMD=(uv run --no-project --python 3.12 python)
@@ -84,6 +83,12 @@ if [ "$MODE" = all ]; then
 fi
 
 HARBOR_VERSION="$("${HARBOR_CMD[@]}" --version)" || die "cannot determine Harbor version"
+mkdir -p "$RESULTS_DIR/jobs"
+RUN_TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+JOBS_DIR="$(mktemp -d "$RESULTS_DIR/jobs/$RUN_TIMESTAMP-XXXXXXXX")" \
+  || die "cannot reserve a run directory under $RESULTS_DIR/jobs"
+SUMMARY="$JOBS_DIR/summary.md"
+
 PLAN_ARGS=(--entry "job=reference,policy=oracle" --entry "job=do-nothing,policy=nop"
   --entry "job=stop-early,policy=stop_early")
 if [ "$MODE" = all ]; then
@@ -104,7 +109,6 @@ if [ "$MODE" = all ]; then
     --ae "$OPENCODE_KEY_NAME=\${$KEY_NAME}" --ak "version=$OPENCODE_VERSION"
 fi
 
-mkdir -p "$JOBS_DIR"
 FAILED=()
 
 # A failed job is recorded and the rest still run, so the summary shows whatever finished.
@@ -155,8 +159,21 @@ if [ "$MODE" = all ]; then
   fi
 fi
 
-if ! "${PYTHON_CMD[@]}" "$REPO_ROOT/eval/summarise.py" "$JOBS_DIR" --out "$SUMMARY"; then
+SUMMARY_STATUS=0
+"${PYTHON_CMD[@]}" "$REPO_ROOT/eval/summarise.py" "$JOBS_DIR" --out "$SUMMARY" || SUMMARY_STATUS=$?
+if [ "$SUMMARY_STATUS" -ne 0 ]; then
   FAILED+=(summary)
+fi
+
+# The summariser returns 3 and 4 only after writing a report with failed or incomplete trials.
+if [[ "$SUMMARY_STATUS" =~ ^(0|3|4)$ ]] && [ -f "$SUMMARY" ]; then
+  echo "run_all: report -> $SUMMARY"
+  # Stage the copy beside its destination so concurrent readers see a complete report.
+  TEMP_SUMMARY="$(mktemp "$RESULTS_DIR/.summary-XXXXXXXX")" || die "cannot stage $LATEST_SUMMARY"
+  if [ -d "$LATEST_SUMMARY" ] || ! cp "$SUMMARY" "$TEMP_SUMMARY" || ! mv -f "$TEMP_SUMMARY" "$LATEST_SUMMARY"; then
+    rm -f "$TEMP_SUMMARY"
+    die "cannot publish $LATEST_SUMMARY (see $SUMMARY)"
+  fi
 fi
 
 if [ "${#FAILED[@]}" -gt 0 ]; then
