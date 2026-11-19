@@ -249,12 +249,16 @@ def test_partial_timeout_retains_reward_but_requires_allow_incomplete(
     if with_plan:
         _manifest(tmp_path / "job")
         summarise.manifest.write_plan(tmp_path, [{"job": "job", "policy": "oracle", "seed": 42}])
+        _trial(tmp_path, "extra", "normal", "nop", reward=0.0, report=_report(0.0, ended="agent_stopped"))
+        _trial(tmp_path, "extra", "timeout", "nop", reward=0.2, report=_report(0.2, ended="timeout"))
     out = tmp_path / "summary.md"
     assert summarise.main([str(tmp_path), "--out", str(out)]) == (4 if with_plan else 3)
     text = out.read_text()
     assert "| job | trial | reference (oracle) | - | 0.400 | timeout | - |" in text
     if with_plan:
         assert "timed out 1" in text and "INCOMPLETE." in text
+        assert "- extra/normal: do-nothing (nop) `-` seed unknown" in text.splitlines()
+        assert "- extra/timeout: do-nothing (nop) `-` seed unknown (ended timeout)" in text.splitlines()
     else:
         assert "job/trial: ended timeout" in capsys.readouterr().err
     assert summarise.main([str(tmp_path), "--out", str(out), "--allow-incomplete"]) == 0

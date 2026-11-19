@@ -403,7 +403,9 @@ def _completeness_lines(c: Completeness) -> list[str]:
         return f"{e.get('job') or '*'}: {e['policy']} `{e.get('model') or '-'}` seed {e.get('seed')} repeat {e.get('repeat')}"
 
     def trial(t: Trial) -> str:
-        return f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed} ({t.error or 'ended timeout'})"
+        status = t.error or ("ended timeout" if _timed_out(t) else None)
+        label = f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed}"
+        return f"{label} ({status})" if status else label
 
     def drift(t: Trial) -> str:
         return f"{t.job}/{t.name}: {', '.join(t.drift)}"
