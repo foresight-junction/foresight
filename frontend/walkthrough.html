@@ -3,80 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Explore three decisions from ED-72, Foresight's emergency department benchmark." />
-    <title>Foresight · ED-72 walkthrough</title>
+    <meta name="description" content="Explore three moments from Foresight's emergency department benchmark." />
+    <title>Foresight · ED-72 replay walkthrough</title>
   </head>
   <body>
     <header class="topbar wrap">
-      <a class="brand" href="./walkthrough.html"><span class="cross" aria-hidden="true">+</span>Foresight <span>ED-72</span></a>
+      <a class="brand" href="./walkthrough.html">Foresight <span>ED-72</span></a>
       <nav aria-label="Page sections">
-        <a href="#benchmark">How it works</a>
+        <a href="#replay">Replay</a>
         <a href="#results">Results</a>
-        <a href="https://github.com/foresight-junction/foresight">GitHub ↗</a>
+        <a href="https://github.com/foresight-junction/foresight">GitHub</a>
       </nav>
     </header>
-    <main class="wrap">
-      <section class="hero" aria-labelledby="intro">
-        <div class="intro">
-          <p class="eyebrow">Junction 2026 · Break the Agent</p>
-          <h1 id="intro">Can an AI run an <em>emergency department?</em></h1>
-          <p>ED-72 gives an agent 72 simulated hours to admit patients, keep beds staffed, and respond when equipment fails. It makes a decision every 30 minutes.</p>
-          <a class="button" href="#walkthrough">Explore the replay <span aria-hidden="true">↓</span></a>
-          <dl class="quick-facts">
-            <div><dt>Decisions</dt><dd>144</dd></div>
-            <div><dt>Beds</dt><dd>17</dd></div>
-            <div><dt>Budget</dt><dd>€12,000</dd></div>
-          </dl>
-        </div>
 
-        <div class="demo" id="walkthrough" role="region" aria-label="Interactive replay">
-          <figure class="board" aria-labelledby="map-caption">
-            <figcaption id="map-caption"><span>Hospital floor · Seed 42</span><span id="clock">Loading replay</span></figcaption>
-            <div class="map" id="map">
-              <canvas id="floor" role="img" aria-label="Pixel-art floor plan of the simulated emergency department">Replay floor plan</canvas>
-            </div>
-            <dl class="readout" aria-live="polite">
-              <div><dt>Waiting</dt><dd id="waiting">—</dd></div>
-              <div><dt>Covered beds</dt><dd id="covered">—</dd></div>
-              <div><dt>CT scanner</dt><dd id="scanner">—</dd></div>
-            </dl>
-          </figure>
-          <div class="chapters" role="group" aria-label="Choose a replay moment">
-            <button type="button" aria-pressed="true" aria-controls="scene"><span>Day 1 · 23:00</span>Staff the first night</button>
-            <button type="button" aria-pressed="false" aria-controls="scene"><span>Day 2 · 17:00</span>Respond to a CT outage</button>
-            <button type="button" aria-pressed="false" aria-controls="scene"><span>Day 2 · 13:30</span>Spot expired contracts</button>
-          </div>
-          <div class="scene" id="scene">
-            <div>
-              <h2 id="scene-title">Staff the first night</h2>
-              <p id="scene-text">A bed needs both doctor and nurse coverage before treatment progresses. The reference policy rotates staff to manage fatigue and keeps Resus available for critical arrivals.</p>
-              <p id="scene-status" role="status"></p>
-            </div>
-            <a class="text-link" id="view-tick" href="./?replay=reference-seed42.json&amp;tick=30">Open this tick in the viewer ↗</a>
-          </div>
+    <main class="wrap">
+      <section class="intro" aria-labelledby="intro">
+        <div>
+          <p class="context">Junction 2026 · Break the Agent</p>
+          <h1 id="intro">72 hours in the emergency department</h1>
         </div>
+        <p>Every 30 simulated minutes, an agent decides who gets a bed, which staff cover it, and when to spend the hospital’s budget.</p>
       </section>
 
-      <section id="benchmark" class="benchmark" aria-labelledby="benchmark-title">
-        <div>
-          <h2 id="benchmark-title">How ED-72 scores a run</h2>
-          <p>The agent reads the rules and the current state, sends a batch of actions, and sees the next tick. It can admit patients, move staff, order temporary cover, repair the scanner, or divert ambulances.</p>
+      <section id="replay" aria-label="Interactive replay">
+        <div class="chapters" role="group" aria-label="Choose a replay chapter">
+          <button type="button" aria-pressed="true" aria-controls="scene">First night</button>
+          <button type="button" aria-pressed="false" aria-controls="scene">Expired contracts</button>
+          <button type="button" aria-pressed="false" aria-controls="scene">CT outage</button>
         </div>
-        <dl class="score-parts">
-          <div><dt>Outcome</dt><dd>60 points</dd></div>
-          <div><dt>Timeliness</dt><dd>20 points</dd></div>
-          <div><dt>Staff wellbeing</dt><dd>Up to 10 points</dd></div>
-          <div><dt>Budget</dt><dd>Up to 10 points</dd></div>
-        </dl>
-        <p class="score-note">Patient outcomes scale the wellbeing and budget contributions. The simulator scores the full episode from its event log.</p>
+        <div class="demo" id="scene">
+          <figure class="board" aria-labelledby="map-caption">
+            <figcaption id="map-caption">
+              <span id="policy">Scripted reference · Seed 42</span>
+              <span id="clock">Loading replay</span>
+            </figcaption>
+            <div class="map" id="map">
+              <canvas id="floor" hidden role="img" aria-label="Floor plan of the simulated emergency department">Replay floor plan</canvas>
+            </div>
+            <div class="transport" role="group" aria-label="Replay controls">
+              <button id="play" type="button" disabled>Play clip</button>
+              <button id="back" type="button" aria-label="Previous tick" disabled>−</button>
+              <input id="timeline" type="range" min="30" max="34" value="30" aria-label="Replay tick" disabled />
+              <button id="forward" type="button" aria-label="Next tick" disabled>+</button>
+            </div>
+          </figure>
+          <div class="scene-copy">
+            <h2 id="scene-title">Staff the first night</h2>
+            <p id="scene-text">Treatment needs both doctor and nurse coverage. The reference policy rotates staff and keeps Resus available for the most urgent arrivals.</p>
+            <dl class="readout">
+              <div><dt>Patients waiting</dt><dd id="waiting">—</dd></div>
+              <div><dt>Occupied beds with staff</dt><dd id="covered">—</dd></div>
+              <div><dt>CT scanner</dt><dd id="scanner">—</dd></div>
+              <div id="rejections" hidden><dt>Rejected assignments</dt><dd>—</dd></div>
+            </dl>
+            <p id="scene-status" role="status"></p>
+            <a id="view-tick" href="./?replay=reference-seed42.json&amp;tick=30">Open tick in full viewer</a>
+          </div>
+        </div>
       </section>
 
       <section id="results" class="results" aria-labelledby="results-title">
-        <h2 id="results-title">What the benchmark found</h2>
-        <p>On seed 3101, the scripted reference scored <strong>95.86 / 100</strong>. Gemini 3.8 Flash scored <strong>8.19 to 80.70 / 100</strong> across three completed runs on that same seed. The walkthrough uses separate seed-42 replays.</p>
-        <div class="links">
-          <a class="text-link" href="https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252">Published scores and traces ↗</a>
-          <a class="text-link" href="https://github.com/foresight-junction/foresight#reproduce-the-reported-results">Reproduce the benchmark ↗</a>
+        <div>
+          <h2 id="results-title">Same seed, three model runs</h2>
+          <p>On benchmark seed 3101, the scripted reference scored 95.86 out of 100. Gemini 3.8 Flash scored 8.19, 42.56, and 80.70 across three completed runs. The replay clips use seed 42.</p>
+          <a href="https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252">Published scores and traces</a>
+        </div>
+        <div>
+          <h2>How scoring works</h2>
+          <p>Patient outcomes account for up to 60 points and timely care for up to 20. Staff wellbeing and spending contribute up to 10 each, scaled by patient outcomes.</p>
+          <a href="https://github.com/foresight-junction/foresight#reproduce-the-reported-results">Reproduce the benchmark</a>
         </div>
       </section>
     </main>

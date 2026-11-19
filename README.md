@@ -1,20 +1,18 @@
 # Foresight · ED-72
 
-An AI agent runs a fictional emergency department for three days. Every 30 minutes, it decides who gets a bed, which staff cover each zone, and who can take a break. A bed is only useful if someone can staff it. A doctor who works through the afternoon might faint during the night shift.
+ED-72 is a benchmark for AI agents managing a fictional emergency department. Every 30 simulated minutes for 72 hours, the agent decides who gets a bed, which staff cover each zone, and when to spend from a €12,000 budget. We built it for AfterQuery’s **Break the Agent** challenge at Junction 2026.
 
-We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
+**[Explore the replay](#interactive-walkthrough)** · [Results](#reported-scores) · [Reproduce the benchmark](#reproduce-the-reported-results)
 
-[Interactive walkthrough](#interactive-walkthrough) · [Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores) · [Judging walkthrough](docs/DEMO.md)
+[![ED-72 replay preview showing first-night staffing, a CT outage, and four rejected agency assignments](docs/ed72-walkthrough.gif)](#interactive-walkthrough)
 
-![ED-72 replay showing the hospital floor, waiting room, timeline, and score breakdown](docs/ed72-replay.png)
-
-The scripted reference replay on seed 42, shown during the first night.
+The preview shows saved seed-42 replays. The final benchmark uses seeds 3101–3103.
 
 Each simulated hospital run gets a score from 0 to 100. **Higher is better.** The score gives the most weight to patient outcomes and also accounts for how quickly patients get care, staff wellbeing, and spending.
 
 In the final evaluation on seed 3101, the scripted reference scored **95.86/100**. Gemini 3.8 Flash scored **8.19 to 80.70 out of 100** across three completed trials on the same seed. A single trial would miss that variability.
 
-The full matrix includes four Kimi timeouts with partial scores and one Kimi attempt with no available record. [Full score matrix](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) · [Published evaluation results and logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
+The full matrix includes four Kimi timeouts with partial scores and one Kimi attempt with no available record. [Full score matrix](https://github.com/foresight-junction/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) · [Published evaluation results and logs](https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252)
 
 ## Run it
 
@@ -23,7 +21,7 @@ The full matrix includes four Kimi timeouts with partial scores and one Kimi att
 Install **Node.js 22**. The commands below launch the tested pnpm 10 release through `npx`, which comes with Node.js. The viewer includes saved runs for the reference policy, a reactive baseline, and a replayed Gemini policy. It runs locally without Docker or a model key.
 
 ```bash
-git clone https://github.com/xand1ex999/foresight.git
+git clone https://github.com/foresight-junction/foresight.git
 cd foresight/frontend
 npx --yes pnpm@10.34.9 install --frozen-lockfile
 npx --yes pnpm@10.34.9 dev
@@ -35,7 +33,7 @@ Pick a replay, press play, or drag the timeline to see the beds, waiting room, s
 
 ### Interactive walkthrough
 
-With Vite running, open [the walkthrough](http://localhost:5173/walkthrough.html). If Vite chose another port, add `/walkthrough.html` to the address it prints. The page explains ED-72, shows three moments from seed-42 replays, and opens each moment in the full viewer.
+Start the TypeScript viewer with the commands above and open [the walkthrough](http://localhost:5173/walkthrough.html). If Vite prints a different port, use that port. Play or scrub three short clips from the reference and Gemini script replays, or open any tick in the full viewer.
 
 ### Watch a new episode live
 
@@ -72,7 +70,7 @@ git switch --detach 9f3bdbb9ddc24182b76b914874294fa5521c09be
 ED72_SEED=3101 ED72_MODEL=gemini/gemini-3.8-flash make eval
 ```
 
-`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. If any baseline fails, no paid trial starts. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/xand1ex999/foresight/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252)
+`make eval` runs the reference policy, do-nothing, and stop-early before it starts three paid trials in parallel with OpenCode 1.19.5. If any baseline fails, no paid trial starts. Repeat in a clean checkout with seeds 3102 and 3103 for the rest of the Gemini subset. Model scores can vary across reruns. The published matrix also includes Kimi trials run separately through Verda. [Evaluated revision](https://github.com/foresight-junction/foresight/tree/9f3bdbb9ddc24182b76b914874294fa5521c09be) · [Final matrix and Harbor trial logs](https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252)
 
 For a keyless check at the pinned revision, run `ED72_SEED=3101 make eval-baselines`. It runs the same three baselines with no model calls. They should score **95.86** (reference), **0.00** (do-nothing), and **4.56** (stop-early) out of 100.
 
@@ -137,7 +135,7 @@ In an earlier calibration run, Gemini kept assigning agency staff to critical be
 
 ### Inspect an example run
 
-Download the [final score table](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) and [final trace archive](https://github.com/xand1ex999/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Logs_Final.tar.gz). The archive contains all 26 available attempts. The unrecorded Kimi attempt is marked missing in the score table.
+Download the [final score table](https://github.com/foresight-junction/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) and [final trace archive](https://github.com/foresight-junction/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Logs_Final.tar.gz). The archive contains all 26 available attempts. The unrecorded Kimi attempt is marked missing in the score table.
 
 | Example | Score / 100 | Trial directory inside the archive |
 | --- | ---: | --- |
@@ -146,7 +144,7 @@ Download the [final score table](https://github.com/xand1ex999/foresight/release
 | Gemini’s best repeat on seed 3101 | 80.70 | `gemini-r3-3101/ed72__GWvZZ5D/` |
 | Kimi’s best completed repeat on seed 3101 | 88.42 | `kimi-r3-3101/ed72__zKXdnoK/` |
 
-For each sample, open `verifier/score_full.json` for outcomes, `verifier/reward.txt` for the normalized reward, and `agent/trajectory.json` for model decisions. The enclosing run folder contains `manifest.json` with the evaluated revision and configuration hashes. Do-nothing and stop-early runs are included as negative controls. The full collection is indexed on the [results release](https://github.com/xand1ex999/foresight/releases/tag/ed72-eval-20261115-002252).
+For each sample, open `verifier/score_full.json` for outcomes, `verifier/reward.txt` for the normalized reward, and `agent/trajectory.json` for model decisions. The enclosing run folder contains `manifest.json` with the evaluated revision and configuration hashes. Do-nothing and stop-early runs are included as negative controls. The full collection is indexed on the [results release](https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252).
 
 ### Single model trials
 
@@ -172,9 +170,9 @@ Single trials write to `jobs/`. Check `result.json` for zero errors and `verifie
 
 **Yehor Mykhailov (@yehorm14)** worked on the evaluation harness.
 
-- Built the one-command `make eval` runner for baseline and model trials and the summariser that turns Harbor outputs into a Markdown score report. [Runner #53](https://github.com/xand1ex999/foresight/pull/53)
-- Fixed the summariser to report failed trials and return a nonzero exit code even when a trial writes `reward.txt`. [Failure reporting #93](https://github.com/xand1ex999/foresight/pull/93)
-- Made the simulation seed selectable from the host via `ED72_SEED`, with seed 42 as the default. [Seed configuration #112](https://github.com/xand1ex999/foresight/pull/112)
+- Built the one-command `make eval` runner for baseline and model trials and the summariser that turns Harbor outputs into a Markdown score report. [Runner #53](https://github.com/foresight-junction/foresight/pull/53)
+- Fixed the summariser to report failed trials and return a nonzero exit code even when a trial writes `reward.txt`. [Failure reporting #93](https://github.com/foresight-junction/foresight/pull/93)
+- Made the simulation seed selectable from the host via `ED72_SEED`, with seed 42 as the default. [Seed configuration #112](https://github.com/foresight-junction/foresight/pull/112)
 
 ## Repository guide
 
