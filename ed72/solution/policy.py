@@ -148,6 +148,9 @@ class ReferencePolicy:
                     admissions.append({"type": "admit", "patient": patient["id"], "zone": zone})
                     break
         unplaced = len(observation["waiting"]) - len(admissions)
+        # Stable sorting keeps bed order and planned admission order within each ESI.
+        for rows in patients.values():
+            rows.sort(key=lambda patient: patient["esi"])
         locations, covered = staff_plan(patients, observation["staff"], FRESH_FATIGUE)
         uncovered = _uncovered(patients, covered)
         if any(p["esi"] <= URGENT_ESI for p in uncovered):
@@ -158,7 +161,7 @@ class ReferencePolicy:
         covered_ids = {
             p["id"] if "id" in p else p["patient"]
             for zone, rows in patients.items()
-            for p in sorted(rows, key=lambda p: p["esi"])[: covered[zone]]
+            for p in rows[: covered[zone]]
         }
         for member in observation["staff"]:
             if member["status"] in ("resting", "on_shift"):
@@ -201,6 +204,4 @@ class ReferencePolicy:
 
 
 def _uncovered(patients: dict[str, list[dict]], covered: dict[str, int]) -> list[dict]:
-    return [
-        p for zone, rows in patients.items() for p in sorted(rows, key=lambda p: p["esi"])[covered[zone] :]
-    ]
+    return [patient for zone, rows in patients.items() for patient in rows[covered[zone] :]]

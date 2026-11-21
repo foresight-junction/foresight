@@ -1,4 +1,7 @@
+from argparse import Namespace
+
 import pytest
+import serve
 from serve import parse_start
 
 
@@ -47,3 +50,26 @@ def test_claude_also_takes_claude_api_key(monkeypatch) -> None:
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.setenv("CLAUDE_API_KEY", "x")
     assert parse_start(b'{"seed": 1, "agent": "claude"}') == (1, "claude")
+
+
+@pytest.mark.parametrize(("directory", "no_save"), [("runs", False), ("custom", False), ("runs", True)])
+def test_new_episode_prints_query_only_for_viewer_replays(tmp_path, monkeypatch, capsys, directory, no_save):
+    monkeypatch.setattr(serve, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(serve.tempfile, "mkdtemp", lambda **kwargs: str(tmp_path))
+    monkeypatch.delenv("ED72_CONFIG", raising=False)
+    args = Namespace(
+        gemini_model=None, kimi_model=None, claude_model=None, no_save=no_save, save_dir=tmp_path / directory
+    )
+    _, _, save_path = serve.new_episode(42, "reference", args)
+    output = capsys.readouterr().out
+
+    if no_save:
+        assert save_path is None
+        assert "save  " not in output
+    else:
+        assert str(save_path) in output
+    if directory == "runs" and not no_save:
+        assert f"viewer query: ?replay=runs/{save_path.name}" in output
+        assert "localhost:" not in output
+    else:
+        assert "?replay=" not in output

@@ -27,6 +27,12 @@ def test_default_json_equals_defaults() -> None:
     assert load_config(str(DEFAULT_JSON)) == Config() == load_config(None)
 
 
+def test_hospital_image_loads_the_manifest_config() -> None:
+    dockerfile = (DEFAULT_JSON.parents[1] / "Dockerfile").read_text(encoding="utf-8").splitlines()
+    assert "COPY hospital/config/default.json /app/config/default.json" in dockerfile
+    assert "ENV ED72_CONFIG=/app/config/default.json" in dockerfile
+
+
 @pytest.mark.parametrize("seed", range(1, 6))
 def test_default_config_world_is_unchanged(seed: int) -> None:
     assert generate_world(seed, Config()) == generate_world(seed)

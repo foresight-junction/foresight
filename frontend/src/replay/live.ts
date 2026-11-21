@@ -1,6 +1,5 @@
 // Live mode: an agent plays an episode right now (frontend/tools/live) and streams every tick over
 // Server-Sent Events. This folds the messages into a growing Replay the viewer can play like a file.
-// Owner: lead.
 
 import type { LiveAgent, LiveMessage, Observation, Replay, ReplayMeta, ReplayTick } from "./types";
 

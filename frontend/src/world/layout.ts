@@ -1,5 +1,4 @@
 // Top-down map of the department: tiles and the pixel positions every entity moves between.
-// Owner: agent B (map + renderer).
 //
 // Plan (37 x 23 tiles, 16 px each). Outside: ambulance bay + sidewalk on the left, street at the bottom.
 // Rooms are kept tight around their beds and seats: the canvas scales the whole map to the screen, so a

@@ -1,6 +1,5 @@
 // Replay format written by frontend/tools/export_replay.py. Observation, Action, ActionResult and the
 // sim events follow docs/CONTRACTS.md v1 exactly; Replay/ReplayTick/ReplayMeta are viewer-only.
-// Owner: lead (leonardodadenchik-claude-1). Agents propose changes, they don't edit this file.
 
 export type Zone = "resus" | "acute" | "fast_track";
 export type Location = Zone | "rest";

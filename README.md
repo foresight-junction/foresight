@@ -12,6 +12,12 @@ We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026
 
 The scripted reference replay on seed 42, shown during the first night.
 
+Each simulated hospital run gets a score from 0 to 100. **Higher is better.** The score gives the most weight to patient outcomes and also accounts for how quickly patients get care, staff wellbeing, and spending.
+
+In the final evaluation on seed 3101, the scripted reference scored **95.86/100**. Gemini 3.8 Flash scored **8.19 to 80.70 out of 100** across three completed trials on the same seed. A single trial would miss that variability.
+
+The full matrix includes four Kimi timeouts with partial scores and one Kimi attempt with no available record. [Full score matrix](https://github.com/foresight-junction/foresight/releases/download/ed72-eval-20261115-002252/ED72_Final_Campaign_Results.md) · [Published evaluation results and logs](https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252)
+
 ## Run it
 
 ### Watch a replay
@@ -125,8 +131,6 @@ Patient outcome weights the sickest patients most heavily. Timeliness measures h
 | Gemini 3.8 Flash, best completed run | 80.70 | 93.39 | 78.69 |
 | Kimi K3.1 Pro, best completed run | 88.42 | 93.69 | 74.38 |
 
-Scores are out of 100. On seed 3101, Gemini ranged from 8.19 to 80.70 over three completed trials. The final matrix shows every recorded attempt, including four Kimi timeouts with partial scores and one missing Kimi record. [Full results and logs](https://github.com/foresight-junction/foresight/releases/tag/ed72-eval-20261115-002252)
-
 In an earlier calibration run, Gemini kept assigning agency staff to critical beds after their contracts had expired. The simulator rejected each assignment, but the policy kept treating those beds as staffed. Two critical patients the reference discharged never received a staffed bed in Gemini’s run. [Calibration run and score report](eval/results/2026-11-14-gemini-seed42/README.md)
 
 ### Inspect an example run
@@ -161,6 +165,14 @@ ED72_SEED=3101 uvx --python 3.12 --from harbor==0.26.0 harbor run \
 ```
 
 Single trials write to `jobs/`. Check `result.json` for zero errors and `verifier/reward.txt` for the reward.
+
+## Team and contributions
+
+**Yehor Mykhailov (@yehorm14)** worked on the evaluation harness.
+
+- Built the one-command `make eval` runner for baseline and model trials and the summariser that turns Harbor outputs into a Markdown score report. [Runner #53](https://github.com/foresight-junction/foresight/pull/53)
+- Fixed the summariser to report failed trials and return a nonzero exit code even when a trial writes `reward.txt`. [Failure reporting #93](https://github.com/foresight-junction/foresight/pull/93)
+- Made the simulation seed selectable from the host via `ED72_SEED`, with seed 42 as the default. [Seed configuration #112](https://github.com/foresight-junction/foresight/pull/112)
 
 ## Repository guide
 

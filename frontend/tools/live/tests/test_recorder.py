@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from ed72_sim.engine import Simulation
+from ed72_sim.scoring import score
 from ed72_sim.world import generate_world
 from policy import ReferencePolicy
 from recorder import LiveRecorder
@@ -136,9 +137,13 @@ def test_finish_runs_out_the_episode(tmp_path):
         "run": "",
     }
     assert rec.final_obs["finished"]
-    # Only the 10 real steps reach the log as agent lines.
-    steps = [e for e in rec.sim.events if e.get("src") == "agent" and e.get("tool") == "step"]
+    events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
+    assert events == rec.sim.events
+    assert events[-1]["event"] == "episode_end" and events[-1]["t"] == 143
+    steps = [e for e in events if e.get("src") == "agent" and e.get("tool") == "step"]
     assert len(steps) == 10
+    assert rec.meta["score"] == score(events)
+    assert rec.meta["score"]["ended"] == "agent_stopped"
 
 
 def test_saves_the_replay_after_every_tick_and_at_the_end(tmp_path):

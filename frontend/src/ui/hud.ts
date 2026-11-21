@@ -1,6 +1,6 @@
 // Side panel styled as a pixel game HUD: replay picker and score meters, a pinned game bar
 // (clock, resource counters, transport), the timeline, the AI's decisions this tick, what happened,
-// department status and the episode's mistakes. Owner: agent E (HUD).
+// department status and the episode's mistakes.
 
 import type { Playback } from "../game/playback";
 import type { LiveAgent, Observation, Replay, ReplayIndexEntry, ReplayTick, Staff, Zone } from "../replay/types";
@@ -495,10 +495,12 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
 
   // Timeline.
   const timeline = panel("Timeline", "timeline", "flag");
-  let scrubber = createScrubber(replay, (t) => playback.seek(t));
+  const scrubber = createScrubber(replay, (t) => playback.seek(t));
+  const legend = el("div", "legend");
+  timeline.body.append(scrubber.el, legend);
 
-  function renderTimeline(): void {
-    const legend = el("div", "legend");
+  function renderLegend(): void {
+    legend.replaceChildren();
     const legendItem = (color: string, label: string): void => {
       const i = el("span", "lg");
       const sw = el("span", "lg-sw");
@@ -521,9 +523,8 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
     ]) {
       if (kinds.has(k)) legendItem(BAND_COLOR[k], label);
     }
-    timeline.body.replaceChildren(scrubber.el, legend);
   }
-  renderTimeline();
+  renderLegend();
 
   const decisions = panel("AI decisions this tick", "decisions", "cross");
   const decisionsBadge = el("span", "head-badge");
@@ -689,7 +690,11 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
   const onKey = (e: KeyboardEvent): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const target = e.target instanceof Element ? e.target : null;
-    if (target?.closest("input, select, textarea, [contenteditable]")) return;
+    if (target?.closest("input, select, textarea, [contenteditable]")) {
+      if (!scrubber.el.contains(target)) return;
+      const jump = e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowRight");
+      if (!jump && ![" ", "+", "=", "-", "_"].includes(e.key)) return;
+    }
     const onButton = !!target?.closest("button");
     switch (e.key) {
       case " ":
@@ -750,7 +755,7 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
         shownFast = fast;
         hud.classList.toggle("fast", fast);
       }
-      scrubber.setPosition(playback.tick + (playback.playing ? Math.min(playback.phase, 1) : 0.5));
+      scrubber.setPosition(playback.tick, playback.playing ? Math.min(playback.phase, 1) : 0.5);
     },
     setReplay(next: Replay) {
       const grew = next.ticks.length !== replay.ticks.length;
@@ -758,9 +763,8 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
       replay = next;
       renderHeader();
       if (grew || !next.meta.live || next.meta.live.state === "done") {
-        scrubber.destroy();
-        scrubber = createScrubber(replay, (t) => playback.seek(t));
-        renderTimeline();
+        scrubber.setReplay(replay);
+        renderLegend();
         renderMistakes();
       }
       // Only the tick that was the live edge can change (its decision and outcomes just arrived, or the

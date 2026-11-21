@@ -1,7 +1,7 @@
 // Per-tick world model, built once per replay. Every person gets a stable place (seat, bed, zone spot,
 // rest spot, infirmary) that they keep until they move, and each tick gets a short plan of who walks where.
 // Phase 0 of tick t is exactly what the AI observed (obs t); phase 1 is the next observation, so a seek
-// to any tick lands on the state the HUD shows. Owner: agent D (playback + animation).
+// to any tick lands on the state the HUD shows.
 //
 // Within a tick (SPEC §4 order): the AI's actions play first (admits, assigns, spends, rejections), then
 // treatment and outcomes (discharges, deaths, leavers, upgrades, faints), then the start of the next tick

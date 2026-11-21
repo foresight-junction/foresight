@@ -13,7 +13,6 @@ Usage: python eval/summarise.py [JOBS_DIR ...] [--out PATH]
 """
 
 import argparse
-import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -49,18 +48,11 @@ class Trial:
     drift: tuple[str, ...] = ()
 
 
-def _read_json(path: Path) -> dict | None:
-    if not path.is_file():
-        return None
-    data = json.loads(path.read_text())
-    return data if isinstance(data, dict) else None
-
-
 def find_trial_dirs(roots: list[Path]) -> list[Path]:
     found: set[Path] = set()
     for root in roots:
         for config in root.rglob("config.json"):
-            data = _read_json(config)
+            data = manifest.read_json_object(config)
             if data is not None and "trial_name" in data:
                 found.add(config.parent)
     return sorted(found)
@@ -71,27 +63,44 @@ def _report(trial_dir: Path) -> dict | None:
         trial_dir / "verifier" / "score_full.json",
         trial_dir / "artifacts" / "evidence" / "report.json",
     ):
-        data = _read_json(path)
+        data = manifest.read_json_object(path)
         if data is not None:
             return data
     for path in sorted((trial_dir / "artifacts").rglob("report.json")):
-        data = _read_json(path)
+        data = manifest.read_json_object(path)
         if data is not None:
             return data
     return None
 
 
 def _reward(result: dict, trial_dir: Path) -> float | None:
-    rewards = (result.get("verifier_result") or {}).get("rewards") or {}
-    if "reward" in rewards:
-        return float(rewards["reward"])
-    reward_txt = trial_dir / "verifier" / "reward.txt"
-    if reward_txt.is_file():
-        try:
-            return float(reward_txt.read_text().strip())
-        except ValueError:
+    verifier = result.get("verifier_result")
+    if verifier is not None and not isinstance(verifier, dict):
+        raise ValueError("invalid verifier_result in result.json")
+    rewards = verifier.get("rewards") if verifier is not None else None
+    if rewards is not None and not isinstance(rewards, dict):
+        raise ValueError("invalid verifier rewards in result.json")
+    if rewards is not None and "reward" in rewards:
+        value = rewards["reward"]
+        source = "result.json"
+    else:
+        reward_txt = trial_dir / "verifier" / "reward.txt"
+        if not reward_txt.is_file():
             return None
-    return None
+        source = "verifier/reward.txt"
+        try:
+            value = reward_txt.read_text().strip()
+        except (OSError, UnicodeError) as exc:
+            raise ValueError(f"could not read reward from {source}: {exc}") from exc
+
+    error = f"invalid reward in {source} (expected a finite number in [0, 1])"
+    try:
+        reward = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(error) from exc
+    if isinstance(value, bool) or not 0.0 <= reward <= 1.0:
+        raise ValueError(error)
+    return reward
 
 
 def _model(result: dict) -> str:
@@ -135,13 +144,17 @@ def _identity(trial_dir: Path, report: dict | None) -> dict[str, str]:
 
 def load_trial(trial_dir: Path) -> Trial | None:
     """Return None for a trial that has not finished (Harbor writes result.json at the end)."""
-    result = _read_json(trial_dir / "result.json")
+    result = manifest.read_json_object(trial_dir / "result.json")
     if result is None:
         return None
     report = _report(trial_dir)
-    reward = _reward(result, trial_dir)
     exc = result.get("exception_info") or {}
     error = exc.get("exception_type")
+    try:
+        reward = _reward(result, trial_dir)
+    except ValueError as reward_error:
+        reward = None
+        error = f"{error}: {reward_error}" if error else str(reward_error)
     if reward is None and error is None:
         error = "no reward"
     ident = _identity(trial_dir, report)
@@ -291,7 +304,7 @@ class Completeness:
 
     @property
     def incomplete(self) -> bool:
-        return bool(self.missing or self.failed or self.drifted or self.crashed)
+        return bool(self.missing or self.failed or self.timed_out or self.drifted or self.crashed)
 
     def __add__(self, other: "Completeness") -> "Completeness":
         return Completeness(
@@ -304,6 +317,10 @@ class Completeness:
             self.drifted + other.drifted,
             self.crashed + other.crashed,
         )
+
+
+def _timed_out(trial: Trial) -> bool:
+    return trial.report is not None and trial.report.get("ended") == "timeout"
 
 
 def _plan_entries(plan: dict | list) -> list[dict]:
@@ -323,8 +340,8 @@ def completeness(
 
     An entry without a job matches that policy/model/seed in any job. Every planned attempt without
     a finished trial is `missing`, a matched trial with an error is `failed`, a matched trial that
-    ended on `timeout` is also listed as `timed_out` (it stays `failed` too if Harbor recorded an
-    exception, because #93 made any agent exception fail the evaluation), and a trial no entry claims
+    ended on `timeout` is listed as `timed_out` and makes the plan incomplete even with a reward.
+    A timeout with an error is also listed as `failed`, and a trial no entry claims
     is `unplanned`. Nothing is dropped. This matches ONE root's plan against that root's trials; use
     `completeness_by_root` for several roots. A matched trial whose manifest flags identity drift is
     `drifted` and counts as failed. A planned entry with no finished trial whose job recorded a non-zero
@@ -358,7 +375,7 @@ def completeness(
         failed=[t for t in matched if t.error is not None],
         drifted=[t for t in matched if t.drift],
         crashed=[e for e in missing if job_exit.get(e.get("job") or "")],
-        timed_out=[t for t in matched if t.report and t.report.get("ended") == "timeout"],
+        timed_out=[t for t in matched if _timed_out(t)],
         unplanned=free,
     )
 
@@ -386,7 +403,9 @@ def _completeness_lines(c: Completeness) -> list[str]:
         return f"{e.get('job') or '*'}: {e['policy']} `{e.get('model') or '-'}` seed {e.get('seed')} repeat {e.get('repeat')}"
 
     def trial(t: Trial) -> str:
-        return f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed} ({t.error or 'ended timeout'})"
+        status = t.error or ("ended timeout" if _timed_out(t) else None)
+        label = f"{t.job}/{t.name}: {t.policy} `{t.model}` seed {t.seed}"
+        return f"{label} ({status})" if status else label
 
     def drift(t: Trial) -> str:
         return f"{t.job}/{t.name}: {', '.join(t.drift)}"
@@ -402,8 +421,8 @@ def _completeness_lines(c: Completeness) -> list[str]:
     ]
     for title, items, fmt in (
         ("Missing (planned, no finished trial)", c.missing, entry),
-        ("Failed (exception or no reward)", c.failed, trial),
-        ("Timed out (ended=timeout; also failed if Harbor recorded an exception)", c.timed_out, trial),
+        ("Failed (exception, missing reward, or invalid reward)", c.failed, trial),
+        ("Timed out (ended=timeout; partial rewards retained)", c.timed_out, trial),
         ("Identity drift (task or source changed since plan; counts as failed)", c.drifted, drift),
         ("Crashed (missing, and harbor exited non-zero; counts as failed)", c.crashed, entry),
         ("Unplanned (not in plan.json)", c.unplanned, trial),
@@ -422,7 +441,7 @@ def render(trials: list[Trial], sources: list[str], pending: int, comp: Complete
         "",
         f"{len(trials)} finished trials" + (f", {pending} still running (left out)" if pending else "") + ".",
         "Reward = score / 100 (SPEC section 6). A trial with no reward counts as 0.",
-        "Errors = trials where Harbor recorded an exception or no reward.",
+        "Errors = trials with a Harbor exception, a missing reward, or an invalid reward.",
         "Seed, Config (SHA-256 prefix of the hospital config), Instruction (of instruction.md), Task (of the task dir),",
         "Reference (of solution/) and Source (git commit, +dirty) come from the job's manifest.json or the task dir;",
         "rows differing in any of them are separate, and `unknown` rows are never pooled or compared.",
@@ -476,7 +495,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--allow-incomplete",
         action="store_true",
-        help="exit 0 even when a planned attempt is missing or failed (still listed in the summary)",
+        help="exit 0 even when attempts are incomplete or failed (still listed in the summary)",
     )
     args = parser.parse_args(argv)
     roots: list[Path] = args.jobs or [DEFAULT_JOBS]
@@ -494,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         loaded += root_trials
         plan = manifest.load_plan(r)
         job_exit = {
-            e["job"]: (manifest._read_json(r / e["job"] / manifest.MANIFEST_NAME) or {}).get(
+            e["job"]: (manifest.read_json_object(r / e["job"] / manifest.MANIFEST_NAME) or {}).get(
                 "harbor_exit_code"
             )
             for e in _plan_entries(plan or {})
@@ -520,14 +539,19 @@ def main(argv: list[str] | None = None) -> int:
     elif comp.incomplete and not args.allow_incomplete:
         print(
             f"summarise: INCOMPLETE: {len(comp.missing)} planned attempts missing, "
-            f"{len(comp.failed)} failed, {len(comp.drifted)} identity drift, "
+            f"{len(comp.failed)} failed, {len(comp.timed_out)} timed out, "
+            f"{len(comp.drifted)} identity drift, "
             f"{len(comp.crashed)} crashed (use --allow-incomplete to accept)",
             file=sys.stderr,
         )
         return 4
-    errors = [f"{t.job}/{t.name}: {t.error}" for t in trials if t.error is not None]
+    errors = [
+        f"{t.job}/{t.name}: {t.error or 'ended timeout'}"
+        for t in trials
+        if t.error is not None or _timed_out(t)
+    ]
     if errors and not args.allow_incomplete:
-        print(f"summarise: failed trials: {', '.join(errors)}", file=sys.stderr)
+        print(f"summarise: incomplete or failed trials: {', '.join(errors)}", file=sys.stderr)
         return 3
     return 0
 

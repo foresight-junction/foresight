@@ -1,6 +1,6 @@
 """Replays are complete, internally consistent, and score what the scorer says.
 
-Needs PYTHONPATH="ed72/environment/hospital;ed72/solution;eval/baselines" (':' off Windows).
+Needs PYTHONPATH="ed72/environment/hospital:ed72/solution:eval/baselines" in Bash.
 """
 
 import json

@@ -1,5 +1,5 @@
 // Episode-wide timeline data for the scrubber and the mistakes list, computed from replay.ticks.
-// Pure functions only. Owner: agent E (HUD).
+// Pure functions only.
 
 import type { Esi, Replay } from "../replay/types";
 import { clockForTick, euro, eventName, patientEsi } from "./describe";
