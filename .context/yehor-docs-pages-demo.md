@@ -7,7 +7,7 @@
 
 ## Handoff
 
-Enable GitHub Actions as the Pages source in the repository settings before merging.
+GitHub Actions is the Pages source for the organization repository.
 Once Pages deploys, open the README demo link in a signed-out browser. It should
 load Gemini seed 42, paused at tick 59, and explain the four rejected assignments.
 Set the repository About website to that same URL after verifying public access.
