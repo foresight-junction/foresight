@@ -642,6 +642,25 @@ export function mountHud(root: HTMLElement, initial: Replay, playback: Playback,
 
   function renderDecisions(t: ReplayTick, acts: ReturnType<typeof describeActions>): void {
     const out: HTMLElement[] = [];
+    const expiredAssignments = t.results.filter(({ index, ok, reason }) => {
+      const action = t.actions[index];
+      return (
+        !ok &&
+        reason === "staff_unavailable" &&
+        action?.type === "assign" &&
+        t.obs.staff.some((staff) => staff.id === action.staff && staff.status === "agency_left")
+      );
+    }).length;
+    if (expiredAssignments > 0) {
+      const assignments = expiredAssignments === 1 ? "assignment" : "assignments";
+      out.push(
+        el(
+          "p",
+          "decision-note",
+          `The simulator rejected ${expiredAssignments} ${assignments} to agency staff no longer under contract.`,
+        ),
+      );
+    }
     if (t.thought) {
       const q = el("blockquote", "thought");
       q.append(el("span", "thought-l", "THINKING"), el("p", "", t.thought));

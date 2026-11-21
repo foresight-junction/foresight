@@ -557,6 +557,12 @@
 }
 
 /* Lines (decisions, events) */
+.decision-note {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-left: 4px solid var(--bad);
+  background: #2a1619;
+}
 .lines,
 .mlist {
   list-style: none;
