@@ -2,15 +2,13 @@
 
 **[Open demo](https://foresight-junction.github.io/foresight/?replay=gemini-seed42.json&tick=59)** · See what happens when Gemini tries to assign staff whose contracts have ended.
 
-An AI agent runs a fictional emergency department for three days. Every 30 minutes, it decides who gets a bed, which staff cover each zone, and who can take a break. A bed is only useful if someone can staff it. A doctor who works through the afternoon might faint during the night shift.
+ED-72 is a benchmark for AI agents managing a fictional emergency department. Every 30 simulated minutes for 72 hours, the agent decides who gets a bed, which staff cover each zone, and when to spend from a €12,000 budget. We built it for AfterQuery’s **Break the Agent** challenge at Junction 2026.
 
-We built ED-72 for AfterQuery’s **Break the Agent** challenge at Junction 2026. We wanted to see whether an agent could make 144 decisions that hold up over a whole episode. The department has 17 beds, six doctors, nine nurses, a CT scanner, and a €12,000 budget. Patients arrive throughout the day. A flu wave or bus crash can fill the waiting room, and a broken CT can stall treatment. The agent can hire temporary staff, repair the scanner, or divert ambulances. Patients, staff, and events are synthetic.
+[Interactive walkthrough](#interactive-walkthrough) · [Results](#reported-scores) · [Reproduce the benchmark](#reproduce-the-reported-results) · [Judging walkthrough](docs/DEMO.md)
 
-[Watch a replay](#watch-a-replay) · [Run the benchmark](#reproduce-the-reported-results) · [See the scores](#reported-scores) · [Judging walkthrough](docs/DEMO.md)
+[![ED-72 replay preview showing first-night staffing, a CT outage, and four rejected agency assignments](docs/ed72-walkthrough.gif)](#interactive-walkthrough)
 
-![ED-72 replay showing the hospital floor, waiting room, timeline, and score breakdown](docs/ed72-replay.png)
-
-The scripted reference replay on seed 42, shown during the first night.
+The preview shows saved seed-42 replays. The final benchmark uses seeds 3101–3103.
 
 Each simulated hospital run gets a score from 0 to 100. **Higher is better.** The score gives the most weight to patient outcomes and also accounts for how quickly patients get care, staff wellbeing, and spending.
 
@@ -34,6 +32,10 @@ npx --yes pnpm@10.34.9 dev
 Open the URL Vite prints. If it uses port 5173, open [the scripted reference replay](http://localhost:5173/?replay=reference-seed42.json&tick=30) during the first night or [the Gemini policy replay](http://localhost:5173/?replay=gemini-seed42.json&tick=59) to inspect rejected staff assignments. For a different port, use that port in the same links. The bundled examples use seeds 7, 42, and 1234. The final benchmark uses seeds 3101–3103.
 
 Pick a replay, press play, or drag the timeline to see the beds, waiting room, staff, budget, and score breakdown.
+
+### Interactive walkthrough
+
+Open the [hosted walkthrough](https://foresight-junction.github.io/foresight/walkthrough.html) to play or scrub three short clips from the reference and Gemini script replays. Each clip links to the same tick in the full viewer. To run it locally, start Vite with the commands above and open [the local walkthrough](http://localhost:5173/walkthrough.html). If Vite prints a different port, use that port.
 
 ### Watch a new episode live
 
