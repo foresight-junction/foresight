@@ -1,6 +1,8 @@
+import json
 import os
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,35 +27,49 @@ MOCK_TOOL = r"""#!/usr/bin/env bash
 set -eu
 [ "${USE_MOCKS:-}" = 1 ] || exit 99
 tool="${0##*/}"
-printf '%s\t' "$tool" "$@" >> calls.tsv
-printf '\n' >> calls.tsv
+printf '%s\t' "$tool" "$@" >> "${MOCK_CALLS:-calls.tsv}"
+printf '\n' >> "${MOCK_CALLS:-calls.tsv}"
 case "$tool" in
+  date) echo 20261119-090000; exit 0 ;;
   docker) exit 0 ;;
   uv)
-    script="" action=""
+    script="" action="" target="" out=""
     args=("$@")
     for ((i=0; i<${#args[@]}; i++)); do
       case "${args[i]}" in
         */manifest.py|*/summarise.py) script="${args[i]}"; action="${args[i+1]}" ;;
+        plan|write) target="${args[i+1]}" ;;
+        --out) out="${args[i+1]}" ;;
       esac
     done
     if [[ "$script" = */manifest.py ]]; then
       if [ "$action" = plan ] && [ -f fail-plan ]; then exit 29; fi
       if [ "$action" = write ] && [ -f fail-manifest ]; then exit 31; fi
+      filename=manifest.json
+      if [ "$action" = plan ]; then filename=plan.json; fi
+      printf '{"seed": "%s"}\n' "${ED72_SEED:-3101}" > "$target/$filename"
     fi
-    if [[ "$script" = */summarise.py ]] && [ -f fail-baseline-summary ] && \
-      [ "${action##*/}" = "$(cat fail-baseline-summary)" ]; then exit 3; fi
-    for arg in "$@"; do
-      if [[ "$arg" = */summarise.py ]] && [ -f fail-summary ]; then exit 3; fi
-    done
+    if [[ "$script" = */summarise.py ]]; then
+      if [ -f fail-summary-without-report ]; then exit 1; fi
+      if [ -f crash-during-summary ]; then
+        printf '# Mock evaluation' > "$out"
+        exit 1
+      fi
+      printf '# Mock evaluation report\n\nSeed: %s\n' "${ED72_SEED:-3101}" > "$out"
+      if [ -f fail-summary ]; then exit "$(cat fail-summary)"; fi
+      if [ -f fail-baseline-summary ] && [ "${action##*/}" = "$(cat fail-baseline-summary)" ]; then
+        exit 3
+      fi
+    fi
     exit 0 ;;
 esac
-agent="" job="" dry=0
+agent="" job="" output="" dry=0
 args=("$@")
 for ((i=0; i<${#args[@]}; i++)); do
   case "${args[i]}" in
     -a|--agent) agent="${args[i+1]}" ;;
     --job-name) job="${args[i+1]}" ;;
+    -o) output="${args[i+1]}" ;;
     --dry-run) dry=1 ;;
     --version) echo 'Harbor 0.26.0'; exit 0 ;;
   esac
@@ -64,7 +80,11 @@ fi
 if [ "$dry" = 1 ] && [ -f fail-preflight ] && [ "$agent" = "$(cat fail-preflight)" ]; then
   exit 17
 fi
-if [ "$dry" = 0 ] && [ -f fail-job ] && [ "$job" = "$(cat fail-job)" ]; then exit 23; fi
+if [ "$dry" = 0 ]; then
+  if [ -f fail-job ] && [ "$job" = "$(cat fail-job)" ]; then exit 23; fi
+  mkdir -p "$output/$job"
+  printf '%s\n' "${ED72_SEED:-3101}" > "$output/$job/trial-seed.txt"
+fi
 """
 
 
@@ -74,7 +94,7 @@ class Runner:
     bash: str
     env: dict[str, str]
 
-    def run(self, mode: str = "baselines") -> subprocess.CompletedProcess[str]:
+    def run(self, mode: str = "baselines", **env: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [
                 self.bash,
@@ -85,7 +105,7 @@ class Runner:
             ],
             check=False,
             cwd=self.root,
-            env=self.env,
+            env=self.env | env,
             capture_output=True,
             text=True,
             timeout=30,
@@ -128,7 +148,7 @@ def runner(tmp_path: Path) -> Runner:
         target.write_text("# MOCK: existence-only runner prerequisite, enabled by USE_MOCKS.\n")
     tools = root / "mock-bin"
     tools.mkdir()
-    for name in ("docker", "uv", "uvx", "harbor"):
+    for name in ("date", "docker", "uv", "uvx", "harbor"):
         tool = tools / name
         tool.write_text(MOCK_TOOL, newline="\n")
         tool.chmod(0o755)
@@ -136,7 +156,16 @@ def runner(tmp_path: Path) -> Runner:
         key: value
         for key, value in os.environ.items()
         if key
-        not in {"HARBOR", "ED72_MODEL", "GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PYTHONPATH"}
+        not in {
+            "HARBOR",
+            "ED72_MODEL",
+            "ED72_SEED",
+            "GEMINI_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "PYTHONPATH",
+            "MOCK_CALLS",
+        }
     }
     env["USE_MOCKS"] = "1"
     return Runner(root, bash, env)
@@ -153,6 +182,7 @@ def test_missing_prerequisite_fails_before_running_any_jobs(runner: Runner, miss
     assert result.returncode != 0, result.stdout + result.stderr
     assert not runner.harbor_calls(dry=False)
     assert Path(missing).name in result.stderr
+    assert not (runner.root / "eval/results").exists()
 
 
 @pytest.mark.parametrize("agent", ["oracle", "nop", STOP_EARLY, "opencode"])
@@ -206,9 +236,9 @@ def test_gemini_mapping_and_pinned_versions_are_forwarded(runner: Runner, provid
     assert _option(agent_job, "-k") == "3" and _option(agent_job, "-n") == "3"
 
 
-@pytest.mark.parametrize("failure", ["job", "summary"])
-def test_failed_job_or_summary_makes_runner_fail(runner: Runner, failure: str) -> None:
-    (runner.root / f"fail-{failure}").write_text("do-nothing")
+@pytest.mark.parametrize(("failure", "value"), [("job", "do-nothing"), ("summary", "3"), ("summary", "4")])
+def test_failed_job_or_summary_makes_runner_fail(runner: Runner, failure: str, value: str) -> None:
+    (runner.root / f"fail-{failure}").write_text(value)
     result = runner.run()
     assert result.returncode != 0, result.stdout + result.stderr
     assert len(runner.harbor_calls(dry=False)) == 3
@@ -216,6 +246,58 @@ def test_failed_job_or_summary_makes_runner_fail(runner: Runner, failure: str) -
         call[0] == "uv" and any(arg.endswith("/summarise.py") for arg in call) for call in runner.calls()
     )
     assert ("do-nothing" if failure == "job" else "summary") in result.stderr
+    (report,) = runner.root.glob("eval/results/jobs/*/summary.md")
+    assert f"{report.parent.name}/summary.md" in result.stdout
+    assert (runner.root / "eval/results/summary.md").read_bytes() == report.read_bytes()
+
+
+@pytest.mark.parametrize("failure", ["fail-summary-without-report", "crash-during-summary"])
+def test_missing_or_truncated_report_preserves_previous_summary(runner: Runner, failure: str) -> None:
+    latest = runner.root / "eval/results/summary.md"
+    latest.parent.mkdir()
+    latest.write_text("Previous report\n")
+    (runner.root / failure).touch()
+    result = runner.run()
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "failed: summary" in result.stderr
+    assert latest.read_text() == "Previous report\n"
+    reports = list(runner.root.glob("eval/results/jobs/*/summary.md"))
+    if failure == "crash-during-summary":
+        (report,) = reports
+        assert report.read_text() == "# Mock evaluation"
+    else:
+        assert not reports
+
+
+def test_same_second_runs_keep_seed_artifacts_and_reports_separate(runner: Runner) -> None:
+    seeds = (3101, 3102)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(runner.run, ED72_SEED=str(seed), MOCK_CALLS=f"calls-{seed}.tsv") for seed in seeds
+        ]
+        results = [future.result() for future in futures]
+
+    job_roots = sorted(runner.root.glob("eval/results/jobs/20261119-090000-*"))
+    assert len(job_roots) == 2
+    reports = {}
+    for job_root in job_roots:
+        seed = int(json.loads((job_root / "plan.json").read_text())["seed"])
+        assert seed not in reports
+        for name in ("reference", "do-nothing", "stop-early"):
+            job = job_root / name
+            assert (job / "trial-seed.txt").read_text().strip() == str(seed)
+            assert json.loads((job / "manifest.json").read_text())["seed"] == str(seed)
+            assert (job / "harbor-exit-code.txt").read_text().strip() == "0"
+        report = job_root / "summary.md"
+        reports[seed] = report.read_bytes()
+        assert reports[seed] == f"# Mock evaluation report\n\nSeed: {seed}\n".encode()
+        result = results[seeds.index(seed)]
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert job_root.name + "/summary.md" in result.stdout
+
+    assert set(reports) == set(seeds)
+    assert (runner.root / "eval/results/summary.md").read_bytes() in reports.values()
+    assert not list(runner.root.glob("eval/results/.summary-*"))
 
 
 @pytest.mark.parametrize("mode", ["baselines", "all"])
@@ -291,5 +373,5 @@ def test_baseline_failure_blocks_paid_runs_and_preserves_model_plan(
     final = summaries[-1]
     script_index = next(index for index, arg in enumerate(final) if arg.endswith("/summarise.py"))
     assert final[script_index + 1] == plan[plan.index("plan") + 1]
-    assert _option(final, "--out").endswith("/eval/results/summary.md")
+    assert _option(final, "--out") == f"{final[script_index + 1]}/summary.md"
     assert "no model runs started" in result.stderr

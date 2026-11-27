@@ -68,6 +68,7 @@ figcaption, .transport { display: flex; flex-wrap: wrap; justify-content: space-
   display: grid;
   place-items: center;
   overflow: hidden;
+  width: 100%;
   aspect-ratio: 1.72;
   min-height: 190px;
   background: #14141c;
@@ -115,6 +116,7 @@ figcaption, .transport { display: flex; flex-wrap: wrap; justify-content: space-
   .demo { gap: 12px; }
 }
 @media (max-width: 380px) {
+  .topbar { flex-wrap: wrap; gap: 8px 12px; padding-block: 10px; }
   nav { gap: 12px; }
   .chapters { gap: 0 14px; }
   .chapters button { font-size: .875rem; }

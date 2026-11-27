@@ -85,7 +85,6 @@ const STATUS_WORD: Record<string, string> = {
   fainted: "fainted",
   sick: "off sick",
   agency_ordered: "not arrived yet",
-  agency_left: "contract over",
   resting: "resting",
   on_shift: "on shift",
 };
@@ -115,6 +114,7 @@ export function reasonText(reason: string | undefined, action: Action, obs: Obse
     case "staff_unavailable": {
       if (action.type !== "assign") return "staff unavailable";
       const s = obs.staff.find((x) => x.id === action.staff);
+      if (s?.status === "agency_left") return `Contract ended for ${action.staff}`;
       const why = s ? STATUS_WORD[s.status] ?? s.status : "unavailable";
       return `${action.staff} is ${why}`;
     }

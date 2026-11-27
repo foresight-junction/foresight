@@ -1,8 +1,10 @@
 # Foresight · ED-72
 
+**[Open demo](https://foresight-junction.github.io/foresight/?replay=gemini-seed42.json&tick=59)** · See what happens when Gemini tries to assign staff whose contracts have ended.
+
 ED-72 is a benchmark for AI agents managing a fictional emergency department. Every 30 simulated minutes for 72 hours, the agent decides who gets a bed, which staff cover each zone, and when to spend from a €12,000 budget. We built it for AfterQuery’s **Break the Agent** challenge at Junction 2026.
 
-**[Explore the replay](#interactive-walkthrough)** · [Results](#reported-scores) · [Reproduce the benchmark](#reproduce-the-reported-results)
+[Interactive walkthrough](#interactive-walkthrough) · [Results](#reported-scores) · [Reproduce the benchmark](#reproduce-the-reported-results) · [Judging walkthrough](docs/DEMO.md)
 
 [![ED-72 replay preview showing first-night staffing, a CT outage, and four rejected agency assignments](docs/ed72-walkthrough.gif)](#interactive-walkthrough)
 
@@ -33,7 +35,7 @@ Pick a replay, press play, or drag the timeline to see the beds, waiting room, s
 
 ### Interactive walkthrough
 
-Start the TypeScript viewer with the commands above and open [the walkthrough](http://localhost:5173/walkthrough.html). If Vite prints a different port, use that port. Play or scrub three short clips from the reference and Gemini script replays, or open any tick in the full viewer.
+Open the [hosted walkthrough](https://foresight-junction.github.io/foresight/walkthrough.html) to play or scrub three short clips from the reference and Gemini script replays. Each clip links to the same tick in the full viewer. To run it locally, start Vite with the commands above and open [the local walkthrough](http://localhost:5173/walkthrough.html). If Vite prints a different port, use that port.
 
 ### Watch a new episode live
 

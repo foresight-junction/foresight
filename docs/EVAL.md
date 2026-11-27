@@ -37,7 +37,11 @@ How ED-72 is run, how the judges' runs map to commands, and how we check and tun
 
 Expected order: reference, then reactive proxy, then stop-early, then do-nothing at 0.
 
-`make eval` runs all of the above.
+`make eval` runs all of the above. Each invocation reserves its own directory under
+`eval/results/jobs/`, named with a timestamp and a unique suffix. The directory holds
+the plan, job outputs and `summary.md`. The runner prints the path to its report and
+atomically updates `eval/results/summary.md` with the most recently published report,
+including a partial report when the evaluation fails.
 
 ## 4. Run matrix
 

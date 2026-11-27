@@ -33,30 +33,49 @@ const MARK_H = 6;
 
 export interface Scrubber {
   el: HTMLElement;
-  data: TimelineData;
-  setPosition(tickFloat: number): void;
+  readonly data: TimelineData;
+  setPosition(tick: number, progress: number): void;
+  setReplay(replay: Replay): void;
   destroy(): void;
 }
 
 export function createScrubber(replay: Replay, onSeek: (tick: number) => void): Scrubber {
-  const data = buildTimeline(replay);
+  let data = buildTimeline(replay);
   const wrap = document.createElement("div");
   wrap.className = "scrub";
+  const range = document.createElement("input");
+  range.type = "range";
+  range.className = "scrub-range";
+  range.min = "0";
+  range.max = String(data.marks.length - 1);
+  range.step = "1";
+  range.setAttribute("aria-label", "Episode timeline");
   const canvas = document.createElement("canvas");
   canvas.className = "scrub-canvas";
-  canvas.setAttribute("role", "slider");
-  canvas.setAttribute("aria-label", "Episode timeline");
-  canvas.setAttribute("aria-valuemin", "0");
-  canvas.setAttribute("aria-valuemax", String(data.n - 1));
+  canvas.setAttribute("aria-hidden", "true");
   const tip = document.createElement("div");
   tip.className = "scrub-tip";
-  wrap.append(canvas, tip);
+  tip.setAttribute("aria-hidden", "true");
+  wrap.append(range, canvas, tip);
 
   const base = document.createElement("canvas");
   let width = 0;
   let dpr = 1;
   let pos = 0;
   let drawnX = -1;
+  let describedTick = -1;
+
+  const syncTick = (tick: number): void => {
+    describedTick = tick;
+    range.valueAsNumber = tick;
+    range.setAttribute("aria-valuetext", tickSummary(data, tick));
+  };
+  const seek = (tick: number): void => {
+    syncTick(tick);
+    onSeek(tick);
+  };
+  syncTick(0);
+  range.addEventListener("input", () => seek(range.valueAsNumber));
 
   const xOf = (tick: number): number => (tick / data.n) * width;
 
@@ -154,29 +173,35 @@ export function createScrubber(replay: Replay, onSeek: (tick: number) => void): 
     return Math.max(0, Math.min(data.n - 1, Math.floor(((clientX - r.left) / r.width) * data.n)));
   };
 
+  const seekAt = (clientX: number): void => seek(Math.min(data.marks.length - 1, tickAt(clientX)));
   let dragging = false;
   const showTip = (clientX: number): void => {
     const tick = tickAt(clientX);
-    tip.textContent = tickSummary(data, tick);
+    const summary = tickSummary(data, tick);
+    tip.classList.toggle("on", summary !== "");
+    if (!summary) return;
+    tip.textContent = summary;
     const r = canvas.getBoundingClientRect();
     tip.style.left = `${Math.max(0, Math.min(r.width - tip.offsetWidth, clientX - r.left - tip.offsetWidth / 2))}px`;
-    tip.classList.add("on");
   };
   canvas.addEventListener("pointerdown", (e) => {
+    if (!e.isPrimary || e.button !== 0) return;
+    e.preventDefault();
     dragging = true;
+    range.focus({ preventScroll: true });
     canvas.setPointerCapture(e.pointerId);
-    onSeek(tickAt(e.clientX));
+    seekAt(e.clientX);
     showTip(e.clientX);
   });
   canvas.addEventListener("pointermove", (e) => {
-    if (dragging) onSeek(tickAt(e.clientX));
+    if (!e.isPrimary) return;
+    if (dragging) seekAt(e.clientX);
     showTip(e.clientX);
   });
   const stop = (): void => {
     dragging = false;
   };
-  canvas.addEventListener("pointerup", stop);
-  canvas.addEventListener("pointercancel", stop);
+  canvas.addEventListener("lostpointercapture", stop);
   canvas.addEventListener("pointerleave", () => tip.classList.remove("on"));
 
   const ro = new ResizeObserver(() => {
@@ -186,14 +211,20 @@ export function createScrubber(replay: Replay, onSeek: (tick: number) => void): 
 
   return {
     el: wrap,
-    data,
-    setPosition(tickFloat: number) {
-      if (Math.floor(tickFloat) !== Math.floor(pos) || drawnX < 0) {
-        canvas.setAttribute("aria-valuenow", String(Math.floor(tickFloat)));
-      }
-      pos = tickFloat;
+    get data() {
+      return data;
+    },
+    setPosition(tick: number, progress: number) {
+      if (describedTick !== tick) syncTick(tick);
+      pos = tick + progress;
       if (width === 0 && wrap.isConnected) drawBase();
       else paint();
+    },
+    setReplay(next: Replay) {
+      data = buildTimeline(next);
+      range.max = String(data.marks.length - 1);
+      syncTick(range.valueAsNumber);
+      drawBase();
     },
     destroy() {
       ro.disconnect();
